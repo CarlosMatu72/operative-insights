@@ -145,20 +145,23 @@ export function useGlosaActions() {
     // Find any active session for this user and pause it
     const { data: activeSessions } = await supabase
       .from("review_sessions")
-      .select("id, review_case_id, started_at, paused_at")
+      .select("id, review_case_id, started_at, paused_at, duration_seconds")
       .eq("user_id", user!.id)
       .eq("session_status", "active");
 
     for (const session of activeSessions ?? []) {
-      const elapsed = Math.floor(
-        (Date.now() - new Date(session.paused_at ?? session.started_at).getTime()) / 1000
+      // Calculate elapsed since last resume/start, add to previously accumulated duration
+      const resumedAt = session.paused_at ?? session.started_at;
+      const newElapsed = Math.floor(
+        (Date.now() - new Date(resumedAt).getTime()) / 1000
       );
+      const totalDuration = (session.duration_seconds ?? 0) + newElapsed;
       await supabase
         .from("review_sessions")
         .update({
           session_status: "paused",
           paused_at: new Date().toISOString(),
-          duration_seconds: elapsed,
+          duration_seconds: totalDuration,
         })
         .eq("id", session.id);
 
