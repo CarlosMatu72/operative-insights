@@ -217,6 +217,15 @@ const Reportes = () => {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Cliente</Label>
+                  <Select value={filters.clientId ?? "_all_"} onValueChange={(v) => updateFilter("clientId", v)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_all_">Todos</SelectItem>
+                      {(clients.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                <div className="space-y-1">
                   <Label className="text-[10px] uppercase text-muted-foreground">Tipo</Label>
                   <Select value={filters.documentTypeId ?? "_all_"} onValueChange={(v) => updateFilter("documentTypeId", v)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
