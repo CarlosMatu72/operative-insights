@@ -627,7 +627,7 @@ const ReviewDetail = () => {
         </Dialog>
 
         {/* Action Buttons */}
-        {!isReadOnly && !needsCorrection && !isReopened && (
+        {!isReadOnly && !needsCorrection && !isReopened && (status === "EN_REVISION" || status === "EN_CORRECCION") && (
           <>
             <Separator />
             <div className="flex flex-wrap gap-2">
