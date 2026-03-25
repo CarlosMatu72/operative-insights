@@ -67,10 +67,11 @@ const Glosa = () => {
     c.status === "ASIGNADO" && !c.first_started_at;
 
   const canContinue = (c: any) =>
-    ["PAUSADO", "EN_CORRECCION", "REABIERTO"].includes(c.status);
+    ["PAUSADO", "REABIERTO"].includes(c.status) || 
+    (c.status === "ASIGNADO" && c.first_started_at); // case was started before and paused but status reverted
 
   const canPause = (c: any) =>
-    c.status === "EN_REVISION" && c.has_active_session;
+    ["EN_REVISION", "EN_CORRECCION"].includes(c.status) && c.has_active_session;
 
   const canCorrecciones = (c: any) =>
     ["CORRECCION_PENDIENTE", "EN_CORRECCION"].includes(c.status) && c.findings_count > 0;

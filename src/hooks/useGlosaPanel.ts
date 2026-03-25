@@ -272,7 +272,7 @@ export function useGlosaActions() {
           .update({
             session_status: "paused",
             paused_at: new Date().toISOString(),
-            duration_seconds: elapsed,
+            duration_seconds: (s.duration_seconds ?? 0) + newElapsed,
           })
           .eq("id", s.id);
       }

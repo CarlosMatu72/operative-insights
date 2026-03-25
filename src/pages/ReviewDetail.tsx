@@ -453,7 +453,7 @@ const ReviewDetail = () => {
               Observaciones
               {openFindings.length > 0 && <Badge variant="destructive" className="ml-2 text-xs">{openFindings.length} abiertas</Badge>}
             </CardTitle>
-            {!isReadOnly && !needsCorrection && (
+            {!isReadOnly && !needsCorrection && (status === "EN_REVISION" || status === "EN_CORRECCION") && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowObsForm(true)}>
                 <Plus className="h-3 w-3" /> Agregar
               </Button>
