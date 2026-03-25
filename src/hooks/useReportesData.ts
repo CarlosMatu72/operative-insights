@@ -35,7 +35,7 @@ export function useReportData(filters: ReportFilters) {
       if (filters.glosadorId) query = query.eq("assigned_glosador_user_id", filters.glosadorId);
       if (filters.clientId) query = query.eq("client_id", filters.clientId);
       if (filters.documentTypeId) query = query.eq("document_type_id", filters.documentTypeId);
-      if (filters.status) query = query.eq("status", filters.status);
+      if (filters.status) query = query.eq("status", filters.status as any);
 
       const { data, error } = await query;
       if (error) throw error;
