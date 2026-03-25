@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
+import { FilterX, Inbox } from "lucide-react";
 
 export function TramitesTable() {
   const { branches, documentTypes } = useCatalogs();
@@ -33,6 +35,12 @@ export function TramitesTable() {
     },
   });
 
+  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus;
+
+  const clearFilters = () => {
+    setFilterRef(""); setFilterTipo(""); setFilterSucursal(""); setFilterEstatus("");
+  };
+
   const filtered = cases.filter(c => {
     if (filterTipo && filterTipo !== "_all" && (c.document_types as any)?.code !== filterTipo) return false;
     if (filterSucursal && filterSucursal !== "_all" && c.branch_id !== filterSucursal) return false;
@@ -43,10 +51,12 @@ export function TramitesTable() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Input placeholder="Buscar referencia / folio..." value={filterRef} onChange={e => setFilterRef(e.target.value)} className="h-9" />
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px] max-w-xs">
+          <Input placeholder="Buscar referencia / folio..." value={filterRef} onChange={e => setFilterRef(e.target.value)} className="h-9" />
+        </div>
         <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger className="h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">Todos los tipos</SelectItem>
             {(documentTypes.data ?? []).map(d => (
@@ -55,23 +65,28 @@ export function TramitesTable() {
           </SelectContent>
         </Select>
         <Select value={filterSucursal} onValueChange={setFilterSucursal}>
-          <SelectTrigger className="h-9"><SelectValue placeholder="Sucursal" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Sucursal" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">Todas las sucursales</SelectItem>
+            <SelectItem value="_all">Todas</SelectItem>
             {(branches.data ?? []).map(b => (
               <SelectItem key={b.id} value={b.id}>{b.nombre}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterEstatus} onValueChange={setFilterEstatus}>
-          <SelectTrigger className="h-9"><SelectValue placeholder="Estatus" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Estatus" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">Todos los estatus</SelectItem>
+            <SelectItem value="_all">Todos</SelectItem>
             {Object.entries(statusConfig).map(([k, v]) => (
               <SelectItem key={k} value={k}>{v.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
+            <FilterX className="h-3.5 w-3.5" /> Limpiar
+          </Button>
+        )}
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm overflow-auto">
@@ -90,14 +105,23 @@ export function TramitesTable() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  Cargando...
+              <TableRow><TableCell colSpan={8} className="text-center py-16 text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-sm">Cargando trámites...</span>
                 </div>
               </TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Sin trámites registrados</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-16">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Inbox className="h-10 w-10 opacity-30" />
+                  <p className="text-sm font-medium">{hasFilters ? "Sin resultados" : "Sin trámites registrados"}</p>
+                  <p className="text-xs">{hasFilters ? "Ajusta los filtros o limpia la búsqueda" : "Los trámites aparecerán aquí al registrarlos"}</p>
+                  {hasFilters && (
+                    <Button variant="outline" size="sm" onClick={clearFilters} className="mt-2 h-7 text-xs">Limpiar filtros</Button>
+                  )}
+                </div>
+              </TableCell></TableRow>
             ) : (
               filtered.map(c => (
                 <TableRow key={c.id} className="hover:bg-muted/30">

@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { GlosadorCard } from "@/components/tablero/GlosadorCard";
 import { PendientesTable } from "@/components/tablero/PendientesTable";
 import { useGlosadores, usePendientes, useKPIs, useRealtimeSessions } from "@/hooks/useTableroData";
-import { FileText, ClipboardCheck, CheckCircle, Package, Layers } from "lucide-react";
+import { FileText, ClipboardCheck, CheckCircle, Package, Layers, Users } from "lucide-react";
 
 const Tablero = () => {
   useRealtimeSessions();
@@ -18,6 +18,8 @@ const Tablero = () => {
     { label: "Ped/Con (mes)", value: kpis?.pedConMes ?? 0, icon: Layers, color: "bg-warning/10 text-warning" },
   ];
 
+  const activeCount = glosadores.filter(g => g.isActive).length;
+
   return (
     <AppLayout>
       <div className="animate-fade-in space-y-6">
@@ -28,6 +30,7 @@ const Tablero = () => {
           </p>
         </div>
 
+        {/* KPIs */}
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {kpiItems.map((k) => (
             <div key={k.label} className="rounded-lg border bg-card p-4 shadow-sm">
@@ -44,10 +47,25 @@ const Tablero = () => {
           ))}
         </div>
 
+        {/* Glosadores */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight mb-3">Glosadores</h2>
+          <div className="flex items-center gap-3 mb-3">
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Glosadores</h2>
+            <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <Users className="h-3 w-3" />
+              {activeCount} activos de {glosadores.length}
+            </span>
+          </div>
           {loadingGlosadores ? (
-            <p className="text-sm text-muted-foreground">Cargando...</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              Cargando glosadores...
+            </div>
+          ) : glosadores.length === 0 ? (
+            <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
+              <p className="text-sm">No hay glosadores registrados</p>
+            </div>
           ) : (
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {glosadores.map((g) => (
@@ -65,13 +83,12 @@ const Tablero = () => {
           )}
         </div>
 
+        {/* Pendientes */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground tracking-tight mb-3">
-            Cola de Pendientes
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({pendientes.length} trámites)
-            </span>
-          </h2>
+          <div className="flex items-center gap-3 mb-3">
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Cola de Pendientes</h2>
+            <span className="text-sm text-muted-foreground">({pendientes.length} trámites)</span>
+          </div>
           <PendientesTable cases={pendientes} isLoading={loadingPendientes} />
         </div>
       </div>

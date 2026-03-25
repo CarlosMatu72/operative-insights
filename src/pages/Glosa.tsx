@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, FileDown, ClipboardCheck, Eye } from "lucide-react";
+import { Play, Pause, RotateCcw, FileDown, ClipboardCheck, Eye, FilterX, Inbox } from "lucide-react";
 
 function formatTime(seconds: number): string {
   if (seconds === 0) return "—";
@@ -42,6 +42,13 @@ const Glosa = () => {
     glosador: filterGlosador,
   });
 
+  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo || filterGlosador;
+
+  const clearFilters = () => {
+    setFilterRef(""); setFilterTipo(""); setFilterSucursal("");
+    setFilterEstatus(""); setFilterEjecutivo(""); setFilterGlosador("");
+  };
+
   const canGlosar = (c: any) =>
     c.status === "ASIGNADO" && !c.first_started_at;
 
@@ -57,24 +64,28 @@ const Glosa = () => {
 
   return (
     <AppLayout>
-      <div className="animate-fade-in space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Panel de Glosa</h1>
-          <p className="text-sm text-muted-foreground">
-            Bandeja de trabajo — revisiones asignadas
-          </p>
+      <div className="animate-fade-in space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Panel de Glosa</h1>
+            <p className="text-sm text-muted-foreground">
+              Bandeja de trabajo — {cases.length} trámites
+            </p>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          <Input
-            placeholder="Buscar referencia..."
-            value={filterRef}
-            onChange={(e) => setFilterRef(e.target.value)}
-            className="h-9"
-          />
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex-1 min-w-[200px] max-w-xs">
+            <Input
+              placeholder="Buscar referencia..."
+              value={filterRef}
+              onChange={(e) => setFilterRef(e.target.value)}
+              className="h-9"
+            />
+          </div>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
               {(documentTypes.data ?? []).map((d) => (
@@ -83,7 +94,7 @@ const Glosa = () => {
             </SelectContent>
           </Select>
           <Select value={filterSucursal} onValueChange={setFilterSucursal}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Sucursal" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Sucursal" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todas</SelectItem>
               {(branches.data ?? []).map((b) => (
@@ -92,7 +103,7 @@ const Glosa = () => {
             </SelectContent>
           </Select>
           <Select value={filterEstatus} onValueChange={setFilterEstatus}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Estatus" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Estatus" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
               {Object.entries(statusConfig).map(([k, v]) => (
@@ -101,7 +112,7 @@ const Glosa = () => {
             </SelectContent>
           </Select>
           <Select value={filterEjecutivo} onValueChange={setFilterEjecutivo}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="Ejecutivo" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Ejecutivo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
               {(executives.data ?? []).map((e) => (
@@ -111,7 +122,7 @@ const Glosa = () => {
           </Select>
           {isAdmin && (
             <Select value={filterGlosador} onValueChange={setFilterGlosador}>
-              <SelectTrigger className="h-9"><SelectValue placeholder="Glosador" /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Glosador" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="_all">Todos</SelectItem>
                 {(glosadores.data ?? []).map((g) => (
@@ -119,6 +130,11 @@ const Glosa = () => {
                 ))}
               </SelectContent>
             </Select>
+          )}
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
+              <FilterX className="h-3.5 w-3.5" /> Limpiar
+            </Button>
           )}
         </div>
 
@@ -136,28 +152,49 @@ const Glosa = () => {
                 <TableHead className="text-xs font-semibold text-center">Rev.</TableHead>
                 <TableHead className="text-xs font-semibold text-center">Calif.</TableHead>
                 <TableHead className="text-xs font-semibold">Tiempo</TableHead>
-                <TableHead className="text-xs font-semibold">Acciones</TableHead>
+                <TableHead className="text-xs font-semibold text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      Cargando...
+                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span className="text-sm">Cargando trámites...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : cases.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
-                    Sin trámites asignados
+                  <TableCell colSpan={10} className="text-center py-16">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Inbox className="h-10 w-10 opacity-30" />
+                      <p className="text-sm font-medium">
+                        {hasFilters ? "Sin resultados para los filtros aplicados" : "Sin trámites asignados"}
+                      </p>
+                      <p className="text-xs">
+                        {hasFilters ? "Intenta ajustar los filtros o limpiar la búsqueda" : "Los trámites aparecerán aquí cuando se asignen"}
+                      </p>
+                      {hasFilters && (
+                        <Button variant="outline" size="sm" onClick={clearFilters} className="mt-2 h-7 text-xs">
+                          Limpiar filtros
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 cases.map((c) => (
-                  <TableRow key={c.id} className={c.has_active_session ? "bg-primary/[0.03]" : "hover:bg-muted/30"}>
+                  <TableRow
+                    key={c.id}
+                    className={`cursor-pointer transition-colors ${
+                      c.has_active_session
+                        ? "bg-primary/[0.04] border-l-2 border-l-primary"
+                        : "hover:bg-muted/30"
+                    }`}
+                    onClick={() => navigate(`/glosa/${c.id}`)}
+                  >
                     <TableCell className="font-medium text-sm">
                       {c.reference ?? c.internal_folio}
                       {c.has_active_session && (
@@ -182,8 +219,8 @@ const Glosa = () => {
                     <TableCell className="text-sm text-muted-foreground">
                       {formatTime(c.active_time_seconds)}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
                         {canGlosar(c) && (
                           <Button
                             size="sm"
@@ -223,16 +260,6 @@ const Glosa = () => {
                             <Pause className="h-3 w-3" /> Pausar
                           </Button>
                         )}
-                        {c.status === "EN_REVISION" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs gap-1"
-                            onClick={() => navigate(`/glosa/${c.id}`)}
-                          >
-                            <Eye className="h-3 w-3" /> Abrir
-                          </Button>
-                        )}
                         {canCorrecciones(c) && (
                           <Button
                             size="sm"
@@ -243,14 +270,6 @@ const Glosa = () => {
                             <ClipboardCheck className="h-3 w-3" /> Correcciones
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0"
-                          onClick={() => navigate(`/glosa/${c.id}`)}
-                        >
-                          <FileDown className="h-3.5 w-3.5" />
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -259,10 +278,6 @@ const Glosa = () => {
             </TableBody>
           </Table>
         </div>
-
-        <p className="text-xs text-muted-foreground text-right">
-          {cases.length} trámites
-        </p>
       </div>
     </AppLayout>
   );
