@@ -401,9 +401,9 @@ export function useReviewActions(caseId: string) {
   const approveCase = useMutation({
     mutationFn: async () => {
       const { data: rounds } = await supabase
-        .from("review_rounds").select("id")
+        .from("review_rounds").select("id, round_number")
         .eq("review_case_id", caseId)
-        .order("round_number", { ascending: false }).limit(1);
+        .order("round_number", { ascending: false });
       if (rounds?.[0]) {
         await supabase.from("review_rounds")
           .update({ closed_at: new Date().toISOString(), result_status: "APPROVED" })
@@ -415,6 +415,53 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "APROBADO" as any, approved_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
+
+      // Calculate and save score
+      try {
+        const correctionRounds = (rounds ?? []).filter((r: any) => r.round_number > 1).length;
+        const { data: findings } = await supabase
+          .from("review_findings").select("observation_error_id, is_open")
+          .eq("review_case_id", caseId);
+        const totalErrors = (findings ?? []).length;
+
+        // Get active scoring rule
+        const { data: scoringRules } = await supabase
+          .from("scoring_rules").select("*").eq("activo", true).limit(1);
+        const rule = scoringRules?.[0];
+        const baseScore = rule?.valor_base ?? 100;
+        const classWeight = Number(rule?.classification_weight ?? 0.2);
+        const obsWeight = Number(rule?.observations_weight ?? 0.8);
+
+        // Classification score: penalize by correction rounds
+        const classScore = correctionRounds === 0 ? baseScore : Math.max(0, baseScore - correctionRounds * 15);
+
+        // Observations score: penalize by error count
+        let penaltyFromErrors = 0;
+        if (rule && findings) {
+          const errorIds = findings.map((f) => f.observation_error_id).filter(Boolean) as string[];
+          if (errorIds.length > 0) {
+            const { data: penalties } = await supabase
+              .from("scoring_rule_error_penalties").select("observation_error_id, penalty_points")
+              .eq("scoring_rule_id", rule.id).in("observation_error_id", errorIds);
+            penaltyFromErrors = (penalties ?? []).reduce((sum, p) => sum + Number(p.penalty_points), 0);
+          }
+        }
+        const obsScore = Math.max(0, baseScore - (totalErrors * 5) - penaltyFromErrors);
+
+        const scoreTotal = Math.round(classScore * classWeight + obsScore * obsWeight);
+
+        await supabase.from("review_scores").insert({
+          review_case_id: caseId,
+          score_total: scoreTotal,
+          score_classification: Math.round(classScore),
+          score_observations: Math.round(obsScore),
+          total_errors: totalErrors,
+          correction_rounds: correctionRounds,
+          calculated_by: user!.id,
+        });
+      } catch (e) {
+        console.error("Error calculating score:", e);
+      }
     },
     onSuccess: () => { toast.success("Trámite aprobado"); invalidate(); },
     onError: () => toast.error("Error al aprobar"),

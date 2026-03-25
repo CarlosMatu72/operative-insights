@@ -1,0 +1,271 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Settings2 } from "lucide-react";
+import { toast } from "sonner";
+
+export function ScoringConfig() {
+  const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRule, setEditRule] = useState<any>(null);
+  const [penaltyOpen, setPenaltyOpen] = useState(false);
+  const [penaltyRuleId, setPenaltyRuleId] = useState("");
+  const [penaltyErrorId, setPenaltyErrorId] = useState("");
+  const [penaltyPoints, setPenaltyPoints] = useState("");
+
+  const { data: rules = [] } = useQuery({
+    queryKey: ["scoring-rules"],
+    queryFn: async () => {
+      const { data } = await supabase.from("scoring_rules").select("*").order("nombre");
+      return data ?? [];
+    },
+  });
+
+  const { data: penalties = [] } = useQuery({
+    queryKey: ["scoring-penalties"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("scoring_rule_error_penalties")
+        .select("*, observation_errors(descripcion, codigo_error), scoring_rules(nombre)")
+        .order("penalty_points", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const { data: errors = [] } = useQuery({
+    queryKey: ["obs-errors-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("observation_errors").select("id, descripcion, codigo_error").eq("activo", true).order("descripcion");
+      return data ?? [];
+    },
+  });
+
+  const saveRule = useMutation({
+    mutationFn: async (rule: any) => {
+      if (rule.id) {
+        await supabase.from("scoring_rules").update({
+          nombre: rule.nombre,
+          valor_base: Number(rule.valor_base),
+          classification_weight: Number(rule.classification_weight),
+          observations_weight: Number(rule.observations_weight),
+          activo: rule.activo,
+        }).eq("id", rule.id);
+      } else {
+        await supabase.from("scoring_rules").insert({
+          nombre: rule.nombre,
+          valor_base: Number(rule.valor_base),
+          classification_weight: Number(rule.classification_weight),
+          observations_weight: Number(rule.observations_weight),
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scoring-rules"] });
+      toast.success("Regla guardada");
+      setEditOpen(false);
+    },
+    onError: () => toast.error("Error al guardar"),
+  });
+
+  const savePenalty = useMutation({
+    mutationFn: async () => {
+      await supabase.from("scoring_rule_error_penalties").insert({
+        scoring_rule_id: penaltyRuleId,
+        observation_error_id: penaltyErrorId,
+        penalty_points: Number(penaltyPoints),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scoring-penalties"] });
+      toast.success("Penalización agregada");
+      setPenaltyOpen(false);
+      setPenaltyErrorId("");
+      setPenaltyPoints("");
+    },
+    onError: () => toast.error("Error al guardar"),
+  });
+
+  const deletePenalty = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("scoring_rule_error_penalties").delete().eq("id", id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scoring-penalties"] });
+      toast.success("Penalización eliminada");
+    },
+  });
+
+  const openNewRule = () => {
+    setEditRule({ nombre: "", valor_base: "100", classification_weight: "0.2", observations_weight: "0.8", activo: true });
+    setEditOpen(true);
+  };
+
+  const openEditRule = (r: any) => {
+    setEditRule({ ...r, valor_base: String(r.valor_base), classification_weight: String(r.classification_weight), observations_weight: String(r.observations_weight) });
+    setEditOpen(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base flex items-center gap-2"><Settings2 className="h-4 w-4" /> Reglas de Calificación</CardTitle>
+          <Button size="sm" onClick={openNewRule} className="gap-1"><Plus className="h-3 w-3" /> Nueva Regla</Button>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Base</TableHead>
+                  <TableHead>Peso Clasificación</TableHead>
+                  <TableHead>Peso Observaciones</TableHead>
+                  <TableHead>Activa</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rules.map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
+                    <TableCell className="text-sm">{r.valor_base}</TableCell>
+                    <TableCell className="text-sm">{(Number(r.classification_weight) * 100).toFixed(0)}%</TableCell>
+                    <TableCell className="text-sm">{(Number(r.observations_weight) * 100).toFixed(0)}%</TableCell>
+                    <TableCell>
+                      <span className={`text-xs font-medium ${r.activo ? "text-success" : "text-muted-foreground"}`}>
+                        {r.activo ? "Sí" : "No"}
+                      </span>
+                    </TableCell>
+                    <TableCell><Button size="sm" variant="ghost" onClick={() => openEditRule(r)}>Editar</Button></TableCell>
+                  </TableRow>
+                ))}
+                {rules.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-sm text-muted-foreground">Sin reglas configuradas</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">Penalizaciones por Error</CardTitle>
+          <Button size="sm" variant="outline" onClick={() => { setPenaltyOpen(true); setPenaltyRuleId(rules[0]?.id ?? ""); }} disabled={rules.length === 0} className="gap-1">
+            <Plus className="h-3 w-3" /> Agregar
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Regla</TableHead>
+                  <TableHead>Error</TableHead>
+                  <TableHead>Puntos</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {penalties.map((p: any) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="text-sm">{p.scoring_rules?.nombre}</TableCell>
+                    <TableCell className="text-sm">{p.observation_errors?.codigo_error ? `[${p.observation_errors.codigo_error}] ` : ""}{p.observation_errors?.descripcion}</TableCell>
+                    <TableCell className="text-sm font-medium text-destructive">-{p.penalty_points}</TableCell>
+                    <TableCell><Button size="sm" variant="ghost" className="text-destructive" onClick={() => deletePenalty.mutate(p.id)}>×</Button></TableCell>
+                  </TableRow>
+                ))}
+                {penalties.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="text-center py-6 text-sm text-muted-foreground">Sin penalizaciones</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Edit rule dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editRule?.id ? "Editar" : "Nueva"} Regla de Calificación</DialogTitle></DialogHeader>
+          {editRule && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nombre</Label>
+                <Input value={editRule.nombre} onChange={(e) => setEditRule({ ...editRule, nombre: e.target.value })} className="h-9 text-sm" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Valor Base</Label>
+                  <Input type="number" value={editRule.valor_base} onChange={(e) => setEditRule({ ...editRule, valor_base: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Peso Clasificación</Label>
+                  <Input type="number" step="0.05" value={editRule.classification_weight} onChange={(e) => setEditRule({ ...editRule, classification_weight: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Peso Observaciones</Label>
+                  <Input type="number" step="0.05" value={editRule.observations_weight} onChange={(e) => setEditRule({ ...editRule, observations_weight: e.target.value })} className="h-9 text-sm" />
+                </div>
+              </div>
+              {editRule.id && (
+                <div className="flex items-center gap-2">
+                  <Switch checked={editRule.activo} onCheckedChange={(v) => setEditRule({ ...editRule, activo: v })} />
+                  <Label className="text-xs">Activa</Label>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveRule.mutate(editRule)} disabled={saveRule.isPending}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add penalty dialog */}
+      <Dialog open={penaltyOpen} onOpenChange={setPenaltyOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Agregar Penalización</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Regla</Label>
+              <Select value={penaltyRuleId} onValueChange={setPenaltyRuleId}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {rules.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Error</Label>
+              <Select value={penaltyErrorId} onValueChange={setPenaltyErrorId}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar error" /></SelectTrigger>
+                <SelectContent>
+                  {errors.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Puntos a descontar</Label>
+              <Input type="number" value={penaltyPoints} onChange={(e) => setPenaltyPoints(e.target.value)} className="h-9 text-sm" placeholder="5" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPenaltyOpen(false)}>Cancelar</Button>
+            <Button onClick={() => savePenalty.mutate()} disabled={!penaltyErrorId || !penaltyPoints || savePenalty.isPending}>Agregar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
