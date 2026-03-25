@@ -1,0 +1,151 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+
+export function useGlosadores() {
+  return useQuery({
+    queryKey: ["glosadores-with-stats"],
+    queryFn: async () => {
+      // Get users with glosa or admin role
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+      const glosadorIds = (roles ?? [])
+        .filter((r) => r.role === "glosa" || r.role === "admin")
+        .map((r) => r.user_id);
+      if (glosadorIds.length === 0) return [];
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", glosadorIds)
+        .eq("activo", true)
+        .order("nombre");
+
+      // Get active sessions
+      const { data: activeSessions } = await supabase
+        .from("review_sessions")
+        .select("user_id")
+        .eq("session_status", "active");
+
+      const activeUserIds = new Set((activeSessions ?? []).map((s) => s.user_id));
+
+      // Monthly stats - approved cases this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: monthCases } = await supabase
+        .from("review_cases")
+        .select("assigned_glosador_user_id, document_type_id, status")
+        .in("assigned_glosador_user_id", glosadorIds)
+        .gte("approved_at", startOfMonth.toISOString());
+
+      const { data: docTypes } = await supabase.from("document_types").select("id, code");
+      const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
+
+      // Also count EN_REVISION cases per glosador this month
+      const { data: allMonthCases } = await supabase
+        .from("review_cases")
+        .select("assigned_glosador_user_id, document_type_id, status, approved_at")
+        .in("assigned_glosador_user_id", glosadorIds)
+        .in("status", ["APROBADO", "EN_REVISION", "ASIGNADO", "REGISTRADO", "PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]);
+
+      // Build stats per glosador
+      const statsMap: Record<string, { pedConsolidados: number; remesas: number }> = {};
+      for (const c of monthCases ?? []) {
+        const uid = c.assigned_glosador_user_id!;
+        if (!statsMap[uid]) statsMap[uid] = { pedConsolidados: 0, remesas: 0 };
+        const code = docTypeMap[c.document_type_id!];
+        if (code === "REMESA") {
+          statsMap[uid].remesas++;
+        } else {
+          statsMap[uid].pedConsolidados++;
+        }
+      }
+
+      const totalApproved = (monthCases ?? []).length || 1;
+
+      return (profiles ?? []).map((p) => ({
+        ...p,
+        isActive: activeUserIds.has(p.id),
+        pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,
+        remesas: statsMap[p.id]?.remesas ?? 0,
+        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / totalApproved * 100),
+      }));
+    },
+    refetchInterval: 30000,
+  });
+}
+
+export function usePendientes() {
+  return useQuery({
+    queryKey: ["pendientes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("review_cases")
+        .select(`
+          *,
+          document_types(code, name),
+          branches(nombre),
+          executives(nombre),
+          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+        `)
+        .in("status", ["REGISTRADO", "ASIGNADO"])
+        .order("registered_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 15000,
+  });
+}
+
+export function useKPIs() {
+  return useQuery({
+    queryKey: ["tablero-kpis"],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const [pendRes, revRes, aprobRes, allApproved] = await Promise.all([
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION"),
+        supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
+        supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
+      ]);
+
+      const { data: docTypes } = await supabase.from("document_types").select("id, code");
+      const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
+
+      let remesasMes = 0;
+      let pedConMes = 0;
+      for (const c of allApproved.data ?? []) {
+        if (docTypeMap[c.document_type_id!] === "REMESA") remesasMes++;
+        else pedConMes++;
+      }
+
+      return {
+        pendientes: pendRes.count ?? 0,
+        enRevision: revRes.count ?? 0,
+        aprobadosMes: aprobRes.count ?? 0,
+        remesasMes,
+        pedConMes,
+      };
+    },
+    refetchInterval: 30000,
+  });
+}
+
+export function useRealtimeSessions() {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("session-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "review_sessions" }, () => {
+        setTick((t) => t + 1);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+}
