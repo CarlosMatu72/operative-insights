@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, RotateCcw, FileDown, ClipboardCheck } from "lucide-react";
+import { Play, Pause, RotateCcw, FileDown, ClipboardCheck, Eye } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   ASIGNADO: "Asignado",
