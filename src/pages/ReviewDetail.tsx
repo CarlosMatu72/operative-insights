@@ -18,17 +18,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw } from "lucide-react";
+import { ArrowLeft, Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const correctionStatuses = [
-  { value: "CORRECTED", label: "Corregido", color: "bg-success/15 text-success" },
-  { value: "NOT_CORRECTED", label: "No corregido", color: "bg-destructive/15 text-destructive" },
-  { value: "PARTIALLY_CORRECTED", label: "Parcialmente", color: "bg-warning/15 text-warning" },
+  { value: "CORRECTED", label: "Corregido", color: "text-success" },
+  { value: "NOT_CORRECTED", label: "No corregido", color: "text-destructive" },
+  { value: "PARTIALLY_CORRECTED", label: "Parcialmente", color: "text-warning" },
 ];
+
+const findingStatusLabels: Record<string, { label: string; className: string }> = {
+  open: { label: "Abierta", className: "bg-warning/10 text-warning border-warning/20" },
+  closed: { label: "Cerrada", className: "bg-muted text-muted-foreground border-border" },
+  CORRECTED: { label: "Corregido", className: "bg-success/10 text-success border-success/20" },
+  NOT_CORRECTED: { label: "No corregido", className: "bg-destructive/10 text-destructive border-destructive/20" },
+  PARTIALLY_CORRECTED: { label: "Parcialmente", className: "bg-warning/10 text-warning border-warning/20" },
+};
 
 const ReviewDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,7 +68,7 @@ const ReviewDetail = () => {
   const [docStatus, setDocStatus] = useState("COMPLETO");
   const [docComment, setDocComment] = useState("");
 
-  // Obs form
+  // Obs form — inline
   const [showObsForm, setShowObsForm] = useState(false);
   const [obsCategoryId, setObsCategoryId] = useState("");
   const [obsSubcategoryId, setObsSubcategoryId] = useState("");
@@ -83,6 +90,7 @@ const ReviewDetail = () => {
   const isCorrection = ["EN_CORRECCION"].includes(status);
   const needsCorrection = status === "CORRECCION_PENDIENTE";
   const isReopened = status === "REABIERTO";
+  const isActiveReview = ["EN_REVISION", "EN_CORRECCION"].includes(status);
 
   // Init form
   useEffect(() => {
@@ -174,8 +182,9 @@ const ReviewDetail = () => {
       category_id: obsCategoryId, subcategory_id: obsSubcategoryId,
       observation_error_id: obsErrorId, comentario_inicial: obsComment,
     });
-    setObsCategoryId(""); setObsSubcategoryId(""); setObsErrorId(""); setObsComment("");
-    setShowObsForm(false);
+    // Keep form open for rapid entry, just reset selections
+    setObsSubcategoryId(""); setObsErrorId(""); setObsComment("");
+    toast.success("Observación agregada");
   };
 
   const handleStartCorrection = async () => {
@@ -224,12 +233,12 @@ const ReviewDetail = () => {
     let html = `<html><head><title>Revisión ${ref}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:40px;font-size:13px;color:#1a1a1a}
-      h1{font-size:18px;border-bottom:2px solid #1e3a5f;padding-bottom:8px;color:#1e3a5f}
-      h2{font-size:14px;margin-top:24px;color:#1e3a5f}
+      h1{font-size:18px;border-bottom:2px solid #0077F9;padding-bottom:8px;color:#111126}
+      h2{font-size:14px;margin-top:24px;color:#111126}
       table{width:100%;border-collapse:collapse;margin:8px 0}
-      td,th{border:1px solid #ccc;padding:6px 10px;text-align:left}
-      th{background:#f0f4f8;font-weight:600}
-      .obs-item{margin:6px 0;padding:8px;background:#f8f9fa;border-left:3px solid #d97706}
+      td,th{border:1px solid #E2E2E2;padding:6px 10px;text-align:left}
+      th{background:#f5f5f5;font-weight:600;color:#2D2D2D}
+      .obs-item{margin:6px 0;padding:8px;background:#f8f9fa;border-left:3px solid #F59E0B}
       .corrected{border-left-color:#16a34a} .not-corrected{border-left-color:#dc2626}
     </style></head><body>`;
     html += `<h1>Revisión de Glosa — ${ref}</h1>`;
@@ -277,43 +286,63 @@ const ReviewDetail = () => {
   if (!reviewCase) {
     return (
       <AppLayout>
-        <div className="text-center py-20 text-muted-foreground">Trámite no encontrado</div>
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-2">
+          <AlertTriangle className="h-10 w-10 opacity-30" />
+          <p className="text-sm font-medium">Trámite no encontrado</p>
+          <Button variant="outline" size="sm" onClick={() => navigate("/glosa")} className="mt-2">
+            Volver al Panel
+          </Button>
+        </div>
       </AppLayout>
     );
   }
 
+  // Separate previous vs new findings for correction mode
+  const previousFindings = isCorrection ? findings.filter(f => f.current_status !== "open") : [];
+  const newFindings = isCorrection ? findings.filter(f => f.current_status === "open") : [];
+
   return (
     <AppLayout>
-      <div className="animate-fade-in space-y-6 max-w-5xl">
+      <div className="animate-fade-in space-y-5 max-w-5xl pb-24">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/glosa")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground tracking-tight">
-              {reviewCase.reference ?? reviewCase.internal_folio}
-            </h1>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
+                {reviewCase.reference ?? reviewCase.internal_folio}
+              </h1>
+              <StatusBadge status={status} />
+            </div>
             <p className="text-sm text-muted-foreground">
               {(reviewCase.document_types as any)?.name} — Folio: {reviewCase.internal_folio}
               {rounds.length > 0 && ` — Ronda ${rounds.length}`}
             </p>
           </div>
-          <StatusBadge status={status} />
+          {/* Always-visible secondary actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button variant="ghost" size="sm" onClick={handleCopyText} className="h-8 gap-1.5 text-xs">
+              <Copy className="h-3.5 w-3.5" /> Copiar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleGeneratePDF} className="h-8 gap-1.5 text-xs">
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </Button>
+          </div>
         </div>
 
         {/* Correction banner */}
         {needsCorrection && (
-          <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Este trámite tiene observaciones pendientes de corrección</p>
-              <p className="text-xs text-muted-foreground">Inicia la revisión de corrección para evaluar los errores</p>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Observaciones pendientes de corrección</p>
+                <p className="text-xs text-muted-foreground">Inicia la revisión de corrección para evaluar los errores</p>
+              </div>
             </div>
-            <Button
-              onClick={handleStartCorrection}
-              disabled={actions.startCorrection.isPending}
-              className="gap-1.5"
-            >
+            <Button onClick={handleStartCorrection} disabled={actions.startCorrection.isPending} className="gap-1.5 shrink-0">
               <RotateCcw className="h-4 w-4" /> Iniciar Corrección
             </Button>
           </div>
@@ -321,16 +350,15 @@ const ReviewDetail = () => {
 
         {/* Reopened banner */}
         {isReopened && (
-          <div className="rounded-xl border border-accent bg-accent/10 p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Este trámite fue reabierto</p>
-              <p className="text-xs text-muted-foreground">Puedes iniciar una nueva revisión de corrección</p>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-accent bg-accent/30 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <RotateCcw className="h-5 w-5 text-accent-foreground shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Trámite reabierto</p>
+                <p className="text-xs text-muted-foreground">Puedes iniciar una nueva revisión de corrección</p>
+              </div>
             </div>
-            <Button
-              onClick={handleStartCorrection}
-              disabled={actions.startCorrection.isPending}
-              className="gap-1.5"
-            >
+            <Button onClick={handleStartCorrection} disabled={actions.startCorrection.isPending} className="gap-1.5 shrink-0">
               <RotateCcw className="h-4 w-4" /> Iniciar Corrección
             </Button>
           </div>
@@ -338,15 +366,15 @@ const ReviewDetail = () => {
 
         {/* Section 1: General Info */}
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Información General</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold tracking-tight">Información General</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Referencia</Label>
+                <Label className="text-xs text-muted-foreground">Referencia</Label>
                 <Input value={reviewCase.reference ?? ""} disabled className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Sucursal</Label>
+                <Label className="text-xs text-muted-foreground">Sucursal</Label>
                 <Select value={branchId} onValueChange={setBranchId} disabled={isReadOnly}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
@@ -355,7 +383,7 @@ const ReviewDetail = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Ejecutivo</Label>
+                <Label className="text-xs text-muted-foreground">Ejecutivo</Label>
                 <Select value={executiveId} onValueChange={setExecutiveId} disabled={isReadOnly}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
@@ -364,7 +392,7 @@ const ReviewDetail = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Cliente</Label>
+                <Label className="text-xs text-muted-foreground">Cliente</Label>
                 <Select value={clientId} onValueChange={setClientId} disabled={isReadOnly}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
@@ -373,7 +401,7 @@ const ReviewDetail = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Clave Aduanera</Label>
+                <Label className="text-xs text-muted-foreground">Clave Aduanera</Label>
                 <Select value={customsKeyId} onValueChange={setCustomsKeyId} disabled={isReadOnly}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
@@ -382,123 +410,234 @@ const ReviewDetail = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Partidas</Label>
+                <Label className="text-xs text-muted-foreground">Partidas</Label>
                 <div className="flex gap-2">
                   <Input type="number" value={partidas} onChange={(e) => setPartidas(e.target.value)} disabled={isReadOnly} className="h-9 text-sm flex-1" placeholder="0" />
                   {detectedRange && <Badge variant="outline" className="text-[10px] whitespace-nowrap self-center">{detectedRange.nombre_rango}</Badge>}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Section 2: Classification */}
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Clasificación</CardTitle></CardHeader>
-          <CardContent>
-            {features.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay características configuradas</p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {features.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2">
-                    <Checkbox id={`cl-${f.id}`} checked={classValues[f.id] ?? false}
-                      onCheckedChange={(v) => setClassValues((p) => ({ ...p, [f.id]: !!v }))}
-                      disabled={isReadOnly} />
-                    <label htmlFor={`cl-${f.id}`} className="text-sm cursor-pointer">{f.nombre}</label>
-                    {f.descripcion && <span className="text-[10px] text-muted-foreground">({f.descripcion})</span>}
-                  </div>
-                ))}
+            {!isReadOnly && (
+              <div className="mt-4 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Comentarios generales</Label>
+                <Textarea value={comments} onChange={(e) => setComments(e.target.value)} className="text-sm" rows={2} placeholder="Comentarios sobre el trámite..." />
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Section 3: Documentation */}
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Documentación</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Select value={docStatus} onValueChange={setDocStatus} disabled={isReadOnly}>
-              <SelectTrigger className="h-9 text-sm w-72"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="COMPLETO">Completo</SelectItem>
-                <SelectItem value="PENDIENTE_SI_SE_PUEDE_GLOSAR">Pendiente — se puede glosar</SelectItem>
-                <SelectItem value="PENDIENTE_NO_SE_PUEDE_GLOSAR">Pendiente — NO se puede glosar</SelectItem>
-              </SelectContent>
-            </Select>
-            {docStatus !== "COMPLETO" && (
-              <Textarea placeholder="Comentario sobre documentación..." value={docComment}
-                onChange={(e) => setDocComment(e.target.value)} disabled={isReadOnly} className="text-sm" rows={2} />
-            )}
-            {docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment && (
-              <p className="text-xs text-destructive">Comentario obligatorio para este estado</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Section 2: Classification + Documentation side-by-side on desktop */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold tracking-tight">Clasificación</CardTitle></CardHeader>
+            <CardContent>
+              {features.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay características configuradas</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {features.map((f) => (
+                    <div key={f.id} className="flex items-center gap-2.5">
+                      <Checkbox id={`cl-${f.id}`} checked={classValues[f.id] ?? false}
+                        onCheckedChange={(v) => setClassValues((p) => ({ ...p, [f.id]: !!v }))}
+                        disabled={isReadOnly} />
+                      <label htmlFor={`cl-${f.id}`} className="text-sm cursor-pointer select-none flex-1">{f.nombre}</label>
+                      {f.descripcion && <span className="text-[10px] text-muted-foreground shrink-0">({f.descripcion})</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold tracking-tight flex items-center gap-2">
+                <FileCheck className="h-4 w-4 text-muted-foreground" />
+                Documentación
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Select value={docStatus} onValueChange={setDocStatus} disabled={isReadOnly}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COMPLETO">Completo</SelectItem>
+                  <SelectItem value="PENDIENTE_SI_SE_PUEDE_GLOSAR">Pendiente — se puede glosar</SelectItem>
+                  <SelectItem value="PENDIENTE_NO_SE_PUEDE_GLOSAR">Pendiente — NO se puede glosar</SelectItem>
+                </SelectContent>
+              </Select>
+              {docStatus !== "COMPLETO" && (
+                <Textarea placeholder="Comentario sobre documentación..." value={docComment}
+                  onChange={(e) => setDocComment(e.target.value)} disabled={isReadOnly} className="text-sm" rows={2} />
+              )}
+              {docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment && (
+                <p className="text-xs text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3" /> Comentario obligatorio para este estado
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Section 4: Observations */}
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base">
+            <CardTitle className="text-sm font-semibold tracking-tight">
               Observaciones
-              {openFindings.length > 0 && <Badge variant="destructive" className="ml-2 text-xs">{openFindings.length} abiertas</Badge>}
+              {openFindings.length > 0 && (
+                <Badge variant="destructive" className="ml-2 text-[10px]">{openFindings.length} abiertas</Badge>
+              )}
+              {findings.length > 0 && openFindings.length === 0 && (
+                <Badge variant="secondary" className="ml-2 text-[10px]">{findings.length} total</Badge>
+              )}
             </CardTitle>
-            {!isReadOnly && !needsCorrection && (status === "EN_REVISION" || status === "EN_CORRECCION") && (
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowObsForm(true)}>
-                <Plus className="h-3 w-3" /> Agregar
+            {isActiveReview && !needsCorrection && (
+              <Button size="sm" variant={showObsForm ? "secondary" : "outline"} className="h-7 text-xs gap-1"
+                onClick={() => setShowObsForm(!showObsForm)}>
+                {showObsForm ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                {showObsForm ? "Cerrar" : "Agregar"}
               </Button>
             )}
           </CardHeader>
-          <CardContent>
-            {findings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin observaciones registradas</p>
-            ) : (
-              <div className="space-y-2">
-                {findings.map((f) => {
-                  const isFromPreviousRound = isCorrection && f.current_status !== "open";
+          <CardContent className="space-y-3">
+            {/* Inline observation form — fast entry */}
+            {showObsForm && (
+              <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Categoría</Label>
+                    <Select value={obsCategoryId} onValueChange={(v) => { setObsCategoryId(v); setObsSubcategoryId(""); setObsErrorId(""); }}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                      <SelectContent>
+                        {(categories.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Subcategoría</Label>
+                    <Select value={obsSubcategoryId} onValueChange={(v) => { setObsSubcategoryId(v); setObsErrorId(""); }} disabled={!obsCategoryId}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Subcategoría" /></SelectTrigger>
+                      <SelectContent>
+                        {filteredSubcats.map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Error</Label>
+                    <Select value={obsErrorId} onValueChange={setObsErrorId} disabled={!obsSubcategoryId}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Error" /></SelectTrigger>
+                      <SelectContent>
+                        {filteredErrors.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>
+                            {e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <Input value={obsComment} onChange={(e) => setObsComment(e.target.value)}
+                      placeholder="Comentario opcional..." className="h-8 text-xs" />
+                  </div>
+                  <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
+                    className="h-8 text-xs gap-1 shrink-0">
+                    <Plus className="h-3 w-3" /> Agregar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Correction mode: Previous findings */}
+            {isCorrection && previousFindings.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Errores de rondas anteriores</p>
+                {previousFindings.map((f) => {
+                  const st = findingStatusLabels[f.current_status] ?? findingStatusLabels.open;
                   return (
                     <div key={f.id} className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${
-                      f.is_open ? "border-warning/30 bg-warning/5" :
-                      f.current_status === "CORRECTED" ? "border-success/30 bg-success/5" :
-                      f.current_status === "NOT_CORRECTED" ? "border-destructive/30 bg-destructive/5" :
-                      "border-muted opacity-60"
+                      f.current_status === "CORRECTED" ? "border-success/20 bg-success/[0.03]" :
+                      f.current_status === "NOT_CORRECTED" ? "border-destructive/20 bg-destructive/[0.03]" :
+                      "border-warning/20 bg-warning/[0.03]"
                     }`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium">{(f as any).observation_categories?.nombre}</span>
-                          <span className="text-muted-foreground">›</span>
-                          <span>{(f as any).observation_subcategories?.nombre}</span>
+                          <span className="font-medium text-xs">{(f as any).observation_categories?.nombre}</span>
+                          <span className="text-muted-foreground text-xs">›</span>
+                          <span className="text-xs">{(f as any).observation_subcategories?.nombre}</span>
                         </div>
                         <p className="text-foreground mt-0.5">
                           {(f as any).observation_errors?.descripcion}
                           {(f as any).observation_errors?.descuento_puntos && (
-                            <Badge variant="outline" className="ml-2 text-[10px]">
-                              -{(f as any).observation_errors.descuento_puntos} pts
-                            </Badge>
+                            <Badge variant="outline" className="ml-2 text-[10px]">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
                           )}
                         </p>
-                        {f.comentario_inicial && (
-                          <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>
-                        )}
+                        {f.comentario_inicial && <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Badge variant={f.is_open ? "default" : "secondary"} className={`text-[10px] ${
-                          f.current_status === "CORRECTED" ? "bg-success/15 text-success" :
-                          f.current_status === "NOT_CORRECTED" ? "bg-destructive/15 text-destructive" :
-                          f.current_status === "PARTIALLY_CORRECTED" ? "bg-warning/15 text-warning" : ""
-                        }`}>
-                          {f.current_status === "open" ? "Abierta" :
-                           f.current_status === "closed" ? "Cerrada" :
-                           f.current_status}
-                        </Badge>
-                        {/* In correction mode: allow status change on previous findings */}
+                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium ${st.className}`}>
+                          {st.label}
+                        </span>
+                        <Button size="sm" variant="outline" className="h-6 text-[10px] px-2"
+                          onClick={() => { setStatusUpdateFinding(f.id); setStatusUpdateValue(""); setStatusUpdateComment(""); }}>
+                          Evaluar
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Correction mode: New findings separator */}
+            {isCorrection && newFindings.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-primary uppercase tracking-wider">Nuevos errores (esta ronda)</p>
+              </div>
+            )}
+
+            {/* Normal/New findings list */}
+            {(isCorrection ? newFindings : findings).length === 0 && !isCorrection ? (
+              <div className="flex flex-col items-center py-8 text-muted-foreground">
+                <FileCheck className="h-8 w-8 opacity-20 mb-2" />
+                <p className="text-sm">Sin observaciones registradas</p>
+                {isActiveReview && <p className="text-xs mt-1">Usa el botón "Agregar" para capturar observaciones</p>}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(isCorrection ? newFindings : findings).map((f) => {
+                  const st = findingStatusLabels[f.current_status] ?? findingStatusLabels.open;
+                  return (
+                    <div key={f.id} className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${
+                      f.is_open ? "border-warning/30 bg-warning/[0.03]" :
+                      f.current_status === "CORRECTED" ? "border-success/20 bg-success/[0.03]" :
+                      f.current_status === "NOT_CORRECTED" ? "border-destructive/20 bg-destructive/[0.03]" :
+                      "border-muted"
+                    }`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-xs">{(f as any).observation_categories?.nombre}</span>
+                          <span className="text-muted-foreground text-xs">›</span>
+                          <span className="text-xs">{(f as any).observation_subcategories?.nombre}</span>
+                        </div>
+                        <p className="text-foreground mt-0.5">
+                          {(f as any).observation_errors?.descripcion}
+                          {(f as any).observation_errors?.descuento_puntos && (
+                            <Badge variant="outline" className="ml-2 text-[10px]">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
+                          )}
+                        </p>
+                        {f.comentario_inicial && <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium ${st.className}`}>
+                          {st.label}
+                        </span>
                         {isCorrection && f.current_status !== "closed" && (
-                          <Button size="sm" variant="ghost" className="h-6 text-[10px] px-1.5"
+                          <Button size="sm" variant="outline" className="h-6 text-[10px] px-2"
                             onClick={() => { setStatusUpdateFinding(f.id); setStatusUpdateValue(""); setStatusUpdateComment(""); }}>
                             Evaluar
                           </Button>
                         )}
-                        {/* In initial review: allow closing new findings */}
                         {!isCorrection && f.is_open && !isReadOnly && f.current_status === "open" && (
                           <Button size="sm" variant="ghost" className="h-6 w-6 p-0"
                             onClick={() => actions.removeFinding.mutate(f.id)}>
@@ -517,70 +656,23 @@ const ReviewDetail = () => {
         {/* History */}
         <HistoryTabs caseId={caseId} onReopen={isReadOnly && status === "RECHAZADO" && isAdmin ? handleReopen : undefined} />
 
-        {/* Dialogs */}
-        {/* Add Observation */}
-        <Dialog open={showObsForm} onOpenChange={setShowObsForm}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Agregar Observación</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Categoría</Label>
-                <Select value={obsCategoryId} onValueChange={(v) => { setObsCategoryId(v); setObsSubcategoryId(""); setObsErrorId(""); }}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar categoría" /></SelectTrigger>
-                  <SelectContent>
-                    {(categories.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Subcategoría</Label>
-                <Select value={obsSubcategoryId} onValueChange={(v) => { setObsSubcategoryId(v); setObsErrorId(""); }} disabled={!obsCategoryId}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar subcategoría" /></SelectTrigger>
-                  <SelectContent>
-                    {filteredSubcats.map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Error</Label>
-                <Select value={obsErrorId} onValueChange={setObsErrorId} disabled={!obsSubcategoryId}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar error" /></SelectTrigger>
-                  <SelectContent>
-                    {filteredErrors.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Comentario (opcional)</Label>
-                <Textarea value={obsComment} onChange={(e) => setObsComment(e.target.value)} className="text-sm" rows={2} placeholder="Detalle..." />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowObsForm(false)}>Cancelar</Button>
-              <Button onClick={handleAddFinding} disabled={actions.addFinding.isPending}>Agregar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Update Finding Status */}
+        {/* Update Finding Status Dialog */}
         <Dialog open={!!statusUpdateFinding} onOpenChange={(o) => { if (!o) setStatusUpdateFinding(null); }}>
           <DialogContent>
             <DialogHeader><DialogTitle>Evaluar Observación</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Estado de corrección</Label>
-                <Select value={statusUpdateValue} onValueChange={setStatusUpdateValue}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar estado" /></SelectTrigger>
-                  <SelectContent>
-                    {correctionStatuses.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-3 gap-2">
+                {correctionStatuses.map((s) => (
+                  <Button
+                    key={s.value}
+                    variant={statusUpdateValue === s.value ? "default" : "outline"}
+                    size="sm"
+                    className={`h-9 text-xs ${statusUpdateValue === s.value ? "" : s.color}`}
+                    onClick={() => setStatusUpdateValue(s.value)}
+                  >
+                    {s.label}
+                  </Button>
+                ))}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Comentario</Label>
@@ -596,7 +688,7 @@ const ReviewDetail = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Reject */}
+        {/* Reject Dialog */}
         <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
           <DialogContent>
             <DialogHeader><DialogTitle>Rechazar Trámite</DialogTitle></DialogHeader>
@@ -616,49 +708,32 @@ const ReviewDetail = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Action Buttons */}
-        {!isReadOnly && !needsCorrection && !isReopened && (status === "EN_REVISION" || status === "EN_CORRECCION") && (
-          <>
-            <Separator />
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleSaveAll} disabled={
-                actions.saveDetails.isPending || (docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment.trim())
-              } className="gap-1.5">
-                <Save className="h-4 w-4" /> Guardar
-              </Button>
-              <Button variant="outline" onClick={handleCopyText} className="gap-1.5">
-                <Copy className="h-4 w-4" /> Copiar Texto
-              </Button>
-              <Button variant="outline" onClick={handleGeneratePDF} className="gap-1.5">
-                <FileDown className="h-4 w-4" /> PDF
-              </Button>
-              <div className="flex-1" />
-              <Button variant="default" className="gap-1.5 bg-success hover:bg-success/90 text-success-foreground"
-                disabled={!canApprove || actions.approveCase.isPending}
-                onClick={async () => { await actions.approveCase.mutateAsync(); navigate("/glosa"); }}>
-                <CheckCircle className="h-4 w-4" /> Aprobar
-              </Button>
-              <Button variant="destructive" className="gap-1.5" onClick={() => setShowRejectDialog(true)}>
-                <XCircle className="h-4 w-4" /> Rechazar
-              </Button>
+        {/* STICKY Action Bar */}
+        {isActiveReview && !needsCorrection && !isReopened && (
+          <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm shadow-lg">
+            <div className="mx-auto max-w-5xl flex items-center justify-between px-6 py-3">
+              <div className="flex items-center gap-2">
+                <Button onClick={handleSaveAll} disabled={
+                  actions.saveDetails.isPending || (docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment.trim())
+                } className="gap-1.5 h-9">
+                  <Save className="h-4 w-4" /> Guardar
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
+                  disabled={!canApprove || actions.approveCase.isPending}
+                  onClick={async () => { await actions.approveCase.mutateAsync(); navigate("/glosa"); }}>
+                  <CheckCircle className="h-4 w-4" /> Aprobar
+                </Button>
+                <Button variant="destructive" className="gap-1.5 h-9" onClick={() => setShowRejectDialog(true)}>
+                  <XCircle className="h-4 w-4" /> Rechazar
+                </Button>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
-        {/* Read-only actions */}
-        {isReadOnly && (
-          <>
-            <Separator />
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleCopyText} className="gap-1.5">
-                <Copy className="h-4 w-4" /> Copiar Texto
-              </Button>
-              <Button variant="outline" onClick={handleGeneratePDF} className="gap-1.5">
-                <FileDown className="h-4 w-4" /> PDF
-              </Button>
-            </div>
-          </>
-        )}
+        {/* Read-only: no sticky bar needed, PDF/Copy already in header */}
       </div>
     </AppLayout>
   );
