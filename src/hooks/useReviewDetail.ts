@@ -462,6 +462,10 @@ export function useReviewActions(caseId: string) {
       } catch (e) {
         console.error("Error calculating score:", e);
       }
+      // Audit
+      await (supabase as any).from("audit_logs").insert({
+        action: "APROBAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
+      });
     },
     onSuccess: () => { toast.success("Trámite aprobado"); invalidate(); },
     onError: () => toast.error("Error al aprobar"),
