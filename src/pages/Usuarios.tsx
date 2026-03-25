@@ -138,7 +138,7 @@ const Usuarios = () => {
         <div className="rounded-lg border bg-card shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow>
+            <TableRow className="bg-muted/40">
                 <TableHead>Nombre</TableHead>
                 <TableHead>Correo</TableHead>
                 <TableHead>Rol</TableHead>

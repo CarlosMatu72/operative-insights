@@ -143,7 +143,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
         </div>
       )}
 
-      <div className="rounded-xl border bg-card shadow-sm">
+      <div className="rounded-lg border bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
