@@ -462,6 +462,10 @@ export function useReviewActions(caseId: string) {
       } catch (e) {
         console.error("Error calculating score:", e);
       }
+      // Audit
+      await (supabase as any).from("audit_logs").insert({
+        action: "APROBAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
+      });
     },
     onSuccess: () => { toast.success("Trámite aprobado"); invalidate(); },
     onError: () => toast.error("Error al aprobar"),
@@ -488,6 +492,9 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "RECHAZADO" as any, rejected_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
+      await (supabase as any).from("audit_logs").insert({
+        action: "RECHAZAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id, details: { motivo },
+      });
     },
     onSuccess: () => { toast.success("Trámite rechazado"); invalidate(); },
     onError: () => toast.error("Error al rechazar"),
@@ -523,6 +530,9 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "REABIERTO" as any, updated_by: user!.id,
       }).eq("id", caseId);
+      await (supabase as any).from("audit_logs").insert({
+        action: "REABRIR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
+      });
     },
     onSuccess: () => { toast.success("Trámite reabierto"); invalidate(); },
     onError: () => toast.error("Error al reabrir"),
