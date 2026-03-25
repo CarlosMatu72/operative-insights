@@ -32,9 +32,7 @@ const Login = () => {
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-[480px] bg-foreground items-center justify-center p-12">
         <div className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
-            <span className="text-2xl font-bold text-primary-foreground tracking-tight">CG</span>
-          </div>
+          <img src={gapLogo} alt="GAP Agencia Aduanal" className="mx-auto h-20 w-auto object-contain" />
           <h2 className="text-2xl font-bold text-primary-foreground tracking-tight">
             Control de Glosa
           </h2>
