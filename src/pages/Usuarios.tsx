@@ -127,7 +127,7 @@ const Usuarios = () => {
       <div className="animate-fade-in space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Usuarios</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Usuarios</h1>
             <p className="text-sm text-muted-foreground">Gestión de usuarios del sistema — solo administradores</p>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
@@ -135,10 +135,10 @@ const Usuarios = () => {
           </Button>
         </div>
 
-        <div className="rounded-xl border bg-card shadow-sm">
+        <div className="rounded-lg border bg-card shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow>
+            <TableRow className="bg-muted/40">
                 <TableHead>Nombre</TableHead>
                 <TableHead>Correo</TableHead>
                 <TableHead>Rol</TableHead>

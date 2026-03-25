@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -281,15 +282,6 @@ const ReviewDetail = () => {
     );
   }
 
-  const statusColorMap: Record<string, string> = {
-    EN_REVISION: "bg-primary/15 text-primary",
-    APROBADO: "bg-success/15 text-success",
-    RECHAZADO: "bg-destructive/15 text-destructive",
-    CORRECCION_PENDIENTE: "bg-warning/15 text-warning",
-    EN_CORRECCION: "bg-warning/15 text-warning",
-    REABIERTO: "bg-accent text-accent-foreground",
-  };
-
   return (
     <AppLayout>
       <div className="animate-fade-in space-y-6 max-w-5xl">
@@ -299,7 +291,7 @@ const ReviewDetail = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
               {reviewCase.reference ?? reviewCase.internal_folio}
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -307,9 +299,7 @@ const ReviewDetail = () => {
               {rounds.length > 0 && ` — Ronda ${rounds.length}`}
             </p>
           </div>
-          <Badge className={`text-xs ${statusColorMap[status] ?? "bg-muted text-muted-foreground"}`}>
-            {status}
-          </Badge>
+          <StatusBadge status={status} />
         </div>
 
         {/* Correction banner */}

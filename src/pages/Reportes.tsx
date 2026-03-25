@@ -17,16 +17,18 @@ import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, LineChart, Line, Cart
 import { BarChart3, FileText, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, Settings2, Filter } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 
+import { StatusBadge } from "@/components/StatusBadge";
+
 const STATUS_COLORS: Record<string, string> = {
-  REGISTRADO: "hsl(220, 15%, 50%)",
-  ASIGNADO: "hsl(215, 80%, 42%)",
-  EN_REVISION: "hsl(215, 60%, 55%)",
+  REGISTRADO: "hsl(0, 0%, 45%)",
+  ASIGNADO: "hsl(212, 95%, 49%)",
+  EN_REVISION: "hsl(212, 80%, 60%)",
   PAUSADO: "hsl(38, 92%, 50%)",
   CORRECCION_PENDIENTE: "hsl(38, 72%, 50%)",
   EN_CORRECCION: "hsl(38, 60%, 55%)",
-  APROBADO: "hsl(142, 72%, 29%)",
+  APROBADO: "hsl(152, 60%, 36%)",
   RECHAZADO: "hsl(0, 72%, 51%)",
-  REABIERTO: "hsl(280, 60%, 50%)",
+  REABIERTO: "hsl(212, 95%, 49%)",
 };
 
 const Reportes = () => {
@@ -433,7 +435,7 @@ const Reportes = () => {
                               <TableCell className="text-xs">{c.executives?.nombre ?? "—"}</TableCell>
                               <TableCell className="text-xs">{c.glosador?.nombre ?? "—"}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
+                                <StatusBadge status={c.status} />
                               </TableCell>
                               <TableCell className="text-xs font-mono font-medium">
                                 {s?.score_total != null ? s.score_total : "—"}

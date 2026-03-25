@@ -9,29 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatusBadge, statusConfig } from "@/components/StatusBadge";
 import { Play, Pause, RotateCcw, FileDown, ClipboardCheck, Eye } from "lucide-react";
-
-const statusLabels: Record<string, string> = {
-  ASIGNADO: "Asignado",
-  EN_REVISION: "En Revisión",
-  PAUSADO: "Pausado",
-  CORRECCION_PENDIENTE: "Corrección Pend.",
-  EN_CORRECCION: "En Corrección",
-  APROBADO: "Aprobado",
-  RECHAZADO: "Rechazado",
-  REABIERTO: "Reabierto",
-};
-
-const statusColors: Record<string, string> = {
-  ASIGNADO: "bg-accent text-accent-foreground",
-  EN_REVISION: "bg-primary/15 text-primary",
-  PAUSADO: "bg-warning/15 text-warning",
-  CORRECCION_PENDIENTE: "bg-warning/15 text-warning",
-  EN_CORRECCION: "bg-warning/15 text-warning",
-  APROBADO: "bg-success/15 text-success",
-  RECHAZADO: "bg-destructive/15 text-destructive",
-  REABIERTO: "bg-accent text-accent-foreground",
-};
 
 function formatTime(seconds: number): string {
   if (seconds === 0) return "—";
@@ -68,7 +47,7 @@ const Glosa = () => {
 
   const canContinue = (c: any) =>
     ["PAUSADO", "REABIERTO"].includes(c.status) || 
-    (c.status === "ASIGNADO" && c.first_started_at); // case was started before and paused but status reverted
+    (c.status === "ASIGNADO" && c.first_started_at);
 
   const canPause = (c: any) =>
     ["EN_REVISION", "EN_CORRECCION"].includes(c.status) && c.has_active_session;
@@ -80,7 +59,7 @@ const Glosa = () => {
     <AppLayout>
       <div className="animate-fade-in space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Panel de Glosa</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Panel de Glosa</h1>
           <p className="text-sm text-muted-foreground">
             Bandeja de trabajo — revisiones asignadas
           </p>
@@ -92,9 +71,10 @@ const Glosa = () => {
             placeholder="Buscar referencia..."
             value={filterRef}
             onChange={(e) => setFilterRef(e.target.value)}
+            className="h-9"
           />
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
               {(documentTypes.data ?? []).map((d) => (
@@ -103,7 +83,7 @@ const Glosa = () => {
             </SelectContent>
           </Select>
           <Select value={filterSucursal} onValueChange={setFilterSucursal}>
-            <SelectTrigger><SelectValue placeholder="Sucursal" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Sucursal" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todas</SelectItem>
               {(branches.data ?? []).map((b) => (
@@ -112,16 +92,16 @@ const Glosa = () => {
             </SelectContent>
           </Select>
           <Select value={filterEstatus} onValueChange={setFilterEstatus}>
-            <SelectTrigger><SelectValue placeholder="Estatus" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Estatus" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
-              {Object.entries(statusLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              {Object.entries(statusConfig).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={filterEjecutivo} onValueChange={setFilterEjecutivo}>
-            <SelectTrigger><SelectValue placeholder="Ejecutivo" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Ejecutivo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
               {(executives.data ?? []).map((e) => (
@@ -131,7 +111,7 @@ const Glosa = () => {
           </Select>
           {isAdmin && (
             <Select value={filterGlosador} onValueChange={setFilterGlosador}>
-              <SelectTrigger><SelectValue placeholder="Glosador" /></SelectTrigger>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Glosador" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="_all">Todos</SelectItem>
                 {(glosadores.data ?? []).map((g) => (
@@ -143,59 +123,60 @@ const Glosa = () => {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border bg-card shadow-sm overflow-auto">
+        <div className="rounded-lg border bg-card shadow-sm overflow-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Referencia</TableHead>
-                <TableHead>Ejecutivo</TableHead>
-                <TableHead>Sucursal</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Estatus</TableHead>
-                <TableHead className="text-center">Obs.</TableHead>
-                <TableHead className="text-center">Rev.</TableHead>
-                <TableHead className="text-center">Calif.</TableHead>
-                <TableHead>Tiempo</TableHead>
-                <TableHead>Acciones</TableHead>
+              <TableRow className="bg-muted/40">
+                <TableHead className="text-xs font-semibold">Referencia</TableHead>
+                <TableHead className="text-xs font-semibold">Ejecutivo</TableHead>
+                <TableHead className="text-xs font-semibold">Sucursal</TableHead>
+                <TableHead className="text-xs font-semibold">Tipo</TableHead>
+                <TableHead className="text-xs font-semibold">Estatus</TableHead>
+                <TableHead className="text-xs font-semibold text-center">Obs.</TableHead>
+                <TableHead className="text-xs font-semibold text-center">Rev.</TableHead>
+                <TableHead className="text-xs font-semibold text-center">Calif.</TableHead>
+                <TableHead className="text-xs font-semibold">Tiempo</TableHead>
+                <TableHead className="text-xs font-semibold">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                    Cargando...
+                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      Cargando...
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : cases.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                     Sin trámites asignados
                   </TableCell>
                 </TableRow>
               ) : (
                 cases.map((c) => (
-                  <TableRow key={c.id} className={c.has_active_session ? "bg-primary/5" : ""}>
-                    <TableCell className="font-medium">
+                  <TableRow key={c.id} className={c.has_active_session ? "bg-primary/[0.03]" : "hover:bg-muted/30"}>
+                    <TableCell className="font-medium text-sm">
                       {c.reference ?? c.internal_folio}
                       {c.has_active_session && (
                         <span className="ml-1.5 inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{c.executives?.nombre ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{c.branches?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{c.executives?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{c.branches?.nombre ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-[11px] font-normal">
                         {c.document_types?.name ?? "—"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[c.status] ?? ""}`}>
-                        {statusLabels[c.status] ?? c.status}
-                      </span>
+                      <StatusBadge status={c.status} />
                     </TableCell>
-                    <TableCell className="text-center text-sm">{c.findings_count || "—"}</TableCell>
-                    <TableCell className="text-center text-sm">{c.rounds_count || "—"}</TableCell>
-                    <TableCell className="text-center text-sm">
+                    <TableCell className="text-center text-sm text-muted-foreground">{c.findings_count || "—"}</TableCell>
+                    <TableCell className="text-center text-sm text-muted-foreground">{c.rounds_count || "—"}</TableCell>
+                    <TableCell className="text-center text-sm font-medium">
                       {c.score_total != null ? c.score_total : "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">

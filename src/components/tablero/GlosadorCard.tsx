@@ -19,7 +19,7 @@ export function GlosadorCard({ nombre, avatar_url, isActive, pedConsolidados, re
     .toUpperCase();
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
+    <div className="rounded-lg border bg-card p-4 shadow-sm space-y-3">
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
           <AvatarImage src={avatar_url ?? undefined} />
@@ -30,24 +30,24 @@ export function GlosadorCard({ nombre, avatar_url, isActive, pedConsolidados, re
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{nombre}</p>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${
               isActive
-                ? "bg-destructive/15 text-destructive"
-                : "bg-success/15 text-success"
+                ? "bg-primary/10 text-primary border-primary/20"
+                : "bg-success/10 text-success border-success/20"
             }`}
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-destructive" : "bg-success"}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-primary animate-pulse" : "bg-success"}`} />
             {isActive ? "Glosando" : "Disponible"}
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-center">
-        <div className="rounded-lg bg-muted/50 p-2">
+        <div className="rounded-md bg-muted/50 p-2">
           <p className="text-lg font-bold text-foreground">{pedConsolidados}</p>
           <p className="text-[10px] text-muted-foreground leading-tight">Ped/Con mes</p>
         </div>
-        <div className="rounded-lg bg-muted/50 p-2">
+        <div className="rounded-md bg-muted/50 p-2">
           <p className="text-lg font-bold text-foreground">{remesas}</p>
           <p className="text-[10px] text-muted-foreground leading-tight">Remesas mes</p>
         </div>

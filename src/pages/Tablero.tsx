@@ -22,7 +22,7 @@ const Tablero = () => {
     <AppLayout>
       <div className="animate-fade-in space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Tablero Operativo</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Tablero Operativo</h1>
           <p className="text-sm text-muted-foreground">
             Distribución de revisiones y estado de glosadores
           </p>
@@ -30,7 +30,7 @@ const Tablero = () => {
 
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {kpiItems.map((k) => (
-            <div key={k.label} className="rounded-xl border bg-card p-4 shadow-sm">
+            <div key={k.label} className="rounded-lg border bg-card p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className={`rounded-lg p-2 ${k.color}`}>
                   <k.icon className="h-4 w-4" />
@@ -45,7 +45,7 @@ const Tablero = () => {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">Glosadores</h2>
+          <h2 className="text-lg font-semibold text-foreground tracking-tight mb-3">Glosadores</h2>
           {loadingGlosadores ? (
             <p className="text-sm text-muted-foreground">Cargando...</p>
           ) : (
@@ -66,7 +66,7 @@ const Tablero = () => {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight mb-3">
             Cola de Pendientes
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({pendientes.length} trámites)

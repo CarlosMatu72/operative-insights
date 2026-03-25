@@ -10,7 +10,6 @@ import {
   SidebarFooter, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
 
 const mainItems = [
   { title: "Inicio", url: "/", icon: Home },
@@ -23,7 +22,7 @@ const mainItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { profile, role, signOut, isAdmin } = useAuth();
@@ -34,17 +33,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
+            <span className="text-sm font-bold text-sidebar-primary-foreground tracking-tight">CG</span>
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
+              <p className="truncate text-sm font-semibold text-sidebar-accent-foreground tracking-tight">
                 Control de Glosa
               </p>
-              <p className="truncate text-xs text-sidebar-muted">
+              <p className="truncate text-[11px] text-sidebar-muted">
                 Eficiencia Operativa
               </p>
             </div>
@@ -52,9 +51,9 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-2">
+      <SidebarContent className="px-2 py-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">
+          <SidebarGroupLabel className="text-sidebar-muted text-[10px] uppercase tracking-widest font-medium mb-1">
             Navegación
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -65,7 +64,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -81,11 +80,11 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         {!collapsed && profile && (
-          <div className="mb-2 rounded-lg bg-sidebar-accent px-3 py-2">
+          <div className="mb-2 rounded-md bg-sidebar-accent px-3 py-2.5">
             <p className="truncate text-sm font-medium text-sidebar-accent-foreground">
               {profile.nombre}
             </p>
-            <p className="truncate text-xs text-sidebar-muted">
+            <p className="truncate text-[11px] text-sidebar-muted">
               {role === "admin" ? "Administrador" : "Glosador"}
             </p>
           </div>
