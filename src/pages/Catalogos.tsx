@@ -88,7 +88,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
           .eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(config.key).insert(values);
+        const { error } = await supabase.from(config.key).insert(values as any);
         if (error) throw error;
       }
     },
