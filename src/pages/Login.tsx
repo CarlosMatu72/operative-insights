@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -27,24 +27,49 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <Shield className="h-8 w-8 text-primary-foreground" />
+    <div className="flex min-h-screen">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-[480px] bg-foreground items-center justify-center p-12">
+        <div className="text-center space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
+            <span className="text-2xl font-bold text-primary-foreground tracking-tight">CG</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h2 className="text-2xl font-bold text-primary-foreground tracking-tight">
             Control de Glosa
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sistema de Eficiencia Operativa
+          </h2>
+          <p className="text-sm text-primary-foreground/60 max-w-xs mx-auto">
+            Sistema de Eficiencia Operativa para el control y evaluación de trámites aduaneros
           </p>
         </div>
+      </div>
 
-        <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm animate-fade-in">
+          <div className="mb-8 lg:hidden text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+              <span className="text-lg font-bold text-primary-foreground tracking-tight">CG</span>
+            </div>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
+              Control de Glosa
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Sistema de Eficiencia Operativa
+            </p>
+          </div>
+
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Iniciar sesión
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ingrese sus credenciales para acceder al sistema
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
               <Input
                 id="email"
                 type="email"
@@ -53,10 +78,11 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
@@ -65,9 +91,10 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="h-11"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full h-11" disabled={isLoading}>
               {isLoading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
@@ -78,7 +105,7 @@ const Login = () => {
               )}
             </Button>
           </form>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <p className="mt-8 text-center text-[11px] text-muted-foreground leading-relaxed">
             Acceso exclusivo para personal autorizado.
             <br />
             Contacte al administrador para obtener credenciales.
