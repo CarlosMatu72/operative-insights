@@ -435,7 +435,7 @@ const Reportes = () => {
                               <TableCell className="text-xs">{c.executives?.nombre ?? "—"}</TableCell>
                               <TableCell className="text-xs">{c.glosador?.nombre ?? "—"}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
+                                <StatusBadge status={c.status} />
                               </TableCell>
                               <TableCell className="text-xs font-mono font-medium">
                                 {s?.score_total != null ? s.score_total : "—"}
