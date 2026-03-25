@@ -2,6 +2,7 @@ import {
   Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, LayoutDashboard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import gapLogo from "@/assets/gap-logo.png";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
