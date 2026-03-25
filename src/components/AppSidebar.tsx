@@ -2,6 +2,7 @@ import {
   Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, LayoutDashboard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import gapLogo from "@/assets/gap-logo.png";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -35,16 +36,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
-            <span className="text-sm font-bold text-sidebar-primary-foreground tracking-tight">CG</span>
-          </div>
+          <img src={gapLogo} alt="GAP Agencia Aduanal" className="h-9 w-9 shrink-0 object-contain rounded" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-accent-foreground tracking-tight">
                 Control de Glosa
               </p>
               <p className="truncate text-[11px] text-sidebar-muted">
-                Eficiencia Operativa
+                GAP Agencia Aduanal
               </p>
             </div>
           )}

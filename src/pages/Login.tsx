@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn } from "lucide-react";
 import { toast } from "sonner";
+import gapLogo from "@/assets/gap-logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -31,9 +32,7 @@ const Login = () => {
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-[480px] bg-foreground items-center justify-center p-12">
         <div className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
-            <span className="text-2xl font-bold text-primary-foreground tracking-tight">CG</span>
-          </div>
+          <img src={gapLogo} alt="GAP Agencia Aduanal" className="mx-auto h-20 w-auto object-contain" />
           <h2 className="text-2xl font-bold text-primary-foreground tracking-tight">
             Control de Glosa
           </h2>
@@ -47,9 +46,7 @@ const Login = () => {
       <div className="flex-1 flex items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm animate-fade-in">
           <div className="mb-8 lg:hidden text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <span className="text-lg font-bold text-primary-foreground tracking-tight">CG</span>
-            </div>
+            <img src={gapLogo} alt="GAP Agencia Aduanal" className="mx-auto mb-1 h-14 w-auto object-contain" />
             <h1 className="text-xl font-bold text-foreground tracking-tight">
               Control de Glosa
             </h1>
