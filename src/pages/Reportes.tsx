@@ -225,6 +225,7 @@ const Reportes = () => {
                       {(clients.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase text-muted-foreground">Tipo</Label>
                   <Select value={filters.documentTypeId ?? "_all_"} onValueChange={(v) => updateFilter("documentTypeId", v)}>
