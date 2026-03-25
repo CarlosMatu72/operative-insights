@@ -258,9 +258,9 @@ export function useGlosaActions() {
 
   const pauseGlosa = useMutation({
     mutationFn: async (caseId: string) => {
-      const { data: activeSessions } = await supabase
+    const { data: activeSessions } = await supabase
         .from("review_sessions")
-        .select("id, started_at")
+        .select("id, started_at, duration_seconds")
         .eq("review_case_id", caseId)
         .eq("user_id", user!.id)
         .eq("session_status", "active");
