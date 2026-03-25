@@ -37,9 +37,32 @@ export function useReportData(filters: ReportFilters) {
       if (filters.documentTypeId) query = query.eq("document_type_id", filters.documentTypeId);
       if (filters.status) query = query.eq("status", filters.status as any);
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data ?? [];
+      // Fetch all rows (handle >1000 limit)
+      let allData: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: page, error } = await query.range(from, from + pageSize - 1);
+        if (error) throw error;
+        allData = allData.concat(page ?? []);
+        if (!page || page.length < pageSize) break;
+        from += pageSize;
+        // Re-create query for next page
+        let nextQuery = supabase
+          .from("review_cases")
+          .select(`*, document_types(code, name), branches(nombre), executives(nombre), clients(nombre), glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)`)
+          .order("registered_at", { ascending: false });
+        if (filters.dateFrom) nextQuery = nextQuery.gte("registered_at", filters.dateFrom);
+        if (filters.dateTo) nextQuery = nextQuery.lte("registered_at", filters.dateTo + "T23:59:59");
+        if (filters.branchId) nextQuery = nextQuery.eq("branch_id", filters.branchId);
+        if (filters.executiveId) nextQuery = nextQuery.eq("executive_id", filters.executiveId);
+        if (filters.glosadorId) nextQuery = nextQuery.eq("assigned_glosador_user_id", filters.glosadorId);
+        if (filters.clientId) nextQuery = nextQuery.eq("client_id", filters.clientId);
+        if (filters.documentTypeId) nextQuery = nextQuery.eq("document_type_id", filters.documentTypeId);
+        if (filters.status) nextQuery = nextQuery.eq("status", filters.status as any);
+        query = nextQuery;
+      }
+      return allData;
     },
   });
 }

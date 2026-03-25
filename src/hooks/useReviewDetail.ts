@@ -366,6 +366,36 @@ export function useReviewActions(caseId: string) {
 
   const startCorrection = useMutation({
     mutationFn: async () => {
+      // Pause any active session for this user first (single-session rule)
+      const { data: activeSessions } = await supabase
+        .from("review_sessions")
+        .select("id, review_case_id, started_at, paused_at, duration_seconds")
+        .eq("user_id", user!.id)
+        .eq("session_status", "active");
+
+      for (const session of activeSessions ?? []) {
+        const resumedAt = session.paused_at ?? session.started_at;
+        const newElapsed = Math.floor(
+          (Date.now() - new Date(resumedAt).getTime()) / 1000
+        );
+        const totalDuration = (session.duration_seconds ?? 0) + newElapsed;
+        await supabase
+          .from("review_sessions")
+          .update({
+            session_status: "paused",
+            paused_at: new Date().toISOString(),
+            duration_seconds: totalDuration,
+          })
+          .eq("id", session.id);
+
+        if (session.review_case_id !== caseId) {
+          await supabase
+            .from("review_cases")
+            .update({ status: "PAUSADO" as any, paused_at: new Date().toISOString(), updated_by: user!.id })
+            .eq("id", session.review_case_id);
+        }
+      }
+
       // Get max round number
       const { data: rounds } = await supabase
         .from("review_rounds").select("round_number")
