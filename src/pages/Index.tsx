@@ -16,7 +16,7 @@ const Index = () => {
     <AppLayout>
       <div className="animate-fade-in space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             Bienvenido, {profile?.nombre}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -28,7 +28,7 @@ const Index = () => {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+              className="rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-center gap-3">
                 <div className={`rounded-lg p-2.5 ${stat.color}`}>
@@ -43,7 +43,7 @@ const Index = () => {
           ))}
         </div>
 
-        <div className="rounded-xl border bg-card p-8 text-center shadow-sm">
+        <div className="rounded-lg border bg-card p-8 text-center shadow-sm">
           <p className="text-muted-foreground">
             Los módulos de trámites, panel de glosa y reportes se irán habilitando progresivamente.
           </p>

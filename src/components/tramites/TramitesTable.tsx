@@ -6,30 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const statusColors: Record<string, string> = {
-  REGISTRADO: "bg-muted text-muted-foreground",
-  ASIGNADO: "bg-accent text-accent-foreground",
-  EN_REVISION: "bg-primary/15 text-primary",
-  PAUSADO: "bg-warning/15 text-warning",
-  CORRECCION_PENDIENTE: "bg-warning/15 text-warning",
-  EN_CORRECCION: "bg-warning/15 text-warning",
-  APROBADO: "bg-success/15 text-success",
-  RECHAZADO: "bg-destructive/15 text-destructive",
-  REABIERTO: "bg-accent text-accent-foreground",
-};
-
-const statusLabels: Record<string, string> = {
-  REGISTRADO: "Registrado",
-  ASIGNADO: "Asignado",
-  EN_REVISION: "En Revisión",
-  PAUSADO: "Pausado",
-  CORRECCION_PENDIENTE: "Corrección Pend.",
-  EN_CORRECCION: "En Corrección",
-  APROBADO: "Aprobado",
-  RECHAZADO: "Rechazado",
-  REABIERTO: "Reabierto",
-};
+import { StatusBadge, statusConfig } from "@/components/StatusBadge";
 
 export function TramitesTable() {
   const { branches, documentTypes } = useCatalogs();
@@ -67,9 +44,9 @@ export function TramitesTable() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-4">
-        <Input placeholder="Buscar referencia / folio..." value={filterRef} onChange={e => setFilterRef(e.target.value)} />
+        <Input placeholder="Buscar referencia / folio..." value={filterRef} onChange={e => setFilterRef(e.target.value)} className="h-9" />
         <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">Todos los tipos</SelectItem>
             {(documentTypes.data ?? []).map(d => (
@@ -78,7 +55,7 @@ export function TramitesTable() {
           </SelectContent>
         </Select>
         <Select value={filterSucursal} onValueChange={setFilterSucursal}>
-          <SelectTrigger><SelectValue placeholder="Sucursal" /></SelectTrigger>
+          <SelectTrigger className="h-9"><SelectValue placeholder="Sucursal" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">Todas las sucursales</SelectItem>
             {(branches.data ?? []).map(b => (
@@ -87,55 +64,58 @@ export function TramitesTable() {
           </SelectContent>
         </Select>
         <Select value={filterEstatus} onValueChange={setFilterEstatus}>
-          <SelectTrigger><SelectValue placeholder="Estatus" /></SelectTrigger>
+          <SelectTrigger className="h-9"><SelectValue placeholder="Estatus" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="_all">Todos los estatus</SelectItem>
-            {Object.entries(statusLabels).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            {Object.entries(statusConfig).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-auto">
+      <div className="rounded-lg border bg-card shadow-sm overflow-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Folio</TableHead>
-              <TableHead>Referencia</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Sucursal</TableHead>
-              <TableHead>Ejecutivo</TableHead>
-              <TableHead>Glosador</TableHead>
-              <TableHead>Fecha Alta</TableHead>
-              <TableHead>Estatus</TableHead>
+            <TableRow className="bg-muted/40">
+              <TableHead className="text-xs font-semibold">Folio</TableHead>
+              <TableHead className="text-xs font-semibold">Referencia</TableHead>
+              <TableHead className="text-xs font-semibold">Tipo</TableHead>
+              <TableHead className="text-xs font-semibold">Sucursal</TableHead>
+              <TableHead className="text-xs font-semibold">Ejecutivo</TableHead>
+              <TableHead className="text-xs font-semibold">Glosador</TableHead>
+              <TableHead className="text-xs font-semibold">Fecha Alta</TableHead>
+              <TableHead className="text-xs font-semibold">Estatus</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Cargando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Cargando...
+                </div>
+              </TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Sin trámites registrados</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Sin trámites registrados</TableCell></TableRow>
             ) : (
               filtered.map(c => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs">{c.internal_folio}</TableCell>
-                  <TableCell className="font-medium">{c.reference ?? "—"}</TableCell>
+                <TableRow key={c.id} className="hover:bg-muted/30">
+                  <TableCell className="font-mono text-xs text-muted-foreground">{c.internal_folio}</TableCell>
+                  <TableCell className="font-medium text-sm">{c.reference ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-[11px] font-normal">
                       {(c.document_types as any)?.name ?? "—"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{(c.branches as any)?.nombre ?? "—"}</TableCell>
-                  <TableCell>{(c.executives as any)?.nombre ?? "—"}</TableCell>
-                  <TableCell>{(c.glosador as any)?.nombre ?? "Sin asignar"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-sm text-muted-foreground">{(c.branches as any)?.nombre ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{(c.executives as any)?.nombre ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{(c.glosador as any)?.nombre ?? "Sin asignar"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
                     {new Date(c.registered_at).toLocaleDateString("es-MX")}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[c.status] ?? ""}`}>
-                      {statusLabels[c.status] ?? c.status}
-                    </span>
+                    <StatusBadge status={c.status} />
                   </TableCell>
                 </TableRow>
               ))
