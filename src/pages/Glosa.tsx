@@ -42,6 +42,7 @@ function formatTime(seconds: number): string {
 }
 
 const Glosa = () => {
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { branches, documentTypes, executives, glosadores } = useCatalogs();
   const { startGlosa, continueGlosa, pauseGlosa } = useGlosaActions();
