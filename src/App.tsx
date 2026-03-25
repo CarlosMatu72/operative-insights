@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Usuarios from "./pages/Usuarios";
 import Catalogos from "./pages/Catalogos";
 import Tramites from "./pages/Tramites";
+import Tablero from "./pages/Tablero";
 import Glosa from "./pages/Glosa";
 import Reportes from "./pages/Reportes";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/usuarios" element={<ProtectedRoute requiredRole="admin"><Usuarios /></ProtectedRoute>} />
             <Route path="/catalogos" element={<ProtectedRoute><Catalogos /></ProtectedRoute>} />
             <Route path="/tramites" element={<ProtectedRoute><Tramites /></ProtectedRoute>} />
+            <Route path="/tablero" element={<ProtectedRoute><Tablero /></ProtectedRoute>} />
             <Route path="/glosa" element={<ProtectedRoute><Glosa /></ProtectedRoute>} />
             <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
