@@ -12,6 +12,7 @@ import Catalogos from "./pages/Catalogos";
 import Tramites from "./pages/Tramites";
 import Tablero from "./pages/Tablero";
 import Glosa from "./pages/Glosa";
+import ReviewDetail from "./pages/ReviewDetail";
 import Reportes from "./pages/Reportes";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/tramites" element={<ProtectedRoute><Tramites /></ProtectedRoute>} />
             <Route path="/tablero" element={<ProtectedRoute><Tablero /></ProtectedRoute>} />
             <Route path="/glosa" element={<ProtectedRoute><Glosa /></ProtectedRoute>} />
+            <Route path="/glosa/:id" element={<ProtectedRoute><ReviewDetail /></ProtectedRoute>} />
             <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
