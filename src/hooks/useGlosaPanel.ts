@@ -266,7 +266,7 @@ export function useGlosaActions() {
         .eq("session_status", "active");
 
       for (const s of activeSessions ?? []) {
-        const elapsed = Math.floor((Date.now() - new Date(s.started_at).getTime()) / 1000);
+        const newElapsed = Math.floor((Date.now() - new Date(s.started_at).getTime()) / 1000);
         await supabase
           .from("review_sessions")
           .update({
