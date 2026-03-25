@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useGlosaCases, useGlosaActions } from "@/hooks/useGlosaPanel";
 import { useCatalogs } from "@/hooks/useCatalogs";
