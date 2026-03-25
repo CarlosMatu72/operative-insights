@@ -177,7 +177,7 @@ const Reportes = () => {
         {showFilters && (
           <Card>
             <CardContent className="pt-4">
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase text-muted-foreground">Desde</Label>
                   <Input type="date" value={filters.dateFrom ?? ""} onChange={(e) => updateFilter("dateFrom", e.target.value)} className="h-8 text-xs" />
