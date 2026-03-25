@@ -207,7 +207,10 @@ const Glosa = () => {
                             size="sm"
                             variant="default"
                             className="h-7 text-xs gap-1"
-                            onClick={() => startGlosa.mutate(c.id)}
+                            onClick={async () => {
+                              await startGlosa.mutateAsync(c.id);
+                              navigate(`/glosa/${c.id}`);
+                            }}
                             disabled={startGlosa.isPending}
                           >
                             <Play className="h-3 w-3" /> Glosar
@@ -218,7 +221,10 @@ const Glosa = () => {
                             size="sm"
                             variant="outline"
                             className="h-7 text-xs gap-1"
-                            onClick={() => continueGlosa.mutate(c.id)}
+                            onClick={async () => {
+                              await continueGlosa.mutateAsync(c.id);
+                              navigate(`/glosa/${c.id}`);
+                            }}
                             disabled={continueGlosa.isPending}
                           >
                             <RotateCcw className="h-3 w-3" /> Continuar
@@ -235,12 +241,32 @@ const Glosa = () => {
                             <Pause className="h-3 w-3" /> Pausar
                           </Button>
                         )}
+                        {c.status === "EN_REVISION" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => navigate(`/glosa/${c.id}`)}
+                          >
+                            <Eye className="h-3 w-3" /> Abrir
+                          </Button>
+                        )}
                         {canCorrecciones(c) && (
-                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => navigate(`/glosa/${c.id}`)}
+                          >
                             <ClipboardCheck className="h-3 w-3" /> Correcciones
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          onClick={() => navigate(`/glosa/${c.id}`)}
+                        >
                           <FileDown className="h-3.5 w-3.5" />
                         </Button>
                       </div>
