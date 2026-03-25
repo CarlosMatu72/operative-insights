@@ -1,5 +1,5 @@
 import {
-  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, ChevronLeft,
+  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, LayoutDashboard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,6 +17,7 @@ const mainItems = [
   { title: "Usuarios", url: "/usuarios", icon: Users, adminOnly: true },
   { title: "Catálogos", url: "/catalogos", icon: FolderOpen },
   { title: "Trámites", url: "/tramites", icon: FileText },
+  { title: "Tablero Operativo", url: "/tablero", icon: LayoutDashboard },
   { title: "Panel de Glosa", url: "/glosa", icon: ClipboardCheck },
   { title: "Reportes", url: "/reportes", icon: BarChart3 },
 ];
