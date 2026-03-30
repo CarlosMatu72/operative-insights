@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useGlosaCases, useGlosaActions } from "@/hooks/useGlosaPanel";
 import { useCatalogs } from "@/hooks/useCatalogs";
@@ -9,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, FileDown, ClipboardCheck, Eye, FilterX, Inbox } from "lucide-react";
+import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox } from "lucide-react";
+import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
 
 function formatTime(seconds: number): string {
   if (seconds === 0) return "—";
@@ -21,9 +22,8 @@ function formatTime(seconds: number): string {
 }
 
 const Glosa = () => {
-  const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const { branches, documentTypes, executives, glosadores } = useCatalogs();
+  const { branches, documentTypes, executives } = useCatalogs();
   const { startGlosa, continueGlosa, pauseGlosa } = useGlosaActions();
 
   const [filterRef, setFilterRef] = useState("");
@@ -31,7 +31,8 @@ const Glosa = () => {
   const [filterSucursal, setFilterSucursal] = useState("");
   const [filterEstatus, setFilterEstatus] = useState("");
   const [filterEjecutivo, setFilterEjecutivo] = useState("");
-  const [filterGlosador, setFilterGlosador] = useState("");
+
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   const { data: cases = [], isLoading } = useGlosaCases({
     ref: filterRef,
@@ -39,21 +40,21 @@ const Glosa = () => {
     sucursal: filterSucursal,
     estatus: filterEstatus,
     ejecutivo: filterEjecutivo,
-    glosador: filterGlosador,
+    glosador: "",
   });
 
-  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo || filterGlosador;
+  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo;
 
   const clearFilters = () => {
     setFilterRef(""); setFilterTipo(""); setFilterSucursal("");
-    setFilterEstatus(""); setFilterEjecutivo(""); setFilterGlosador("");
+    setFilterEstatus(""); setFilterEjecutivo("");
   };
 
   const canGlosar = (c: any) =>
     c.status === "ASIGNADO" && !c.first_started_at;
 
   const canContinue = (c: any) =>
-    ["PAUSADO", "REABIERTO"].includes(c.status) || 
+    ["PAUSADO", "REABIERTO"].includes(c.status) ||
     (c.status === "ASIGNADO" && c.first_started_at);
 
   const canPause = (c: any) =>
@@ -67,7 +68,7 @@ const Glosa = () => {
       <div className="animate-fade-in space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Panel de Glosa</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Mis Revisiones</h1>
             <p className="text-sm text-muted-foreground">
               Bandeja de trabajo — {cases.length} trámites
             </p>
@@ -120,17 +121,6 @@ const Glosa = () => {
               ))}
             </SelectContent>
           </Select>
-          {isAdmin && (
-            <Select value={filterGlosador} onValueChange={setFilterGlosador}>
-              <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Glosador" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Todos</SelectItem>
-                {(glosadores.data ?? []).map((g) => (
-                  <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
               <FilterX className="h-3.5 w-3.5" /> Limpiar
@@ -189,11 +179,13 @@ const Glosa = () => {
                   <TableRow
                     key={c.id}
                     className={`cursor-pointer transition-colors ${
-                      c.has_active_session
+                      selectedCaseId === c.id
+                        ? "bg-primary/[0.08] border-l-2 border-l-primary"
+                        : c.has_active_session
                         ? "bg-primary/[0.04] border-l-2 border-l-primary"
                         : "hover:bg-muted/30"
                     }`}
-                    onClick={() => navigate(`/glosa/${c.id}`)}
+                    onClick={() => setSelectedCaseId(c.id)}
                   >
                     <TableCell className="font-medium text-sm">
                       {c.reference ?? c.internal_folio}
@@ -228,7 +220,7 @@ const Glosa = () => {
                             className="h-7 text-xs gap-1"
                             onClick={async () => {
                               await startGlosa.mutateAsync(c.id);
-                              navigate(`/glosa/${c.id}`);
+                              setSelectedCaseId(c.id);
                             }}
                             disabled={startGlosa.isPending}
                           >
@@ -242,7 +234,7 @@ const Glosa = () => {
                             className="h-7 text-xs gap-1"
                             onClick={async () => {
                               await continueGlosa.mutateAsync(c.id);
-                              navigate(`/glosa/${c.id}`);
+                              setSelectedCaseId(c.id);
                             }}
                             disabled={continueGlosa.isPending}
                           >
@@ -265,7 +257,7 @@ const Glosa = () => {
                             size="sm"
                             variant="ghost"
                             className="h-7 text-xs gap-1"
-                            onClick={() => navigate(`/glosa/${c.id}`)}
+                            onClick={() => setSelectedCaseId(c.id)}
                           >
                             <ClipboardCheck className="h-3 w-3" /> Correcciones
                           </Button>
@@ -279,6 +271,15 @@ const Glosa = () => {
           </Table>
         </div>
       </div>
+
+      {/* Review Detail Sheet */}
+      <Sheet open={!!selectedCaseId} onOpenChange={(open) => { if (!open) setSelectedCaseId(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl p-0 overflow-y-auto">
+          {selectedCaseId && (
+            <ReviewDetailPanel caseId={selectedCaseId} onClose={() => setSelectedCaseId(null)} />
+          )}
+        </SheetContent>
+      </Sheet>
     </AppLayout>
   );
 };

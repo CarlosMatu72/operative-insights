@@ -1,5 +1,5 @@
 import {
-  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, LayoutDashboard,
+  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import gapLogo from "@/assets/gap-logo.png";
@@ -16,8 +16,7 @@ const mainItems = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Usuarios", url: "/usuarios", icon: Users, adminOnly: true },
   { title: "Catálogos", url: "/catalogos", icon: FolderOpen },
-  { title: "Trámites", url: "/tramites", icon: FileText },
-  { title: "Tablero Operativo", url: "/tablero", icon: LayoutDashboard },
+  { title: "Pre-Registro", url: "/pre-registro", icon: FileText },
   { title: "Panel de Glosa", url: "/glosa", icon: ClipboardCheck },
   { title: "Reportes", url: "/reportes", icon: BarChart3 },
 ];
