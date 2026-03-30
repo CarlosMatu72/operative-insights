@@ -9,8 +9,7 @@ import Login from "./pages/Login";
 import Index from "./pages/Index";
 import Usuarios from "./pages/Usuarios";
 import Catalogos from "./pages/Catalogos";
-import Tramites from "./pages/Tramites";
-import Tablero from "./pages/Tablero";
+import PreRegistro from "./pages/PreRegistro";
 import Glosa from "./pages/Glosa";
 import ReviewDetail from "./pages/ReviewDetail";
 import Reportes from "./pages/Reportes";
@@ -30,8 +29,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute requiredRole="admin"><Usuarios /></ProtectedRoute>} />
             <Route path="/catalogos" element={<ProtectedRoute><Catalogos /></ProtectedRoute>} />
-            <Route path="/tramites" element={<ProtectedRoute><Tramites /></ProtectedRoute>} />
-            <Route path="/tablero" element={<ProtectedRoute><Tablero /></ProtectedRoute>} />
+            <Route path="/pre-registro" element={<ProtectedRoute><PreRegistro /></ProtectedRoute>} />
             <Route path="/glosa" element={<ProtectedRoute><Glosa /></ProtectedRoute>} />
             <Route path="/glosa/:id" element={<ProtectedRoute><ReviewDetail /></ProtectedRoute>} />
             <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
