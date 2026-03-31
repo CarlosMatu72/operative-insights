@@ -73,6 +73,7 @@ export function useGlosadores() {
       }));
     },
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 }
 
