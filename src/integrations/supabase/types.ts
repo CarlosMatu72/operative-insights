@@ -735,6 +735,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "review_cases_glosador_profile_fkey"
+            columns: ["assigned_glosador_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "review_cases_parent_case_id_fkey"
             columns: ["parent_case_id"]
             isOneToOne: false

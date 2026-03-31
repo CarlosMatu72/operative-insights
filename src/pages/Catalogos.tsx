@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Building2, UsersRound, Key, Package } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Building2, UsersRound, Key } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -64,16 +65,26 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [editId, setEditId] = useState<string | null>(null);
+  const [sucursalId, setSucursalId] = useState("");
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
+
+  const isExecutives = config.key === "executives";
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ["branches-for-catalog"],
+    queryFn: async () => {
+      const { data } = await supabase.from("branches").select("*").eq("activo", true).order("nombre");
+      return data ?? [];
+    },
+    enabled: isExecutives,
+  });
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: [config.key],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(config.key)
-        .select("*")
-        .order("id");
+      let query = supabase.from(config.key).select(isExecutives ? "*, branches(nombre)" : "*").order("id" as any);
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
@@ -81,14 +92,15 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
 
   const saveMutation = useMutation({
     mutationFn: async (values: Record<string, any>) => {
+      const payload = { ...values };
+      if (isExecutives) {
+        payload.sucursal_id = sucursalId && sucursalId !== "_none" ? sucursalId : null;
+      }
       if (editId) {
-        const { error } = await supabase
-          .from(config.key)
-          .update(values)
-          .eq("id", editId);
+        const { error } = await supabase.from(config.key).update(payload).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(config.key).insert(values as any);
+        const { error } = await supabase.from(config.key).insert(payload as any);
         if (error) throw error;
       }
     },
@@ -102,10 +114,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
-      const { error } = await supabase
-        .from(config.key)
-        .update({ activo })
-        .eq("id", id);
+      const { error } = await supabase.from(config.key).update({ activo }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -117,6 +126,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
     setOpen(false);
     setFormData({});
     setEditId(null);
+    setSucursalId("");
   };
 
   const openEdit = (item: any) => {
@@ -124,6 +134,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
     config.fields.forEach((f) => (data[f.name] = item[f.name] ?? ""));
     setFormData(data);
     setEditId(item.id);
+    if (isExecutives) setSucursalId(item.sucursal_id || "_none");
     setOpen(true);
   };
 
@@ -150,6 +161,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
               {config.fields.map((f) => (
                 <TableHead key={f.name}>{f.label}</TableHead>
               ))}
+              {isExecutives && <TableHead>Sucursal</TableHead>}
               <TableHead>Activo</TableHead>
               {isAdmin && <TableHead>Acciones</TableHead>}
             </TableRow>
@@ -157,13 +169,13 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={config.fields.length + 2} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={config.fields.length + (isExecutives ? 3 : 2)} className="text-center py-8 text-muted-foreground">
                   Cargando...
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={config.fields.length + 2} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={config.fields.length + (isExecutives ? 3 : 2)} className="text-center py-8 text-muted-foreground">
                   Sin registros
                 </TableCell>
               </TableRow>
@@ -173,6 +185,9 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
                   {config.fields.map((f) => (
                     <TableCell key={f.name}>{item[f.name] ?? "—"}</TableCell>
                   ))}
+                  {isExecutives && (
+                    <TableCell>{(item.branches as any)?.nombre ?? "—"}</TableCell>
+                  )}
                   <TableCell>
                     {isAdmin ? (
                       <Switch
@@ -221,6 +236,20 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
                 />
               </div>
             ))}
+            {isExecutives && (
+              <div className="space-y-2">
+                <Label>Sucursal</Label>
+                <Select value={sucursalId} onValueChange={setSucursalId}>
+                  <SelectTrigger><SelectValue placeholder="Sin sucursal" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Sin sucursal</SelectItem>
+                    {branches.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.nombre} ({b.clave})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancelar

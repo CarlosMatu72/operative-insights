@@ -27,7 +27,7 @@ export function TramitesTable() {
           document_types(code, name),
           branches(nombre, clave),
           executives(nombre),
-          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .order("created_at", { ascending: false });
       if (error) throw error;

@@ -24,7 +24,7 @@ export function useReportData(filters: ReportFilters) {
           branches(nombre),
           executives(nombre),
           clients(nombre),
-          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .order("registered_at", { ascending: false });
 
@@ -50,7 +50,7 @@ export function useReportData(filters: ReportFilters) {
         // Re-create query for next page
         let nextQuery = supabase
           .from("review_cases")
-          .select(`*, document_types(code, name), branches(nombre), executives(nombre), clients(nombre), glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)`)
+          .select(`*, document_types(code, name), branches(nombre), executives(nombre), clients(nombre), glosador:profiles!review_cases_glosador_profile_fkey(nombre)`)
           .order("registered_at", { ascending: false });
         if (filters.dateFrom) nextQuery = nextQuery.gte("registered_at", filters.dateFrom);
         if (filters.dateTo) nextQuery = nextQuery.lte("registered_at", filters.dateTo + "T23:59:59");
