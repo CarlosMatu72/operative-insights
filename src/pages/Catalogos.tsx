@@ -10,9 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Building2, UsersRound, Key } from "lucide-react";
+import { Plus, Building2, UsersRound, Key, AlertTriangle, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { ObservationCategoriesConfig } from "@/components/catalogos/ObservationCategoriesConfig";
+import { ObservationSubcategoriesConfig } from "@/components/catalogos/ObservationSubcategoriesConfig";
+import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
+import { ScoringConfig } from "@/components/reportes/ScoringConfig";
 
 type CatalogType = "branches" | "clients" | "executives" | "customs_keys";
 
