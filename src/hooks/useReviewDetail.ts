@@ -17,7 +17,7 @@ export function useReviewCase(caseId: string) {
           branches(id, nombre),
           executives(id, nombre),
           clients(id, nombre),
-          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .eq("id", caseId)
         .single();
