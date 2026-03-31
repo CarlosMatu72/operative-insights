@@ -43,7 +43,7 @@ export function useGlosaCases(filters: {
           document_types(code, name),
           branches(nombre),
           executives(nombre),
-          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .not("status", "eq", "REGISTRADO")
         .order("registered_at", { ascending: false });
