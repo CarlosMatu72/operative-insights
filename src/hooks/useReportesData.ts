@@ -24,7 +24,7 @@ export function useReportData(filters: ReportFilters) {
           branches(nombre),
           executives(nombre),
           clients(nombre),
-          glosador:profiles!review_cases_assigned_glosador_user_id_fkey(nombre)
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .order("registered_at", { ascending: false });
 
