@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import {
   useReviewCase, useReviewDetails, useReviewClassifications,
   useReviewDocumentation, useReviewFindings, useClassificationFeatures,
   useClassificationRules, useObservationCatalog, useItemRanges,
-  useCustomsKeys, useReviewActions, useReviewRounds,
+  useCustomsKeys, useReviewActions, useReviewRounds, useReviewComments,
 } from "@/hooks/useReviewDetail";
 import { HistoryTabs } from "@/components/glosa/HistoryTabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck } from "lucide-react";
+import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck, MessageSquare } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const correctionStatuses = [
@@ -54,8 +56,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const { data: itemRanges = [] } = useItemRanges();
   const { data: customsKeys = [] } = useCustomsKeys();
   const { data: rounds = [] } = useReviewRounds(caseId);
+  const { data: generalCommentsList = [] } = useReviewComments(caseId);
   const { branches, clients, executives } = useCatalogs();
   const actions = useReviewActions(caseId);
+  const queryClient = useQueryClient();
 
   const [branchId, setBranchId] = useState("");
   const [clientId, setClientId] = useState("");
@@ -79,6 +83,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectMotivo, setRejectMotivo] = useState("");
+  const [generalComment, setGeneralComment] = useState("");
+  const [showCommentForm, setShowCommentForm] = useState(false);
 
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
@@ -195,24 +201,90 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     await actions.reopenCase.mutateAsync(rejectionId);
   };
 
+  const handleAddComment = async () => {
+    if (!generalComment.trim()) { toast.error("El comentario no puede estar vacío"); return; }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+      const { error } = await (supabase as any).from("review_comments").insert({
+        review_case_id: caseId, comment_text: generalComment.trim(), created_by: user.id,
+      });
+      if (error) throw error;
+      toast.success("Comentario agregado");
+      setGeneralComment(""); setShowCommentForm(false);
+      queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
+    } catch (err: any) { toast.error(err.message || "Error al agregar comentario"); }
+  };
+
   const handleCopyText = () => {
-    const lines: string[] = [];
-    lines.push(`Referencia: ${reviewCase?.reference ?? reviewCase?.internal_folio}`);
-    lines.push(`Tipo: ${(reviewCase?.document_types as any)?.name}`);
-    lines.push(`Sucursal: ${(reviewCase?.branches as any)?.nombre ?? "—"}`);
-    lines.push(`Ejecutivo: ${(reviewCase?.executives as any)?.nombre ?? "—"}`);
-    lines.push(`Documentación: ${docStatus}`);
-    lines.push("");
-    lines.push("=== OBSERVACIONES ===");
-    for (const f of findings.filter((x) => x.is_open)) {
-      const cat = (f as any).observation_categories?.nombre ?? "";
-      const sub = (f as any).observation_subcategories?.nombre ?? "";
-      const err = (f as any).observation_errors?.descripcion ?? "";
-      lines.push(`• [${cat} > ${sub}] ${err} — Estado: ${f.current_status}`);
-      if (f.comentario_inicial) lines.push(`  Comentario: ${f.comentario_inicial}`);
+    if (!reviewCase) { toast.error("No hay datos para copiar"); return; }
+    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" }) : "—";
+    const sl: Record<string, string> = {
+      REGISTRADO: "Registrado", ASIGNADO: "Asignado", EN_REVISION: "En Revisión", PAUSADO: "Pausado",
+      CORRECCION_PENDIENTE: "Corrección Pendiente", EN_CORRECCION: "En Corrección",
+      APROBADO: "Aprobado", RECHAZADO: "Rechazado", REABIERTO: "Reabierto",
+    };
+    const dsl: Record<string, string> = {
+      COMPLETO: "✓ Completo", PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
+      PENDIENTE_NO_SE_PUEDE_GLOSAR: "✗ Pendiente — NO se puede glosar",
+    };
+    let t = "";
+    t += "╔════════════════════════════════════════════════════╗\n";
+    t += "║     REPORTE DE REVISIÓN - CONTROL DE GLOSA        ║\n";
+    t += "╚════════════════════════════════════════════════════╝\n\n";
+    t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
+    t += `│ Referencia:      ${reviewCase.reference || reviewCase.internal_folio}\n`;
+    t += `│ Tipo:            ${(reviewCase.document_types as any)?.name || "—"}\n`;
+    t += `│ Folio Interno:   ${reviewCase.internal_folio}\n`;
+    t += `│ Estatus:         ${sl[reviewCase.status] || reviewCase.status}\n`;
+    t += `│ Sucursal:        ${(reviewCase.branches as any)?.nombre || "—"}\n`;
+    t += `│ Cliente:         ${(reviewCase.clients as any)?.nombre || "—"}\n`;
+    t += `│ Ejecutivo:       ${(reviewCase.executives as any)?.nombre || "—"}\n`;
+    t += `│ Glosador:        ${(reviewCase as any).glosador?.nombre || "Sin asignar"}\n`;
+    t += `│ Fecha Registro:  ${fmt(reviewCase.registered_at)}\n`;
+    if (reviewCase.approved_at) t += `│ Fecha Aprobación: ${fmt(reviewCase.approved_at)}\n`;
+    if (reviewCase.rejected_at) t += `│ Fecha Rechazo:   ${fmt(reviewCase.rejected_at)}\n`;
+    t += "└──────────────────────────────────────────────────────┘\n\n";
+    if (documentation) {
+      t += "┌─ DOCUMENTACIÓN ────────────────────────────────────┐\n";
+      t += `│ Estado: ${dsl[documentation.documentation_status ?? ""] || documentation.documentation_status}\n`;
+      if (documentation.documentation_comment) t += `│ Comentario: ${documentation.documentation_comment}\n`;
+      t += "└──────────────────────────────────────────────────────┘\n\n";
     }
-    navigator.clipboard.writeText(lines.join("\n"));
-    toast.success("Texto copiado al portapapeles");
+    if (features.length > 0) {
+      t += "┌─ CLASIFICACIÓN ────────────────────────────────────┐\n";
+      features.forEach(f => { t += `│ ${classValues[f.id] ? "☑ Sí" : "☐ No"}  ${f.nombre}\n`; });
+      t += "└──────────────────────────────────────────────────────┘\n\n";
+    }
+    t += "┌─ OBSERVACIONES ──────────────────────────────────────┐\n";
+    if (findings.length === 0) {
+      t += "│ ✓ Sin observaciones detectadas\n";
+    } else {
+      t += `│ Total: ${findings.length} | Abiertas: ${openFindings.length}\n│\n`;
+      findings.forEach((f, i) => {
+        const cat = (f as any).observation_categories?.nombre || "";
+        const sub = (f as any).observation_subcategories?.nombre || "";
+        const err = (f as any).observation_errors?.descripcion || "";
+        const pts = (f as any).observation_errors?.descuento_puntos;
+        const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
+        t += `│ ${i + 1}. ${cat} › ${sub}\n│    └─ ${err}${pts ? ` (-${pts} pts)` : ""}\n│    Estado: ${stl}\n`;
+        if (f.comentario_inicial) t += `│    Comentario: ${f.comentario_inicial}\n`;
+        t += "│\n";
+      });
+    }
+    t += "└──────────────────────────────────────────────────────┘\n\n";
+    if (generalCommentsList.length > 0) {
+      t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
+      generalCommentsList.forEach((c: any, i: number) => {
+        t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
+      });
+      t += "└──────────────────────────────────────────────────────┘\n\n";
+    }
+    t += `═══════════════════════════════════════════════════════\n`;
+    t += `Generado: ${new Date().toLocaleString("es-MX")}\n`;
+    t += `Sistema de Control de Glosa\n`;
+    t += `═══════════════════════════════════════════════════════\n`;
+    navigator.clipboard.writeText(t).then(() => toast.success("Texto copiado al portapapeles")).catch(() => toast.error("Error al copiar"));
   };
 
   const handleGeneratePDF = () => {
@@ -616,7 +688,63 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         </CardContent>
       </Card>
 
-      {/* History */}
+      {/* General Comments */}
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold tracking-tight flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            Comentarios Generales
+            {generalCommentsList.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px]">{generalCommentsList.length}</Badge>
+            )}
+          </CardTitle>
+          {isActiveReview && !showCommentForm && (
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowCommentForm(true)}>
+              <Plus className="h-3 w-3" /> Agregar
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">Comentarios informativos que no afectan la calificación</p>
+
+          {showCommentForm && (
+            <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium">Nuevo comentario general</span>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setShowCommentForm(false)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <Textarea value={generalComment} onChange={(e) => setGeneralComment(e.target.value)}
+                placeholder="Escribe un comentario general sobre la revisión..." className="min-h-[60px] text-sm" />
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleAddComment} disabled={!generalComment.trim()} className="gap-1 text-xs">
+                  <Plus className="h-3 w-3" /> Agregar Comentario
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {generalCommentsList.length === 0 && !showCommentForm ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Sin comentarios generales</p>
+          ) : (
+            <div className="space-y-2">
+              {generalCommentsList.map((c: any) => (
+                <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(c.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{c.comment_text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <HistoryTabs caseId={caseId} onReopen={isReadOnly && status === "RECHAZADO" && isAdmin ? handleReopen : undefined} />
 
       {/* Update Finding Status Dialog */}

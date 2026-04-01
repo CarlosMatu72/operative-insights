@@ -750,6 +750,48 @@ export type Database = {
           },
         ]
       }
+      review_comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          review_case_id: string
+          review_round_id: string | null
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          review_case_id: string
+          review_round_id?: string | null
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          review_case_id?: string
+          review_round_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_comments_review_case_id_fkey"
+            columns: ["review_case_id"]
+            isOneToOne: false
+            referencedRelation: "review_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_comments_review_round_id_fkey"
+            columns: ["review_round_id"]
+            isOneToOne: false
+            referencedRelation: "review_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_findings: {
         Row: {
           category_id: string | null
