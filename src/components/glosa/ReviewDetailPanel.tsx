@@ -196,28 +196,90 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     setStatusUpdateFinding(null); setStatusUpdateValue(""); setStatusUpdateComment("");
   };
 
-  const handleReopen = async (rejectionId: string) => {
-    await actions.reopenCase.mutateAsync(rejectionId);
+  const handleAddComment = async () => {
+    if (!generalComment.trim()) { toast.error("El comentario no puede estar vacío"); return; }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+      const { error } = await (supabase as any).from("review_comments").insert({
+        review_case_id: caseId, comment_text: generalComment.trim(), created_by: user.id,
+      });
+      if (error) throw error;
+      toast.success("Comentario agregado");
+      setGeneralComment(""); setShowCommentForm(false);
+      queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
+    } catch (err: any) { toast.error(err.message || "Error al agregar comentario"); }
   };
 
   const handleCopyText = () => {
-    const lines: string[] = [];
-    lines.push(`Referencia: ${reviewCase?.reference ?? reviewCase?.internal_folio}`);
-    lines.push(`Tipo: ${(reviewCase?.document_types as any)?.name}`);
-    lines.push(`Sucursal: ${(reviewCase?.branches as any)?.nombre ?? "—"}`);
-    lines.push(`Ejecutivo: ${(reviewCase?.executives as any)?.nombre ?? "—"}`);
-    lines.push(`Documentación: ${docStatus}`);
-    lines.push("");
-    lines.push("=== OBSERVACIONES ===");
-    for (const f of findings.filter((x) => x.is_open)) {
-      const cat = (f as any).observation_categories?.nombre ?? "";
-      const sub = (f as any).observation_subcategories?.nombre ?? "";
-      const err = (f as any).observation_errors?.descripcion ?? "";
-      lines.push(`• [${cat} > ${sub}] ${err} — Estado: ${f.current_status}`);
-      if (f.comentario_inicial) lines.push(`  Comentario: ${f.comentario_inicial}`);
+    if (!reviewCase) { toast.error("No hay datos para copiar"); return; }
+    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" }) : "—";
+    const sl: Record<string, string> = {
+      REGISTRADO: "Registrado", ASIGNADO: "Asignado", EN_REVISION: "En Revisión", PAUSADO: "Pausado",
+      CORRECCION_PENDIENTE: "Corrección Pendiente", EN_CORRECCION: "En Corrección",
+      APROBADO: "Aprobado", RECHAZADO: "Rechazado", REABIERTO: "Reabierto",
+    };
+    const dsl: Record<string, string> = {
+      COMPLETO: "✓ Completo", PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
+      PENDIENTE_NO_SE_PUEDE_GLOSAR: "✗ Pendiente — NO se puede glosar",
+    };
+    let t = "";
+    t += "╔════════════════════════════════════════════════════╗\n";
+    t += "║     REPORTE DE REVISIÓN - CONTROL DE GLOSA        ║\n";
+    t += "╚════════════════════════════════════════════════════╝\n\n";
+    t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
+    t += `│ Referencia:      ${reviewCase.reference || reviewCase.internal_folio}\n`;
+    t += `│ Tipo:            ${(reviewCase.document_types as any)?.name || "—"}\n`;
+    t += `│ Folio Interno:   ${reviewCase.internal_folio}\n`;
+    t += `│ Estatus:         ${sl[reviewCase.status] || reviewCase.status}\n`;
+    t += `│ Sucursal:        ${(reviewCase.branches as any)?.nombre || "—"}\n`;
+    t += `│ Cliente:         ${(reviewCase.clients as any)?.nombre || "—"}\n`;
+    t += `│ Ejecutivo:       ${(reviewCase.executives as any)?.nombre || "—"}\n`;
+    t += `│ Glosador:        ${(reviewCase as any).glosador?.nombre || "Sin asignar"}\n`;
+    t += `│ Fecha Registro:  ${fmt(reviewCase.registered_at)}\n`;
+    if (reviewCase.approved_at) t += `│ Fecha Aprobación: ${fmt(reviewCase.approved_at)}\n`;
+    if (reviewCase.rejected_at) t += `│ Fecha Rechazo:   ${fmt(reviewCase.rejected_at)}\n`;
+    t += "└──────────────────────────────────────────────────────┘\n\n";
+    if (documentation) {
+      t += "┌─ DOCUMENTACIÓN ────────────────────────────────────┐\n";
+      t += `│ Estado: ${dsl[documentation.documentation_status ?? ""] || documentation.documentation_status}\n`;
+      if (documentation.documentation_comment) t += `│ Comentario: ${documentation.documentation_comment}\n`;
+      t += "└──────────────────────────────────────────────────────┘\n\n";
     }
-    navigator.clipboard.writeText(lines.join("\n"));
-    toast.success("Texto copiado al portapapeles");
+    if (features.length > 0) {
+      t += "┌─ CLASIFICACIÓN ────────────────────────────────────┐\n";
+      features.forEach(f => { t += `│ ${classValues[f.id] ? "☑ Sí" : "☐ No"}  ${f.nombre}\n`; });
+      t += "└──────────────────────────────────────────────────────┘\n\n";
+    }
+    t += "┌─ OBSERVACIONES ──────────────────────────────────────┐\n";
+    if (findings.length === 0) {
+      t += "│ ✓ Sin observaciones detectadas\n";
+    } else {
+      t += `│ Total: ${findings.length} | Abiertas: ${openFindings.length}\n│\n`;
+      findings.forEach((f, i) => {
+        const cat = (f as any).observation_categories?.nombre || "";
+        const sub = (f as any).observation_subcategories?.nombre || "";
+        const err = (f as any).observation_errors?.descripcion || "";
+        const pts = (f as any).observation_errors?.descuento_puntos;
+        const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
+        t += `│ ${i + 1}. ${cat} › ${sub}\n│    └─ ${err}${pts ? ` (-${pts} pts)` : ""}\n│    Estado: ${stl}\n`;
+        if (f.comentario_inicial) t += `│    Comentario: ${f.comentario_inicial}\n`;
+        t += "│\n";
+      });
+    }
+    t += "└──────────────────────────────────────────────────────┘\n\n";
+    if (generalCommentsList.length > 0) {
+      t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
+      generalCommentsList.forEach((c: any, i: number) => {
+        t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
+      });
+      t += "└──────────────────────────────────────────────────────┘\n\n";
+    }
+    t += `═══════════════════════════════════════════════════════\n`;
+    t += `Generado: ${new Date().toLocaleString("es-MX")}\n`;
+    t += `Sistema de Control de Glosa\n`;
+    t += `═══════════════════════════════════════════════════════\n`;
+    navigator.clipboard.writeText(t).then(() => toast.success("Texto copiado al portapapeles")).catch(() => toast.error("Error al copiar"));
   };
 
   const handleGeneratePDF = () => {
