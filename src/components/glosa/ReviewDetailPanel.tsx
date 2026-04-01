@@ -55,8 +55,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const { data: itemRanges = [] } = useItemRanges();
   const { data: customsKeys = [] } = useCustomsKeys();
   const { data: rounds = [] } = useReviewRounds(caseId);
+  const { data: generalCommentsList = [] } = useReviewComments(caseId);
   const { branches, clients, executives } = useCatalogs();
   const actions = useReviewActions(caseId);
+  const queryClient = useQueryClient();
 
   const [branchId, setBranchId] = useState("");
   const [clientId, setClientId] = useState("");
