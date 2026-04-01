@@ -197,6 +197,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     setStatusUpdateFinding(null); setStatusUpdateValue(""); setStatusUpdateComment("");
   };
 
+  const handleReopen = async (rejectionId: string) => {
+    await actions.reopenCase.mutateAsync(rejectionId);
+  };
+
   const handleAddComment = async () => {
     if (!generalComment.trim()) { toast.error("El comentario no puede estar vacío"); return; }
     try {
