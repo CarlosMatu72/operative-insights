@@ -125,7 +125,8 @@ export function useGlosaCases(filters: {
 
       return result;
     },
-    refetchInterval: 15000,
+    refetchInterval: 30000,
+    staleTime: 20000,
   });
 }
 
