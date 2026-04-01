@@ -216,6 +216,21 @@ export function useRejectionHistories(caseId: string) {
   });
 }
 
+export function useReviewComments(caseId: string) {
+  return useQuery({
+    queryKey: ["review-comments", caseId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("review_comments")
+        .select("*, profiles:created_by(nombre)")
+        .eq("review_case_id", caseId)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!caseId,
+  });
+}
+
 // ── Actions ──────────────────────────────────────────────
 
 export function useReviewActions(caseId: string) {

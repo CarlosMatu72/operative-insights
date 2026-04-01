@@ -82,6 +82,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectMotivo, setRejectMotivo] = useState("");
+  const [generalComment, setGeneralComment] = useState("");
+  const [showCommentForm, setShowCommentForm] = useState(false);
 
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
