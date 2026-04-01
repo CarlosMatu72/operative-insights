@@ -5,7 +5,7 @@ import {
   useReviewCase, useReviewDetails, useReviewClassifications,
   useReviewDocumentation, useReviewFindings, useClassificationFeatures,
   useClassificationRules, useObservationCatalog, useItemRanges,
-  useCustomsKeys, useReviewActions, useReviewRounds,
+  useCustomsKeys, useReviewActions, useReviewRounds, useReviewComments,
 } from "@/hooks/useReviewDetail";
 import { HistoryTabs } from "@/components/glosa/HistoryTabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
