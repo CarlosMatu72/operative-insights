@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { UserPlus, KeyRound, Shield } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserPlus, KeyRound, Shield, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface UserWithRole {
@@ -41,6 +42,10 @@ const Usuarios = () => {
   const [roleUserName, setRoleUserName] = useState("");
   const [newRole, setNewRole] = useState("");
 
+  const [uploadingAvatar, setUploadingAvatar] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarTargetUserId, setAvatarTargetUserId] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
@@ -61,7 +66,6 @@ const Usuarios = () => {
     },
   });
 
-  // All admin actions go through the edge function for server-side validation
   const adminAction = async (body: any) => {
     const { data, error } = await supabase.functions.invoke("admin-create-user", { body });
     if (error) throw error;
@@ -122,6 +126,56 @@ const Usuarios = () => {
     }
   };
 
+  const handleAvatarClick = (userId: string) => {
+    setAvatarTargetUserId(userId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !avatarTargetUserId) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("El archivo debe ser una imagen");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 5MB");
+      return;
+    }
+
+    setUploadingAvatar(avatarTargetUserId);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${avatarTargetUserId}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { cacheControl: "3600", upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("id", avatarTargetUserId);
+      if (updateError) throw updateError;
+
+      toast.success("Foto actualizada");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    } catch (error: any) {
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setUploadingAvatar(null);
+      setAvatarTargetUserId(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
   return (
     <AppLayout>
       <div className="animate-fade-in space-y-6">
@@ -135,10 +189,14 @@ const Usuarios = () => {
           </Button>
         </div>
 
+        {/* Hidden file input for avatar upload */}
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+
         <div className="rounded-lg border bg-card shadow-sm">
           <Table>
             <TableHeader>
-            <TableRow className="bg-muted/40">
+              <TableRow className="bg-muted/40">
+                <TableHead className="w-14">Foto</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Correo</TableHead>
                 <TableHead>Rol</TableHead>
@@ -150,15 +208,31 @@ const Usuarios = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Cargando...</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Cargando...</TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No hay usuarios</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No hay usuarios</TableCell>
                 </TableRow>
               ) : (
                 users.map((u) => (
                   <TableRow key={u.id}>
+                    <TableCell>
+                      <div className="relative group cursor-pointer" onClick={() => handleAvatarClick(u.id)}>
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar_url ?? undefined} alt={u.nombre} />
+                          <AvatarFallback className="text-xs bg-muted">{getInitials(u.nombre)}</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Camera className="h-3.5 w-3.5 text-background" />
+                        </div>
+                        {uploadingAvatar === u.id && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/60">
+                            <div className="h-4 w-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium text-sm">{u.nombre}</TableCell>
                     <TableCell className="text-sm">{u.correo}</TableCell>
                     <TableCell>

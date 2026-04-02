@@ -324,33 +324,33 @@ export type Database = {
       observation_errors: {
         Row: {
           activo: boolean
-          category_id: string
+          category_id: string | null
           codigo_error: string | null
           descripcion: string
           descuento_puntos: number | null
           id: string
           severidad: string | null
-          subcategory_id: string
+          subcategory_id: string | null
         }
         Insert: {
           activo?: boolean
-          category_id: string
+          category_id?: string | null
           codigo_error?: string | null
           descripcion: string
           descuento_puntos?: number | null
           id?: string
           severidad?: string | null
-          subcategory_id: string
+          subcategory_id?: string | null
         }
         Update: {
           activo?: boolean
-          category_id?: string
+          category_id?: string | null
           codigo_error?: string | null
           descripcion?: string
           descuento_puntos?: number | null
           id?: string
           severidad?: string | null
-          subcategory_id?: string
+          subcategory_id?: string | null
         }
         Relationships: [
           {
