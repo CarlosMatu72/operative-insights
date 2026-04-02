@@ -13,8 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Building2, UsersRound, Key, AlertTriangle, Settings2, FolderTree, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { ObservationCategoriesConfig } from "@/components/catalogos/ObservationCategoriesConfig";
-import { ObservationSubcategoriesConfig } from "@/components/catalogos/ObservationSubcategoriesConfig";
+import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
 import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
 import { ScoringConfig } from "@/components/reportes/ScoringConfig";
 import { ClassificationFeaturesConfig } from "@/components/catalogos/ClassificationFeaturesConfig";
