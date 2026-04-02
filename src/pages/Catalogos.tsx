@@ -312,12 +312,6 @@ const Catalogos = () => {
               <CatalogTab config={c} />
             </TabsContent>
           ))}
-          <TabsContent value="obs-categories">
-            <ObservationCategoriesConfig />
-          </TabsContent>
-          <TabsContent value="obs-subcategories">
-            <ObservationSubcategoriesConfig />
-          </TabsContent>
           <TabsContent value="obs-errors">
             <ObservationErrorsConfig />
           </TabsContent>

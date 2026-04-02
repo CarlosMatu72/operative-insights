@@ -72,8 +72,6 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [docComment, setDocComment] = useState("");
 
   const [showObsForm, setShowObsForm] = useState(false);
-  const [obsCategoryId, setObsCategoryId] = useState("");
-  const [obsSubcategoryId, setObsSubcategoryId] = useState("");
   const [obsErrorId, setObsErrorId] = useState("");
   const [obsComment, setObsComment] = useState("");
 
