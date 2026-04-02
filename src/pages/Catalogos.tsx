@@ -290,14 +290,6 @@ const Catalogos = () => {
                 {c.label}
               </TabsTrigger>
             ))}
-            <TabsTrigger value="obs-categories" className="gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Categorías Obs.
-            </TabsTrigger>
-            <TabsTrigger value="obs-subcategories" className="gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Subcategorías
-            </TabsTrigger>
             <TabsTrigger value="obs-errors" className="gap-2">
               <AlertTriangle className="h-4 w-4" />
               Errores
