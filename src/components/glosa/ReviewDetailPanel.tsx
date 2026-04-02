@@ -582,9 +582,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   }`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-xs">{(f as any).observation_categories?.nombre}</span>
-                        <span className="text-muted-foreground text-xs">›</span>
-                        <span className="text-xs">{(f as any).observation_subcategories?.nombre}</span>
+                        {(f as any).observation_errors?.codigo_error && (
+                          <Badge variant="outline" className="text-[10px]">{(f as any).observation_errors.codigo_error}</Badge>
+                        )}
+                        <span className="font-medium text-sm">{(f as any).observation_errors?.descripcion || "Error sin descripción"}</span>
                       </div>
                       <p className="text-foreground mt-0.5">
                         {(f as any).observation_errors?.descripcion}
