@@ -14,7 +14,6 @@ import { Plus, Building2, UsersRound, Key, AlertTriangle, Settings2, FolderTree,
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
-import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
 import { ScoringConfig } from "@/components/reportes/ScoringConfig";
 import { ClassificationFeaturesConfig } from "@/components/catalogos/ClassificationFeaturesConfig";
 import { ItemRangesConfig } from "@/components/catalogos/ItemRangesConfig";
