@@ -306,6 +306,14 @@ const Catalogos = () => {
               <Settings2 className="h-4 w-4" />
               Calificación
             </TabsTrigger>
+            <TabsTrigger value="ranges" className="gap-2">
+              <Layers className="h-4 w-4" />
+              Rangos
+            </TabsTrigger>
+            <TabsTrigger value="classification" className="gap-2">
+              <FolderTree className="h-4 w-4" />
+              Clasificación
+            </TabsTrigger>
           </TabsList>
           {catalogs.map((c) => (
             <TabsContent key={c.key} value={c.key}>
@@ -323,6 +331,12 @@ const Catalogos = () => {
           </TabsContent>
           <TabsContent value="scoring">
             <ScoringConfig />
+          </TabsContent>
+          <TabsContent value="ranges">
+            <ItemRangesConfig />
+          </TabsContent>
+          <TabsContent value="classification">
+            <ClassificationFeaturesConfig />
           </TabsContent>
         </Tabs>
       </div>
