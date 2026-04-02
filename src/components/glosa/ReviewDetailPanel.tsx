@@ -167,15 +167,15 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   };
 
   const handleAddFinding = async () => {
-    if (!obsCategoryId || !obsSubcategoryId || !obsErrorId) {
-      toast.error("Selecciona categoría, subcategoría y error");
+    if (!obsErrorId) {
+      toast.error("Selecciona un error");
       return;
     }
     await actions.addFinding.mutateAsync({
-      category_id: obsCategoryId, subcategory_id: obsSubcategoryId,
       observation_error_id: obsErrorId, comentario_inicial: obsComment,
     });
-    setObsSubcategoryId(""); setObsErrorId(""); setObsComment("");
+    setObsErrorId(""); setObsComment("");
+    setShowObsForm(false);
     toast.success("Observación agregada");
   };
 
