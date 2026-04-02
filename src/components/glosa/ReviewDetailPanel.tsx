@@ -537,40 +537,29 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         <CardContent className="space-y-3">
           {showObsForm && (
             <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Categoría</Label>
-                  <Select value={obsCategoryId} onValueChange={(v) => { setObsCategoryId(v); setObsSubcategoryId(""); setObsErrorId(""); }}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger>
-                    <SelectContent>{(categories.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Subcategoría</Label>
-                  <Select value={obsSubcategoryId} onValueChange={(v) => { setObsSubcategoryId(v); setObsErrorId(""); }} disabled={!obsCategoryId}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Subcategoría" /></SelectTrigger>
-                    <SelectContent>{filteredSubcats.map((s) => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Error</Label>
-                  <Select value={obsErrorId} onValueChange={setObsErrorId} disabled={!obsSubcategoryId}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Error" /></SelectTrigger>
-                    <SelectContent>
-                      {filteredErrors.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Seleccionar Error</Label>
+                <Select value={obsErrorId} onValueChange={setObsErrorId}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Buscar error..." /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {activeErrors.map((error) => (
+                      <SelectItem key={error.id} value={error.id}>
+                        {error.codigo_error ? `[${error.codigo_error}] ` : ""}{error.descripcion}
+                        {error.descuento_puntos ? ` (-${error.descuento_puntos} pts)` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1">
                   <Input value={obsComment} onChange={(e) => setObsComment(e.target.value)}
                     placeholder="Comentario opcional..." className="h-8 text-xs" />
                 </div>
+                <Button size="sm" variant="outline" className="h-8 text-xs"
+                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); }}>
+                  Cancelar
+                </Button>
                 <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
                   className="h-8 text-xs gap-1 shrink-0">
                   <Plus className="h-3 w-3" /> Agregar
