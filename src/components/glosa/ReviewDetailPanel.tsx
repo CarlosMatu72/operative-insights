@@ -141,13 +141,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     return itemRanges.find((r) => p >= r.min_partidas && p <= r.max_partidas) ?? null;
   }, [partidas, itemRanges]);
 
-  const filteredSubcats = useMemo(
-    () => (subcategories.data ?? []).filter((s) => s.category_id === obsCategoryId),
-    [subcategories.data, obsCategoryId]
-  );
-  const filteredErrors = useMemo(
-    () => (obsErrors.data ?? []).filter((e) => e.subcategory_id === obsSubcategoryId),
-    [obsErrors.data, obsSubcategoryId]
+  const activeErrors = useMemo(
+    () => (obsErrors.data ?? []).filter((e) => e.activo),
+    [obsErrors.data]
   );
 
   const openFindings = findings.filter((f) => f.is_open);
