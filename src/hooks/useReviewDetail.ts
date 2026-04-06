@@ -508,7 +508,7 @@ export function useReviewActions(caseId: string) {
         console.error("Error calculating score:", e);
       }
       // Audit
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "APROBAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
       });
     },
