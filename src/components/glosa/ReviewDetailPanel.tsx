@@ -205,7 +205,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
-      const { error } = await (supabase as any).from("review_comments").insert({
+      const { error } = await supabase.from("review_comments").insert({
         review_case_id: caseId, comment_text: generalComment.trim(), created_by: user.id,
       });
       if (error) throw error;
