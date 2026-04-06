@@ -62,14 +62,17 @@ export function useGlosadores() {
         }
       }
 
-      const totalApproved = (monthCases ?? []).length || 1;
+      const maxWorkload = Math.max(
+        1,
+        ...Object.values(statsMap).map((s) => s.pedConsolidados + s.remesas)
+      );
 
       return (profiles ?? []).map((p) => ({
         ...p,
         isActive: activeUserIds.has(p.id),
         pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,
         remesas: statsMap[p.id]?.remesas ?? 0,
-        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / totalApproved * 100),
+        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / maxWorkload * 100),
       }));
     },
     refetchInterval: 30000,
