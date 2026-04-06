@@ -575,7 +575,7 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "REABIERTO" as any, updated_by: user!.id,
       }).eq("id", caseId);
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "REABRIR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
       });
     },
