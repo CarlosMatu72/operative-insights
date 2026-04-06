@@ -11,7 +11,6 @@ import Usuarios from "./pages/Usuarios";
 import Catalogos from "./pages/Catalogos";
 import PreRegistro from "./pages/PreRegistro";
 import Glosa from "./pages/Glosa";
-
 import Reportes from "./pages/Reportes";
 import NotFound from "./pages/NotFound";
 
