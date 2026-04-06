@@ -220,7 +220,7 @@ export function useReviewComments(caseId: string) {
   return useQuery({
     queryKey: ["review-comments", caseId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("review_comments")
         .select("*, profiles:created_by(nombre)")
         .eq("review_case_id", caseId)
@@ -508,7 +508,7 @@ export function useReviewActions(caseId: string) {
         console.error("Error calculating score:", e);
       }
       // Audit
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "APROBAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
       });
     },
@@ -537,7 +537,7 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "RECHAZADO" as any, rejected_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "RECHAZAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id, details: { motivo },
       });
     },
@@ -575,7 +575,7 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "REABIERTO" as any, updated_by: user!.id,
       }).eq("id", caseId);
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "REABRIR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,
       });
     },
