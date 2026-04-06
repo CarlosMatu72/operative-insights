@@ -220,7 +220,7 @@ export function useReviewComments(caseId: string) {
   return useQuery({
     queryKey: ["review-comments", caseId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("review_comments")
         .select("*, profiles:created_by(nombre)")
         .eq("review_case_id", caseId)
