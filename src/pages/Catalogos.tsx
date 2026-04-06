@@ -294,6 +294,14 @@ const Catalogos = () => {
               <AlertTriangle className="h-4 w-4" />
               Errores
             </TabsTrigger>
+            <TabsTrigger value="obs-categories" className="gap-2">
+              <Tag className="h-4 w-4" />
+              Categorías
+            </TabsTrigger>
+            <TabsTrigger value="obs-subcategories" className="gap-2">
+              <GitBranch className="h-4 w-4" />
+              Subcategorías
+            </TabsTrigger>
             <TabsTrigger value="scoring" className="gap-2">
               <Settings2 className="h-4 w-4" />
               Calificación
