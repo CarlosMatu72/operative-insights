@@ -17,6 +17,8 @@ import { ObservationErrorsConfig } from "@/components/catalogos/ObservationError
 import { ScoringConfig } from "@/components/reportes/ScoringConfig";
 import { ClassificationFeaturesConfig } from "@/components/catalogos/ClassificationFeaturesConfig";
 import { ItemRangesConfig } from "@/components/catalogos/ItemRangesConfig";
+import { ObservationCategoriesConfig } from "@/components/catalogos/ObservationCategoriesConfig";
+import { ObservationSubcategoriesConfig } from "@/components/catalogos/ObservationSubcategoriesConfig";
 
 type CatalogType = "branches" | "clients" | "executives" | "customs_keys";
 
