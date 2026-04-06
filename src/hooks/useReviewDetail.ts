@@ -458,46 +458,47 @@ export function useReviewActions(caseId: string) {
         status: "APROBADO" as any, approved_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
 
-      // Calculate and save score
+      // Calculate and save score using PRD formula
       try {
+        // correctionRounds = rounds with round_number > 1
         const correctionRounds = (rounds ?? []).filter((r: any) => r.round_number > 1).length;
-        const { data: findings } = await supabase
-          .from("review_findings").select("observation_error_id, is_open")
-          .eq("review_case_id", caseId);
-        const totalErrors = (findings ?? []).length;
 
-        // Get active scoring rule
-        const { data: scoringRules } = await supabase
-          .from("scoring_rules").select("*").eq("activo", true).limit(1);
-        const rule = scoringRules?.[0];
-        const baseScore = rule?.valor_base ?? 100;
-        const classWeight = Number(rule?.classification_weight ?? 0.2);
-        const obsWeight = Number(rule?.observations_weight ?? 0.8);
+        // Fetch total active errors in catalog (denominator for observations score)
+        const [findingsRes, totalErrorsRes] = await Promise.all([
+          supabase.from("review_findings").select("observation_error_id").eq("review_case_id", caseId),
+          supabase.from("observation_errors").select("id", { count: "exact", head: true }).eq("activo", true),
+        ]);
+        const errorsDetected = (findingsRes.data ?? []).length;
+        const totalPossibleErrors = totalErrorsRes.count ?? 1;
 
-        // Classification score: penalize by correction rounds
-        const classScore = correctionRounds === 0 ? baseScore : Math.max(0, baseScore - correctionRounds * 15);
+        // SCORE CLASIFICACIÓN (20 pts max) — fixed scale by correction rounds
+        const classScaleMap: Record<number, number> = { 0: 20, 1: 18, 2: 15, 3: 12, 4: 8 };
+        const scoreClasificacion = correctionRounds >= 5 ? 5 : (classScaleMap[correctionRounds] ?? 5);
 
-        // Observations score: penalize by error count
-        let penaltyFromErrors = 0;
-        if (rule && findings) {
-          const errorIds = findings.map((f) => f.observation_error_id).filter(Boolean) as string[];
-          if (errorIds.length > 0) {
-            const { data: penalties } = await supabase
-              .from("scoring_rule_error_penalties").select("observation_error_id, penalty_points")
-              .eq("scoring_rule_id", rule.id).in("observation_error_id", errorIds);
-            penaltyFromErrors = (penalties ?? []).reduce((sum, p) => sum + Number(p.penalty_points), 0);
-          }
+        // SCORE OBSERVACIONES (80 pts max)
+        // Step 1: proportion = (total_posibles - detectados) / total_posibles × 80
+        const proportion = Math.max(0, (totalPossibleErrors - errorsDetected) / totalPossibleErrors);
+        let scoreObservaciones = Math.round(80 * proportion);
+
+        // Step 2: subtract direct penalties from observation_errors.descuento_puntos
+        const errorIds = (findingsRes.data ?? []).map((f) => f.observation_error_id).filter(Boolean) as string[];
+        if (errorIds.length > 0) {
+          const { data: errorDetails } = await supabase
+            .from("observation_errors")
+            .select("descuento_puntos")
+            .in("id", errorIds);
+          const totalPenalty = (errorDetails ?? []).reduce((sum, e) => sum + Number(e.descuento_puntos ?? 0), 0);
+          scoreObservaciones = Math.max(0, scoreObservaciones - totalPenalty);
         }
-        const obsScore = Math.max(0, baseScore - (totalErrors * 5) - penaltyFromErrors);
 
-        const scoreTotal = Math.round(classScore * classWeight + obsScore * obsWeight);
+        const scoreTotal = scoreClasificacion + scoreObservaciones;
 
         await supabase.from("review_scores").insert({
           review_case_id: caseId,
           score_total: scoreTotal,
-          score_classification: Math.round(classScore),
-          score_observations: Math.round(obsScore),
-          total_errors: totalErrors,
+          score_classification: scoreClasificacion,
+          score_observations: scoreObservaciones,
+          total_errors: errorsDetected,
           correction_rounds: correctionRounds,
           calculated_by: user!.id,
         });
