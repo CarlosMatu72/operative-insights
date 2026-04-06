@@ -110,11 +110,14 @@ export function useKPIs() {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const [pendRes, revRes, aprobRes, allApproved] = await Promise.all([
+      const [pendRes, revRes, aprobRes, allApproved, pausRes, rechRes, totalRes] = await Promise.all([
         supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]),
         supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION"),
         supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
         supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "RECHAZADO"),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }),
       ]);
 
       const { data: docTypes } = await supabase.from("document_types").select("id, code");
@@ -133,6 +136,9 @@ export function useKPIs() {
         aprobadosMes: aprobRes.count ?? 0,
         remesasMes,
         pedConMes,
+        pausados: pausRes.count ?? 0,
+        rechazados: rechRes.count ?? 0,
+        total: totalRes.count ?? 0,
       };
     },
     refetchInterval: 30000,
