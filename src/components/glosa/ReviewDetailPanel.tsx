@@ -175,7 +175,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     }
     await actions.addFinding.mutateAsync({
       observation_error_id: obsErrorId, comentario_inicial: obsComment,
+      category_id: obsCategoryId || undefined,
+      subcategory_id: obsSubcategoryId || undefined,
     });
+    setObsCategoryId(""); setObsSubcategoryId("");
     setObsErrorId(""); setObsComment("");
     setShowObsForm(false);
     toast.success("Observación agregada");
