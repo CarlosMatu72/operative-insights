@@ -47,6 +47,14 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
 
       const nextRevision = ((existingRevisions?.[0]?.remesa_revision_number) ?? 0) + 1;
 
+      // Check for duplicate reference
+      const generatedRef = `${selectedRemesa.remesa_base_reference}-${nextRevision}`;
+      const { count } = await supabase
+        .from("review_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("reference", generatedRef);
+      if (count && count > 0) throw new Error(`La revisión ${generatedRef} ya existe`);
+
       const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
       if (!folio) throw new Error("Error generando folio");
 

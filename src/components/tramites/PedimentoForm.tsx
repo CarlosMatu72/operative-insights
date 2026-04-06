@@ -24,6 +24,15 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       const docType = (documentTypes.data ?? []).find(d => d.code === "PEDIMENTO");
       if (!docType) throw new Error("Tipo de documento PEDIMENTO no encontrado");
 
+      // Check for duplicate reference
+      if (referencia.trim()) {
+        const { count } = await supabase
+          .from("review_cases")
+          .select("id", { count: "exact", head: true })
+          .eq("reference", referencia.trim());
+        if (count && count > 0) throw new Error(`La referencia "${referencia.trim()}" ya existe en el sistema`);
+      }
+
       const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "PEDIMENTO" });
       if (!folio) throw new Error("Error generando folio");
 
