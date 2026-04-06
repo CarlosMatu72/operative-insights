@@ -557,7 +557,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                     placeholder="Comentario opcional..." className="h-8 text-xs" />
                 </div>
                 <Button size="sm" variant="outline" className="h-8 text-xs"
-                  onClick={() => { setShowObsForm(false); setObsCategoryId(""); setObsSubcategoryId(""); setObsErrorId(""); setObsComment(""); }}>
+                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); }}>
                   Cancelar
                 </Button>
                 <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
