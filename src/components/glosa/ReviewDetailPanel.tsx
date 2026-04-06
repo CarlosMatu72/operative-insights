@@ -478,7 +478,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                 {features.map((f) => (
                   <div key={f.id} className="flex items-center gap-2.5">
                     <Checkbox id={`cl-${f.id}`} checked={classValues[f.id] ?? false}
-                      onCheckedChange={(v) => setClassValues((p) => ({ ...p, [f.id]: !!v }))}
+                      onCheckedChange={(v) => {
+                        setManuallyChanged(prev => new Set(prev).add(f.id));
+                        setClassValues((p) => ({ ...p, [f.id]: !!v }));
+                      }}
                       disabled={isReadOnly} />
                     <label htmlFor={`cl-${f.id}`} className="text-sm cursor-pointer select-none flex-1">{f.nombre}</label>
                     {f.descripcion && <span className="text-[10px] text-muted-foreground shrink-0">({f.descripcion})</span>}
