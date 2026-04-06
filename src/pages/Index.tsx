@@ -1,16 +1,18 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { Users, FileText, ClipboardCheck, BarChart3 } from "lucide-react";
-
-const stats = [
-  { label: "Trámites registrados", value: "—", icon: FileText, color: "bg-primary/10 text-primary" },
-  { label: "En revisión", value: "—", icon: ClipboardCheck, color: "bg-warning/10 text-warning" },
-  { label: "Aprobados", value: "—", icon: BarChart3, color: "bg-success/10 text-success" },
-  { label: "Usuarios activos", value: "—", icon: Users, color: "bg-accent text-accent-foreground" },
-];
+import { useKPIs } from "@/hooks/useTableroData";
 
 const Index = () => {
   const { profile } = useAuth();
+  const { data: kpis } = useKPIs();
+
+  const stats = [
+    { label: "Trámites registrados", value: kpis?.pendientes ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
+    { label: "En revisión", value: kpis?.enRevision ?? "—", icon: ClipboardCheck, color: "bg-warning/10 text-warning" },
+    { label: "Aprobados", value: kpis?.aprobadosMes ?? "—", icon: BarChart3, color: "bg-success/10 text-success" },
+    { label: "Usuarios activos", value: "—", icon: Users, color: "bg-accent text-accent-foreground" },
+  ];
 
   return (
     <AppLayout>
@@ -41,12 +43,6 @@ const Index = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="rounded-lg border bg-card p-8 text-center shadow-sm">
-          <p className="text-muted-foreground">
-            Los módulos de trámites, panel de glosa y reportes se irán habilitando progresivamente.
-          </p>
         </div>
       </div>
     </AppLayout>
