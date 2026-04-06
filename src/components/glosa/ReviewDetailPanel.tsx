@@ -637,12 +637,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                         )}
                         <span className="font-medium text-sm">{(f as any).observation_errors?.descripcion || "Error sin descripción"}</span>
                       </div>
-                      <p className="text-foreground mt-0.5">
-                        {(f as any).observation_errors?.descripcion}
-                        {(f as any).observation_errors?.descuento_puntos && (
-                          <Badge variant="outline" className="ml-2 text-[10px]">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
-                        )}
-                      </p>
+                      {(f as any).observation_errors?.descuento_puntos && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
+                      )}
                       {f.comentario_inicial && <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">

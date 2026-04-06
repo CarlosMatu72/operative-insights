@@ -260,13 +260,14 @@ export function useGlosaActions() {
     mutationFn: async (caseId: string) => {
     const { data: activeSessions } = await supabase
         .from("review_sessions")
-        .select("id, started_at, duration_seconds")
+        .select("id, started_at, paused_at, duration_seconds")
         .eq("review_case_id", caseId)
         .eq("user_id", user!.id)
         .eq("session_status", "active");
 
       for (const s of activeSessions ?? []) {
-        const newElapsed = Math.floor((Date.now() - new Date(s.started_at).getTime()) / 1000);
+        const resumedAt = s.paused_at ?? s.started_at;
+        const newElapsed = Math.floor((Date.now() - new Date(resumedAt).getTime()) / 1000);
         await supabase
           .from("review_sessions")
           .update({
