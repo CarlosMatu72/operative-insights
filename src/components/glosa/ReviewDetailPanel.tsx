@@ -52,7 +52,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const { data: findings = [] } = useReviewFindings(caseId);
   const { data: features = [] } = useClassificationFeatures();
   const { data: rules = [] } = useClassificationRules();
-  const { categories, subcategories, errors: obsErrors } = useObservationCatalog();
+  const { errors: obsErrors } = useObservationCatalog();
   const { data: itemRanges = [] } = useItemRanges();
   const { data: customsKeys = [] } = useCustomsKeys();
   const { data: rounds = [] } = useReviewRounds(caseId);
@@ -72,8 +72,6 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [docComment, setDocComment] = useState("");
 
   const [showObsForm, setShowObsForm] = useState(false);
-  const [obsCategoryId, setObsCategoryId] = useState("");
-  const [obsSubcategoryId, setObsSubcategoryId] = useState("");
   const [obsErrorId, setObsErrorId] = useState("");
   const [obsComment, setObsComment] = useState("");
 
@@ -175,10 +173,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     }
     await actions.addFinding.mutateAsync({
       observation_error_id: obsErrorId, comentario_inicial: obsComment,
-      category_id: obsCategoryId || undefined,
-      subcategory_id: obsSubcategoryId || undefined,
     });
-    setObsCategoryId(""); setObsSubcategoryId("");
     setObsErrorId(""); setObsComment("");
     setShowObsForm(false);
     toast.success("Observación agregada");
@@ -542,32 +537,6 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         <CardContent className="space-y-3">
           {showObsForm && (
             <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Categoría (opcional)</Label>
-                  <Select value={obsCategoryId} onValueChange={(v) => { setObsCategoryId(v); setObsSubcategoryId(""); }}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar categoría..." /></SelectTrigger>
-                    <SelectContent>
-                      {(categories.data ?? []).map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {obsCategoryId && (
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Subcategoría (opcional)</Label>
-                    <Select value={obsSubcategoryId} onValueChange={setObsSubcategoryId}>
-                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar subcategoría..." /></SelectTrigger>
-                      <SelectContent>
-                        {(subcategories.data ?? []).filter((s) => s.category_id === obsCategoryId).map((sub) => (
-                          <SelectItem key={sub.id} value={sub.id}>{sub.nombre}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Seleccionar Error</Label>
                 <Select value={obsErrorId} onValueChange={setObsErrorId}>
@@ -588,7 +557,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                     placeholder="Comentario opcional..." className="h-8 text-xs" />
                 </div>
                 <Button size="sm" variant="outline" className="h-8 text-xs"
-                  onClick={() => { setShowObsForm(false); setObsCategoryId(""); setObsSubcategoryId(""); setObsErrorId(""); setObsComment(""); }}>
+                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); }}>
                   Cancelar
                 </Button>
                 <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
