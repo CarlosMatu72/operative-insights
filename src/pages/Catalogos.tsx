@@ -323,6 +323,12 @@ const Catalogos = () => {
           <TabsContent value="obs-errors">
             <ObservationErrorsConfig />
           </TabsContent>
+          <TabsContent value="obs-categories">
+            <ObservationCategoriesConfig />
+          </TabsContent>
+          <TabsContent value="obs-subcategories">
+            <ObservationSubcategoriesConfig />
+          </TabsContent>
           <TabsContent value="scoring">
             <ScoringConfig />
           </TabsContent>
