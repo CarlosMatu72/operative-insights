@@ -27,6 +27,16 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       const docType = (documentTypes.data ?? []).find(d => d.code === "CONSOLIDADO");
       if (!docType) throw new Error("Tipo CONSOLIDADO no encontrado");
 
+      // Check for duplicate reference
+      const refToCheck = referenciaConsolidado || `CON-${selectedRemesa.remesa_base_reference}`;
+      if (refToCheck.trim()) {
+        const { count } = await supabase
+          .from("review_cases")
+          .select("id", { count: "exact", head: true })
+          .eq("reference", refToCheck.trim());
+        if (count && count > 0) throw new Error(`La referencia "${refToCheck.trim()}" ya existe en el sistema`);
+      }
+
       const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "CONSOLIDADO" });
       if (!folio) throw new Error("Error generando folio");
 

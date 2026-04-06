@@ -24,6 +24,15 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       const docTypeRemesa = (documentTypes.data ?? []).find(d => d.code === "REMESA");
       if (!docTypeAlta || !docTypeRemesa) throw new Error("Tipos de documento no encontrados");
 
+      // Check for duplicate reference
+      if (referencia.trim()) {
+        const { count } = await supabase
+          .from("review_cases")
+          .select("id", { count: "exact", head: true })
+          .eq("reference", referencia.trim());
+        if (count && count > 0) throw new Error(`La referencia "${referencia.trim()}" ya existe en el sistema`);
+      }
+
       // Create the alta remesa base case
       const { data: folioAlta } = await supabase.rpc("generate_internal_folio", { doc_code: "ALTA_REMESA" });
       if (!folioAlta) throw new Error("Error generando folio");
