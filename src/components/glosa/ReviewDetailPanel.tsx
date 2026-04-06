@@ -537,32 +537,6 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         <CardContent className="space-y-3">
           {showObsForm && (
             <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Categoría (opcional)</Label>
-                  <Select value={obsCategoryId} onValueChange={(v) => { setObsCategoryId(v); setObsSubcategoryId(""); }}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar categoría..." /></SelectTrigger>
-                    <SelectContent>
-                      {(categories.data ?? []).map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {obsCategoryId && (
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Subcategoría (opcional)</Label>
-                    <Select value={obsSubcategoryId} onValueChange={setObsSubcategoryId}>
-                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar subcategoría..." /></SelectTrigger>
-                      <SelectContent>
-                        {(subcategories.data ?? []).filter((s) => s.category_id === obsCategoryId).map((sub) => (
-                          <SelectItem key={sub.id} value={sub.id}>{sub.nombre}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Seleccionar Error</Label>
                 <Select value={obsErrorId} onValueChange={setObsErrorId}>
