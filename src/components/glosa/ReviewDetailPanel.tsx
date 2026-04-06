@@ -52,7 +52,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const { data: findings = [] } = useReviewFindings(caseId);
   const { data: features = [] } = useClassificationFeatures();
   const { data: rules = [] } = useClassificationRules();
-  const { categories, subcategories, errors: obsErrors } = useObservationCatalog();
+  const { errors: obsErrors } = useObservationCatalog();
   const { data: itemRanges = [] } = useItemRanges();
   const { data: customsKeys = [] } = useCustomsKeys();
   const { data: rounds = [] } = useReviewRounds(caseId);
