@@ -72,6 +72,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [docComment, setDocComment] = useState("");
 
   const [showObsForm, setShowObsForm] = useState(false);
+  const [manuallyChanged, setManuallyChanged] = useState<Set<string>>(new Set());
   const [obsErrorId, setObsErrorId] = useState("");
   const [obsComment, setObsComment] = useState("");
 
@@ -115,24 +116,26 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   }, [documentation]);
 
   useEffect(() => {
-    if (features.length > 0) {
-      const vals: Record<string, boolean> = {};
-      for (const f of features) {
-        const existing = classifications.find((c) => (c as any).classification_feature_id === f.id);
-        if (existing) {
-          vals[f.id] = existing.value_boolean;
-        } else {
-          const rule = rules.find(
-            (r) => r.classification_feature_id === f.id &&
-              (!r.sucursal_id || r.sucursal_id === branchId) &&
-              (!r.cliente_id || r.cliente_id === clientId) &&
-              (!r.customs_key_id || r.customs_key_id === customsKeyId)
-          );
-          vals[f.id] = rule?.default_value ?? false;
-        }
+    if (features.length === 0) return;
+
+    const vals: Record<string, boolean> = {};
+    for (const f of features) {
+      const existing = classifications.find((c) => (c as any).classification_feature_id === f.id);
+
+      if (existing) {
+        vals[f.id] = existing.value_boolean;
+      } else if (manuallyChanged.has(f.id)) {
+        vals[f.id] = classValues[f.id] ?? false;
+      } else {
+        const ruleForBranch = rules.find(r => r.classification_feature_id === f.id && r.sucursal_id && r.sucursal_id === branchId && !r.cliente_id && !r.customs_key_id);
+        const ruleForClient = rules.find(r => r.classification_feature_id === f.id && r.cliente_id && r.cliente_id === clientId && !r.sucursal_id && !r.customs_key_id);
+        const ruleForKey = rules.find(r => r.classification_feature_id === f.id && r.customs_key_id && r.customs_key_id === customsKeyId && !r.sucursal_id && !r.cliente_id);
+        const ruleDefault = rules.find(r => r.classification_feature_id === f.id && !r.sucursal_id && !r.cliente_id && !r.customs_key_id);
+        const matchedRule = ruleForBranch ?? ruleForClient ?? ruleForKey ?? ruleDefault;
+        vals[f.id] = matchedRule?.default_value ?? false;
       }
-      setClassValues(vals);
     }
+    setClassValues(vals);
   }, [features, classifications, rules, branchId, clientId, customsKeyId]);
 
   const detectedRange = useMemo(() => {
@@ -475,7 +478,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                 {features.map((f) => (
                   <div key={f.id} className="flex items-center gap-2.5">
                     <Checkbox id={`cl-${f.id}`} checked={classValues[f.id] ?? false}
-                      onCheckedChange={(v) => setClassValues((p) => ({ ...p, [f.id]: !!v }))}
+                      onCheckedChange={(v) => {
+                        setManuallyChanged(prev => new Set(prev).add(f.id));
+                        setClassValues((p) => ({ ...p, [f.id]: !!v }));
+                      }}
                       disabled={isReadOnly} />
                     <label htmlFor={`cl-${f.id}`} className="text-sm cursor-pointer select-none flex-1">{f.nombre}</label>
                     {f.descripcion && <span className="text-[10px] text-muted-foreground shrink-0">({f.descripcion})</span>}
