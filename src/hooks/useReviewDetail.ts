@@ -537,7 +537,7 @@ export function useReviewActions(caseId: string) {
       await supabase.from("review_cases").update({
         status: "RECHAZADO" as any, rejected_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
-      await (supabase as any).from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: "RECHAZAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id, details: { motivo },
       });
     },
