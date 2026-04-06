@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 const mainItems = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Usuarios", url: "/usuarios", icon: Users, adminOnly: true },
-  { title: "Catálogos", url: "/catalogos", icon: FolderOpen },
+  { title: "Catálogos", url: "/catalogos", icon: FolderOpen, adminOnly: true },
   { title: "Pre-Registro", url: "/pre-registro", icon: FileText },
   { title: "Panel de Glosa", url: "/glosa", icon: ClipboardCheck },
   { title: "Reportes", url: "/reportes", icon: BarChart3 },
