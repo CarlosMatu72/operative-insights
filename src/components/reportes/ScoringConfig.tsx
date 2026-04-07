@@ -53,17 +53,11 @@ export function ScoringConfig() {
       if (rule.id) {
         await supabase.from("scoring_rules").update({
           nombre: rule.nombre,
-          valor_base: Number(rule.valor_base),
-          classification_weight: Number(rule.classification_weight),
-          observations_weight: Number(rule.observations_weight),
           activo: rule.activo,
         }).eq("id", rule.id);
       } else {
         await supabase.from("scoring_rules").insert({
           nombre: rule.nombre,
-          valor_base: Number(rule.valor_base),
-          classification_weight: Number(rule.classification_weight),
-          observations_weight: Number(rule.observations_weight),
         });
       }
     },
@@ -104,12 +98,12 @@ export function ScoringConfig() {
   });
 
   const openNewRule = () => {
-    setEditRule({ nombre: "", valor_base: "100", classification_weight: "0.2", observations_weight: "0.8", activo: true });
+    setEditRule({ nombre: "", activo: true });
     setEditOpen(true);
   };
 
   const openEditRule = (r: any) => {
-    setEditRule({ ...r, valor_base: String(r.valor_base), classification_weight: String(r.classification_weight), observations_weight: String(r.observations_weight) });
+    setEditRule({ id: r.id, nombre: r.nombre, activo: r.activo });
     setEditOpen(true);
   };
 
@@ -126,9 +120,6 @@ export function ScoringConfig() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
-                  <TableHead>Base</TableHead>
-                  <TableHead>Peso Clasificación</TableHead>
-                  <TableHead>Peso Observaciones</TableHead>
                   <TableHead>Activa</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
@@ -137,9 +128,6 @@ export function ScoringConfig() {
                 {rules.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
-                    <TableCell className="text-sm">{r.valor_base}</TableCell>
-                    <TableCell className="text-sm">{(Number(r.classification_weight) * 100).toFixed(0)}%</TableCell>
-                    <TableCell className="text-sm">{(Number(r.observations_weight) * 100).toFixed(0)}%</TableCell>
                     <TableCell>
                       <span className={`text-xs font-medium ${r.activo ? "text-success" : "text-muted-foreground"}`}>
                         {r.activo ? "Sí" : "No"}
@@ -149,7 +137,7 @@ export function ScoringConfig() {
                   </TableRow>
                 ))}
                 {rules.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-sm text-muted-foreground">Sin reglas configuradas</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={3} className="text-center py-6 text-sm text-muted-foreground">Sin reglas configuradas</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -203,20 +191,10 @@ export function ScoringConfig() {
                 <Label className="text-xs">Nombre</Label>
                 <Input value={editRule.nombre} onChange={(e) => setEditRule({ ...editRule, nombre: e.target.value })} className="h-9 text-sm" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Valor Base</Label>
-                  <Input type="number" value={editRule.valor_base} onChange={(e) => setEditRule({ ...editRule, valor_base: e.target.value })} className="h-9 text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Peso Clasificación</Label>
-                  <Input type="number" step="0.05" value={editRule.classification_weight} onChange={(e) => setEditRule({ ...editRule, classification_weight: e.target.value })} className="h-9 text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Peso Observaciones</Label>
-                  <Input type="number" step="0.05" value={editRule.observations_weight} onChange={(e) => setEditRule({ ...editRule, observations_weight: e.target.value })} className="h-9 text-sm" />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                La fórmula de calificación es fija: 20 pts por clasificación + 80 pts por observaciones.
+                Las penalizaciones adicionales se configuran en la sección de abajo.
+              </p>
               {editRule.id && (
                 <div className="flex items-center gap-2">
                   <Switch checked={editRule.activo} onCheckedChange={(v) => setEditRule({ ...editRule, activo: v })} />
