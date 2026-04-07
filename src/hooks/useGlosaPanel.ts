@@ -13,6 +13,7 @@ export interface GlosaCaseRow {
   last_started_at: string | null;
   assigned_glosador_user_id: string | null;
   document_types: { code: string; name: string } | null;
+  clients: { nombre: string } | null;
   branches: { nombre: string } | null;
   executives: { nombre: string } | null;
   glosador: { nombre: string } | null;
@@ -41,6 +42,7 @@ export function useGlosaCases(filters: {
         .select(`
           *,
           document_types(code, name),
+          clients(nombre),
           branches(nombre),
           executives(nombre),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
@@ -90,6 +92,7 @@ export function useGlosaCases(filters: {
       let result: GlosaCaseRow[] = (data ?? []).map((c) => ({
         ...c,
         document_types: c.document_types as any,
+        clients: c.clients as any,
         branches: c.branches as any,
         executives: c.executives as any,
         glosador: c.glosador as any,
