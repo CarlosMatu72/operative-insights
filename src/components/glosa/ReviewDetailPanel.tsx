@@ -19,8 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck, MessageSquare } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck, MessageSquare, Search } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const correctionStatuses = [
@@ -40,6 +40,24 @@ const findingStatusLabels: Record<string, { label: string; className: string }> 
 interface Props {
   caseId: string;
   onClose: () => void;
+}
+
+function ScoreBadgeInline({ caseId }: { caseId: string }) {
+  const { data: score } = useQuery({
+    queryKey: ["review-score-badge", caseId],
+    queryFn: async () => {
+      const { data } = await supabase.from("review_scores").select("score_total").eq("review_case_id", caseId).maybeSingle();
+      return data;
+    },
+  });
+  if (!score?.score_total) return null;
+  const val = Number(score.score_total);
+  const color = val >= 85 ? "text-success bg-success/10 border-success/20" : val >= 70 ? "text-warning bg-warning/10 border-warning/20" : "text-destructive bg-destructive/10 border-destructive/20";
+  return (
+    <span className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-sm font-bold ${color}`}>
+      {val}/100
+    </span>
+  );
 }
 
 const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
@@ -74,6 +92,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [showObsForm, setShowObsForm] = useState(false);
   const [manuallyChanged, setManuallyChanged] = useState<Set<string>>(new Set());
   const [obsErrorId, setObsErrorId] = useState("");
+  const [obsSearch, setObsSearch] = useState("");
   const [obsComment, setObsComment] = useState("");
 
   const [statusUpdateFinding, setStatusUpdateFinding] = useState<string | null>(null);
@@ -177,7 +196,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     await actions.addFinding.mutateAsync({
       observation_error_id: obsErrorId, comentario_inicial: obsComment,
     });
-    setObsErrorId(""); setObsComment("");
+    setObsErrorId(""); setObsComment(""); setObsSearch("");
     setShowObsForm(false);
     toast.success("Observación agregada");
   };
