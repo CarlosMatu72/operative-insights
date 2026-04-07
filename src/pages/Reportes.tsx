@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { useReportData, useReportScores, useReportFindings, useReportSessions, type ReportFilters } from "@/hooks/useReportesData";
-import { ScoringConfig } from "@/components/reportes/ScoringConfig";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, ResponsiveContainer } from "recharts";
-import { BarChart3, FileText, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, Settings2, Filter } from "lucide-react";
+import { BarChart3, FileText, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp, Filter } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 
 import { StatusBadge } from "@/components/StatusBadge";
@@ -257,7 +257,7 @@ const Reportes = () => {
           <TabsList>
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
             <TabsTrigger value="table" className="gap-1.5 text-xs"><FileText className="h-3.5 w-3.5" /> Detallado</TabsTrigger>
-            {isAdmin && <TabsTrigger value="config" className="gap-1.5 text-xs"><Settings2 className="h-3.5 w-3.5" /> Configuración</TabsTrigger>}
+            
           </TabsList>
 
           {/* ── Dashboard ── */}
@@ -455,12 +455,6 @@ const Reportes = () => {
             </Card>
           </TabsContent>
 
-          {/* ── Config (admin) ── */}
-          {isAdmin && (
-            <TabsContent value="config" className="mt-4">
-              <ScoringConfig />
-            </TabsContent>
-          )}
         </Tabs>
       </div>
     </AppLayout>
