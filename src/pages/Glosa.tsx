@@ -70,10 +70,34 @@ const Glosa = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Mis Revisiones</h1>
             <p className="text-sm text-muted-foreground">
-              Bandeja de trabajo — {cases.length} trámites
+              Bandeja de trabajo — {cases.length} trámite{cases.length !== 1 ? "s" : ""}
+              {cases.filter(c => c.has_active_session).length > 0 && (
+                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
+                  · {cases.filter(c => c.has_active_session).length} activo
+                </span>
+              )}
             </p>
           </div>
         </div>
+
+        {cases.some((c) => c.has_active_session) && (
+          <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/[0.04] px-4 py-2.5">
+            <span className="inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-sm font-medium text-primary">Revisión en curso</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto h-7 text-xs gap-1.5"
+              onClick={() => {
+                const activeCase = cases.find((c) => c.has_active_session);
+                if (activeCase) pauseGlosa.mutate(activeCase.id);
+              }}
+              disabled={pauseGlosa.isPending}
+            >
+              <Pause className="h-3 w-3" /> Pausar
+            </Button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex items-end gap-3 flex-wrap">
@@ -135,7 +159,8 @@ const Glosa = () => {
               <TableRow className="bg-muted/40">
                 <TableHead className="text-xs font-semibold">Referencia</TableHead>
                 <TableHead className="text-xs font-semibold">Ejecutivo</TableHead>
-                <TableHead className="text-xs font-semibold">Sucursal</TableHead>
+                 <TableHead className="text-xs font-semibold">Sucursal</TableHead>
+                 <TableHead className="text-xs font-semibold">Cliente</TableHead>
                 <TableHead className="text-xs font-semibold">Tipo</TableHead>
                 <TableHead className="text-xs font-semibold">Estatus</TableHead>
                 <TableHead className="text-xs font-semibold text-center">Obs.</TableHead>
@@ -148,7 +173,7 @@ const Glosa = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       <span className="text-sm">Cargando trámites...</span>
@@ -157,7 +182,7 @@ const Glosa = () => {
                 </TableRow>
               ) : cases.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-16">
+                  <TableCell colSpan={11} className="text-center py-16">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Inbox className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">
@@ -182,7 +207,7 @@ const Glosa = () => {
                       selectedCaseId === c.id
                         ? "bg-primary/[0.08] border-l-2 border-l-primary"
                         : c.has_active_session
-                        ? "bg-primary/[0.04] border-l-2 border-l-primary"
+                        ? "bg-primary/[0.06] border-l-2 border-l-primary"
                         : "hover:bg-muted/30"
                     }`}
                     onClick={() => setSelectedCaseId(c.id)}
@@ -195,6 +220,7 @@ const Glosa = () => {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{c.executives?.nombre ?? "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{c.branches?.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{c.clients?.nombre ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[11px] font-normal">
                         {c.document_types?.name ?? "—"}
