@@ -168,7 +168,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             {isValidInput ? (
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-primary" />
             ) : (
               <AlertCircle className="h-4 w-4 text-destructive" />
             )}
