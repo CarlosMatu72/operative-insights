@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, role } = useAuth();
@@ -28,6 +28,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {role === "admin" ? "Admin" : "Glosa"}
               </span>
               <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.nombre} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                   {initials}
                 </AvatarFallback>
