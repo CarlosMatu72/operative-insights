@@ -103,7 +103,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
         payload.sucursal_id = sucursalId && sucursalId !== "_none" ? sucursalId : null;
       }
       if (editId) {
-        const { error } = await supabase.from(config.key).update(payload).eq("id", editId);
+        const { error } = await supabase.from(config.key).update(payload as any).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from(config.key).insert(payload as any);
