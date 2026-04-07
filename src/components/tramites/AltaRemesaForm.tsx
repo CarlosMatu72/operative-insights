@@ -17,6 +17,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const [referencia, setReferencia] = useState("");
   const [sucursalId, setSucursalId] = useState("");
   const [clienteId, setClienteId] = useState("");
+  const [totalEsperado, setTotalEsperado] = useState("");
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -46,6 +47,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
         status: "REGISTRADO",
         remesa_base_reference: referencia,
         is_active_remesa: true,
+        total_remesas_esperadas: totalEsperado ? parseInt(totalEsperado) : null,
         created_by: user?.id,
         updated_by: user?.id,
       }).select().single();
@@ -76,6 +78,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       setReferencia("");
       setSucursalId("");
       setClienteId("");
+      setTotalEsperado("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       onSuccess();
@@ -111,6 +114,20 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Total de remesas esperadas <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Input
+            type="number"
+            min="1"
+            value={totalEsperado}
+            onChange={e => setTotalEsperado(e.target.value)}
+            placeholder="Ej: 27"
+            className="max-w-[120px]"
+          />
+          <p className="text-xs text-muted-foreground">
+            Indica cuántas remesas se revisarán en total. Ayuda a validar el consolidado al cierre.
+          </p>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
