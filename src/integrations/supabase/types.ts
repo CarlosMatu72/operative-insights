@@ -649,7 +649,9 @@ export type Database = {
           rejected_at: string | null
           remesa_base_reference: string | null
           remesa_revision_number: number | null
+          remesas_faltantes_comentario: string | null
           status: Database["public"]["Enums"]["review_status"]
+          total_remesas_esperadas: number | null
           updated_at: string
           updated_by: string | null
         }
@@ -675,7 +677,9 @@ export type Database = {
           rejected_at?: string | null
           remesa_base_reference?: string | null
           remesa_revision_number?: number | null
+          remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
+          total_remesas_esperadas?: number | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -701,7 +705,9 @@ export type Database = {
           rejected_at?: string | null
           remesa_base_reference?: string | null
           remesa_revision_number?: number | null
+          remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
+          total_remesas_esperadas?: number | null
           updated_at?: string
           updated_by?: string | null
         }
