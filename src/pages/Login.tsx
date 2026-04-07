@@ -21,7 +21,7 @@ const Login = () => {
     const { error } = await signIn(email, password);
     setIsLoading(false);
     if (error) {
-      toast.error("Credenciales inválidas o usuario inactivo");
+      toast.error("Correo o contraseña incorrectos. Si el problema persiste, contacta al administrador.");
     } else {
       navigate("/");
     }

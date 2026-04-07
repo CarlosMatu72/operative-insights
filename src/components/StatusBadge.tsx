@@ -19,7 +19,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
   CORRECCION_PENDIENTE: {
     label: "Corrección Pend.",
-    className: "bg-warning/10 text-warning border-warning/20",
+    className: "bg-warning/10 text-warning border-warning/20 font-semibold",
   },
   EN_CORRECCION: {
     label: "En Corrección",
@@ -53,11 +53,14 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
         config.className,
         className
       )}
     >
+      {(status === "EN_REVISION" || status === "CORRECCION_PENDIENTE") && (
+        <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${status === "EN_REVISION" ? "bg-primary animate-pulse" : "bg-warning"}`} />
+      )}
       {config.label}
     </span>
   );
