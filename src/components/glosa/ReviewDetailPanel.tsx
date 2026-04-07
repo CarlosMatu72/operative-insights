@@ -416,7 +416,6 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           <Button onClick={handleStartCorrection} disabled={actions.startCorrection.isPending} className="gap-1.5 shrink-0">
             <RotateCcw className="h-4 w-4" /> Iniciar revisión de correcciones →
           </Button>
-          </Button>
         </div>
       )}
 
