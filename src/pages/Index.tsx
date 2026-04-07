@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
-import { useKPIs, useGlosadores } from "@/hooks/useTableroData";
+import { useKPIs, useGlosadores, useRealtimeSessions } from "@/hooks/useTableroData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +8,14 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, XCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 
 const Index = () => {
   const { profile } = useAuth();
   const { data: kpis } = useKPIs();
   const { data: glosadores = [] } = useGlosadores();
+  useRealtimeSessions();
 
   const { data: recentCases = [] } = useQuery({
     queryKey: ["recent-cases-dashboard"],
@@ -35,7 +36,7 @@ const Index = () => {
     { label: "En revisión", value: kpis?.enRevision ?? "—", icon: ClipboardCheck, color: "bg-primary/10 text-primary" },
     { label: "En corrección / pausados", value: kpis?.pausados ?? "—", icon: AlertTriangle, color: "bg-warning/10 text-warning" },
     { label: "Aprobados (mes)", value: kpis?.aprobadosMes ?? "—", icon: CheckCircle, color: "bg-success/10 text-success" },
-    { label: "Rechazados", value: kpis?.rechazados ?? "—", icon: XCircle, color: "bg-destructive/10 text-destructive" },
+    { label: "Glosadores activos", value: glosadores.filter((g: any) => g.isActive).length, icon: Users, color: "bg-success/10 text-success" },
   ];
 
   return (
@@ -138,7 +139,7 @@ const Index = () => {
                       </Avatar>
                       <span
                         className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card ${
-                          g.isActive ? "bg-success" : "bg-destructive"
+                         g.isActive ? "bg-destructive animate-pulse" : "bg-success"
                         }`}
                       />
                     </div>
