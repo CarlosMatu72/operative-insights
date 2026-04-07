@@ -14,11 +14,7 @@ export function useGlosadores() {
       if (glosadorIds.length === 0) return [];
 
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", glosadorIds)
-        .eq("activo", true)
-        .order("nombre");
+        .rpc("get_profiles_display", { _user_ids: glosadorIds });
 
       // Get active sessions
       const { data: activeSessions } = await supabase
