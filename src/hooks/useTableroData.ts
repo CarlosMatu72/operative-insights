@@ -63,7 +63,7 @@ export function useGlosadores() {
         ...Object.values(statsMap).map((s) => s.pedConsolidados + s.remesas)
       );
 
-      return (profiles ?? []).map((p) => ({
+      return (profiles ?? []).filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((p) => ({
         ...p,
         isActive: activeUserIds.has(p.id),
         pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,

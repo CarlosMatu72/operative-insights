@@ -41,7 +41,7 @@ export function useCatalogs() {
       const glosadorIds = (roles ?? []).filter(r => r.role === "glosa" || r.role === "admin").map(r => r.user_id);
       if (glosadorIds.length === 0) return [];
       const { data: profiles } = await supabase.rpc("get_profiles_display", { _user_ids: glosadorIds });
-      return profiles ?? [];
+      return (profiles ?? []).filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre));
     },
   });
 
