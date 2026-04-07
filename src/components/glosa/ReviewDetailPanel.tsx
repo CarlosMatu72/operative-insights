@@ -272,23 +272,29 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       features.forEach(f => { t += `│ ${classValues[f.id] ? "☑ Sí" : "☐ No"}  ${f.nombre}\n`; });
       t += "└──────────────────────────────────────────────────────┘\n\n";
     }
-    t += "┌─ OBSERVACIONES ──────────────────────────────────────┐\n";
+    t += ">> Observaciones <<\n\n";
     if (findings.length === 0) {
-      t += "│ ✓ Sin observaciones detectadas\n";
+      t += "  Sin observaciones detectadas.\n";
     } else {
-      t += `│ Total: ${findings.length} | Abiertas: ${openFindings.length}\n│\n`;
-      findings.forEach((f, i) => {
+      findings.forEach((f) => {
+        const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
         const cat = (f as any).observation_categories?.nombre || "";
         const sub = (f as any).observation_subcategories?.nombre || "";
         const err = (f as any).observation_errors?.descripcion || "";
         const pts = (f as any).observation_errors?.descuento_puntos;
-        const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
-        t += `│ ${i + 1}. ${cat} › ${sub}\n│    └─ ${err}${pts ? ` (-${pts} pts)` : ""}\n│    Estado: ${stl}\n`;
-        if (f.comentario_inicial) t += `│    Comentario: ${f.comentario_inicial}\n`;
-        t += "│\n";
+        const codigo = (f as any).observation_errors?.codigo_error;
+        t += `  Estatus = ${stl}\n`;
+        if (cat) t += `  Categoria = ${cat}\n`;
+        if (sub || err) {
+          const errLabel = codigo ? `[${codigo}] ${err}` : err;
+          const ptsLabel = pts ? ` (-${pts} pts)` : "";
+          const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
+          t += `           ${sub ? sub + " --> " : ""}${errLabel}${ptsLabel}${comentario}\n`;
+        }
+        t += "\n";
       });
     }
-    t += "└──────────────────────────────────────────────────────┘\n\n";
+    t += "\n";
     if (generalCommentsList.length > 0) {
       t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
       generalCommentsList.forEach((c: any, i: number) => {
