@@ -14,11 +14,7 @@ export function useGlosadores() {
       if (glosadorIds.length === 0) return [];
 
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", glosadorIds)
-        .eq("activo", true)
-        .order("nombre");
+        .rpc("get_profiles_display", { _user_ids: glosadorIds });
 
       // Get active sessions
       const { data: activeSessions } = await supabase
@@ -67,7 +63,7 @@ export function useGlosadores() {
         ...Object.values(statsMap).map((s) => s.pedConsolidados + s.remesas)
       );
 
-      return (profiles ?? []).map((p) => ({
+      return (profiles ?? []).filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((p) => ({
         ...p,
         isActive: activeUserIds.has(p.id),
         pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,
