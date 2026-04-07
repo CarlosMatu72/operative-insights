@@ -48,7 +48,7 @@ export function GlosadoresSection() {
                 }`}
               >
                 <div className="flex flex-col items-center text-center gap-3">
-                  <Avatar className="h-16 w-16">
+                  <Avatar className="h-14 w-14">
                     <AvatarImage src={g.avatar_url ?? undefined} />
                     <AvatarFallback className="text-lg font-bold bg-muted">
                       {initials}

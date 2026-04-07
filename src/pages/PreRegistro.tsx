@@ -1,9 +1,44 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { AltaTramiteSection } from "@/components/pre-registro/AltaTramiteSection";
 import { PendientesSection } from "@/components/pre-registro/PendientesSection";
 import { GlosadoresSection } from "@/components/pre-registro/GlosadoresSection";
 import { useKPIs, useRealtimeSessions } from "@/hooks/useTableroData";
-import { FileText, ClipboardCheck, CheckCircle, Layers } from "lucide-react";
+import { FileText, ClipboardCheck, CheckCircle, Layers, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PedimentoForm } from "@/components/tramites/PedimentoForm";
+import { AltaRemesaForm } from "@/components/tramites/AltaRemesaForm";
+import { RemesaForm } from "@/components/tramites/RemesaForm";
+import { ConsolidadoForm } from "@/components/tramites/ConsolidadoForm";
+
+function AltaTramiteButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)} className="gap-1.5">
+        <Plus className="h-4 w-4" /> Nuevo Registro
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Alta de Trámite</DialogTitle></DialogHeader>
+          <Tabs defaultValue="pedimento">
+            <TabsList className="h-9 w-full">
+              <TabsTrigger value="pedimento" className="text-xs flex-1">Pedimento</TabsTrigger>
+              <TabsTrigger value="alta_remesa" className="text-xs flex-1">Alta Remesa</TabsTrigger>
+              <TabsTrigger value="remesa" className="text-xs flex-1">Remesa</TabsTrigger>
+              <TabsTrigger value="consolidado" className="text-xs flex-1">Consolidado</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pedimento" className="mt-4"><PedimentoForm onSuccess={() => setOpen(false)} /></TabsContent>
+            <TabsContent value="alta_remesa" className="mt-4"><AltaRemesaForm onSuccess={() => setOpen(false)} /></TabsContent>
+            <TabsContent value="remesa" className="mt-4"><RemesaForm onSuccess={() => setOpen(false)} /></TabsContent>
+            <TabsContent value="consolidado" className="mt-4"><ConsolidadoForm onSuccess={() => setOpen(false)} /></TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 const PreRegistro = () => {
   useRealtimeSessions();
@@ -19,11 +54,12 @@ const PreRegistro = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Módulo Pre-Registro</h1>
-          <p className="text-sm text-muted-foreground">
-            Control de glosas pendientes y distribución
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Pre-Registro</h1>
+            <p className="text-sm text-muted-foreground">Cola de pendientes y distribución</p>
+          </div>
+          <AltaTramiteButton />
         </div>
 
         {/* KPIs */}
@@ -42,9 +78,6 @@ const PreRegistro = () => {
             </div>
           ))}
         </div>
-
-        {/* Alta de Trámites */}
-        <AltaTramiteSection />
 
         {/* Cola de Pendientes */}
         <PendientesSection />
