@@ -384,6 +384,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               {reviewCase.reference ?? reviewCase.internal_folio}
             </h1>
             <StatusBadge status={status} />
+            {status === "APROBADO" && reviewCase && (
+              <ScoreBadgeInline caseId={caseId} />
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             {(reviewCase.document_types as any)?.name} — Folio: {reviewCase.internal_folio}
@@ -402,7 +405,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
       {/* Correction banner */}
       {needsCorrection && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-warning/30 bg-warning/[0.08] px-4 py-3">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
             <div>
@@ -411,7 +414,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             </div>
           </div>
           <Button onClick={handleStartCorrection} disabled={actions.startCorrection.isPending} className="gap-1.5 shrink-0">
-            <RotateCcw className="h-4 w-4" /> Iniciar Corrección
+            <RotateCcw className="h-4 w-4" /> Iniciar revisión de correcciones →
+          </Button>
           </Button>
         </div>
       )}
@@ -563,18 +567,54 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           {showObsForm && (
             <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Seleccionar Error</Label>
-                <Select value={obsErrorId} onValueChange={setObsErrorId}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Buscar error..." /></SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {activeErrors.map((error) => (
-                      <SelectItem key={error.id} value={error.id}>
-                        {error.codigo_error ? `[${error.codigo_error}] ` : ""}{error.descripcion}
-                        {error.descuento_puntos ? ` (-${error.descuento_puntos} pts)` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs text-muted-foreground">Buscar y seleccionar error</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={obsSearch}
+                    onChange={(e) => { setObsSearch(e.target.value); setObsErrorId(""); }}
+                    placeholder="Escribe para filtrar errores..."
+                    className="h-9 text-sm pl-9"
+                  />
+                </div>
+                {obsSearch.length > 1 && (
+                  <div className="rounded-md border bg-card shadow-sm max-h-48 overflow-y-auto divide-y divide-border">
+                    {activeErrors
+                      .filter(e =>
+                        e.descripcion.toLowerCase().includes(obsSearch.toLowerCase()) ||
+                        (e.codigo_error && e.codigo_error.toLowerCase().includes(obsSearch.toLowerCase()))
+                      )
+                      .slice(0, 8)
+                      .map(error => (
+                        <button
+                          key={error.id}
+                          type="button"
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${obsErrorId === error.id ? "bg-primary/5 text-primary" : ""}`}
+                          onClick={() => { setObsErrorId(error.id); setObsSearch(error.descripcion); }}
+                        >
+                          <span className="font-medium">
+                            {error.codigo_error && <span className="text-xs text-muted-foreground mr-1.5">[{error.codigo_error}]</span>}
+                            {error.descripcion}
+                          </span>
+                          {error.descuento_puntos && (
+                            <span className="ml-2 text-xs text-destructive">−{error.descuento_puntos} pts</span>
+                          )}
+                        </button>
+                      ))
+                    }
+                    {activeErrors.filter(e => e.descripcion.toLowerCase().includes(obsSearch.toLowerCase()) || (e.codigo_error && e.codigo_error.toLowerCase().includes(obsSearch.toLowerCase()))).length === 0 && (
+                      <div className="px-3 py-3 text-sm text-muted-foreground text-center">Sin resultados</div>
+                    )}
+                  </div>
+                )}
+                {obsErrorId && (
+                  <div className="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-1.5">
+                    <span className="text-xs text-primary font-medium flex-1 truncate">{obsSearch}</span>
+                    <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setObsErrorId(""); setObsSearch(""); }}>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1">
@@ -582,7 +622,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                     placeholder="Comentario opcional..." className="h-8 text-xs" />
                 </div>
                 <Button size="sm" variant="outline" className="h-8 text-xs"
-                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); }}>
+                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); setObsSearch(""); }}>
                   Cancelar
                 </Button>
                 <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
@@ -805,8 +845,12 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           <div className="flex items-center justify-between px-6 py-3">
             <Button onClick={handleSaveAll} disabled={
               actions.saveDetails.isPending || (docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment.trim())
-            } className="gap-1.5 h-9">
-              <Save className="h-4 w-4" /> Guardar
+            } className="gap-1.5 h-9 min-w-[100px]">
+              {actions.saveDetails.isPending ? (
+                <><div className="h-3.5 w-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Guardando</>
+              ) : (
+                <><Save className="h-4 w-4" /> Guardar</>
+              )}
             </Button>
             <div className="flex items-center gap-2">
               <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
