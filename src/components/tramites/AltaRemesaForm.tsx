@@ -78,6 +78,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       setReferencia("");
       setSucursalId("");
       setClienteId("");
+      setTotalEsperado("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       onSuccess();
