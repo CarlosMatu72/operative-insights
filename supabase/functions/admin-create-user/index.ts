@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -120,7 +120,7 @@ serve(async (req) => {
         );
       }
 
-      const { error } = await adminClient.auth.admin.updateUser(user_id, {
+      const { error } = await adminClient.auth.admin.updateUserById(user_id, {
         password: new_password,
       });
 
@@ -193,7 +193,7 @@ serve(async (req) => {
       }
 
       // Also ban/unban the auth user to prevent login
-      await adminClient.auth.admin.updateUser(user_id, {
+      await adminClient.auth.admin.updateUserById(user_id, {
         ban_duration: activo ? "none" : "876000h", // ~100 years
       });
 
