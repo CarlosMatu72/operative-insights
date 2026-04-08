@@ -46,7 +46,7 @@ export function ObservationErrorsConfig() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!descripcion.trim()) throw new Error("La descripción es requerida");
-      const payload: any = {
+      const payload: { descripcion: string; codigo_error: string | null; severidad: string | null; descuento_puntos: number | null; activo: boolean; category_id: null; subcategory_id: null } = {
         descripcion: descripcion.trim(),
         codigo_error: codigoError.trim() || null,
         severidad: severidad.trim() || null,
@@ -70,7 +70,7 @@ export function ObservationErrorsConfig() {
       toast.success(editId ? "Error actualizado" : "Error creado");
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || "Error al guardar"),
+    onError: (err: Error) => toast.error(err.message || "Error al guardar"),
   });
 
   const toggleActive = useMutation({
@@ -93,7 +93,7 @@ export function ObservationErrorsConfig() {
     setDescuentoPuntos("");
   };
 
-  const openEdit = (error: any) => {
+  const openEdit = (error: { id: string; codigo_error: string | null; descripcion: string; severidad: string | null; descuento_puntos: number | null }) => {
     setEditId(error.id);
     setCodigoError(error.codigo_error || "");
     setDescripcion(error.descripcion);

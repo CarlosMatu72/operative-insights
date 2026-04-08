@@ -43,7 +43,7 @@ export function ObservationSubcategoriesConfig() {
 
   const filtered = filterCategoryId === "_all_"
     ? subcategories
-    : subcategories.filter((s: any) => s.category_id === filterCategoryId);
+    : subcategories.filter((s) => s.category_id === filterCategoryId);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -61,7 +61,7 @@ export function ObservationSubcategoriesConfig() {
       toast.success(editId ? "Subcategoría actualizada" : "Subcategoría creada");
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || "Error al guardar"),
+    onError: (err: Error) => toast.error(err.message || "Error al guardar"),
   });
 
   const toggleActive = useMutation({
@@ -80,7 +80,7 @@ export function ObservationSubcategoriesConfig() {
     setOrden("0");
   };
 
-  const openEdit = (sub: any) => {
+  const openEdit = (sub: { id: string; nombre: string; category_id: string; orden: number }) => {
     setEditId(sub.id);
     setNombre(sub.nombre);
     setCategoryId(sub.category_id);
@@ -131,7 +131,7 @@ export function ObservationSubcategoriesConfig() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Sin subcategorías</TableCell></TableRow>
             ) : (
-              filtered.map((sub: any) => (
+              filtered.map((sub) => (
                 <TableRow key={sub.id}>
                   <TableCell className="text-sm text-muted-foreground">{sub.orden}</TableCell>
                   <TableCell className="font-medium text-sm">{sub.nombre}</TableCell>

@@ -60,7 +60,7 @@ export function ItemRangesConfig() {
       toast.success(editId ? "Rango actualizado" : "Rango creado");
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || "Error al guardar"),
+    onError: (err: Error) => toast.error(err.message || "Error al guardar"),
   });
 
   const toggleActive = useMutation({
@@ -73,7 +73,7 @@ export function ItemRangesConfig() {
 
   const closeDialog = () => { setOpen(false); setEditId(null); setNombreRango(""); setMinPartidas(""); setMaxPartidas(""); };
 
-  const openEdit = (r: any) => {
+  const openEdit = (r: { id: string; nombre_rango: string; min_partidas: number; max_partidas: number }) => {
     setEditId(r.id);
     setNombreRango(r.nombre_rango);
     setMinPartidas(String(r.min_partidas));

@@ -53,7 +53,7 @@ export function ClassificationFeaturesConfig() {
       toast.success(editId ? "Característica actualizada" : "Característica creada");
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || "Error al guardar"),
+    onError: (err: Error) => toast.error(err.message || "Error al guardar"),
   });
 
   const toggleActive = useMutation({
@@ -71,7 +71,7 @@ export function ClassificationFeaturesConfig() {
     setDescripcion("");
   };
 
-  const openEdit = (f: any) => {
+  const openEdit = (f: { id: string; nombre: string; descripcion: string | null }) => {
     setEditId(f.id);
     setNombre(f.nombre);
     setDescripcion(f.descripcion || "");

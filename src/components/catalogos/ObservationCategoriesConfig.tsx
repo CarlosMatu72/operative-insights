@@ -45,7 +45,7 @@ export function ObservationCategoriesConfig() {
       toast.success(editId ? "Categoría actualizada" : "Categoría creada");
       closeDialog();
     },
-    onError: (err: any) => toast.error(err.message || "Error al guardar"),
+    onError: (err: Error) => toast.error(err.message || "Error al guardar"),
   });
 
   const toggleActive = useMutation({
@@ -63,7 +63,7 @@ export function ObservationCategoriesConfig() {
     setOrden("0");
   };
 
-  const openEdit = (cat: any) => {
+  const openEdit = (cat: { id: string; nombre: string; orden: number }) => {
     setEditId(cat.id);
     setNombre(cat.nombre);
     setOrden(String(cat.orden));
