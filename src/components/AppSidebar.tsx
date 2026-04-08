@@ -1,5 +1,5 @@
 import {
-  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut,
+  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, BadgeCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import gapLogo from "@/assets/gap-logo.png";
@@ -19,17 +19,20 @@ const mainItems = [
   { title: "Pre-Registro", url: "/pre-registro", icon: FileText },
   { title: "Panel de Glosa", url: "/glosa", icon: ClipboardCheck },
   { title: "Reportes", url: "/reportes", icon: BarChart3 },
+  { title: "Gafetes ANAM", url: "/gafetes", icon: BadgeCheck, gafetesAccess: true },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { profile, role, signOut, isAdmin } = useAuth();
+  const { profile, role, signOut, isAdmin, isJuridico } = useAuth();
 
-  const visibleItems = mainItems.filter(
-    (item) => !item.adminOnly || isAdmin
-  );
+  const visibleItems = mainItems.filter((item) => {
+    if ((item as any).adminOnly) return isAdmin;
+    if ((item as any).gafetesAccess) return isAdmin || role === "juridico";
+    return true;
+  });
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -83,7 +86,7 @@ export function AppSidebar() {
               {profile.nombre}
             </p>
             <p className="truncate text-[11px] text-sidebar-muted">
-              {role === "admin" ? "Administrador" : "Glosador"}
+              {role === "juridico" ? "Jurídico" : role === "admin" ? "Administrador" : "Glosador"}
             </p>
           </div>
         )}
