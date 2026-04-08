@@ -276,6 +276,145 @@ export type Database = {
           },
         ]
       }
+      gafete_departamentos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      gafetes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          created_by: string | null
+          departamento_id: string | null
+          doc_acuse_cita: boolean
+          doc_constancia_fiscal: boolean
+          doc_identificacion: boolean
+          doc_responsiva_firmada: boolean
+          estatus: string
+          fecha_cita: string | null
+          fecha_entrega: string | null
+          fecha_vigencia: string | null
+          id: string
+          nombre_completo: string
+          notas: string | null
+          password_anam: string | null
+          updated_at: string
+          updated_by: string | null
+          usuario_anam: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          departamento_id?: string | null
+          doc_acuse_cita?: boolean
+          doc_constancia_fiscal?: boolean
+          doc_identificacion?: boolean
+          doc_responsiva_firmada?: boolean
+          estatus?: string
+          fecha_cita?: string | null
+          fecha_entrega?: string | null
+          fecha_vigencia?: string | null
+          id?: string
+          nombre_completo: string
+          notas?: string | null
+          password_anam?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          usuario_anam?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          departamento_id?: string | null
+          doc_acuse_cita?: boolean
+          doc_constancia_fiscal?: boolean
+          doc_identificacion?: boolean
+          doc_responsiva_firmada?: boolean
+          estatus?: string
+          fecha_cita?: string | null
+          fecha_entrega?: string | null
+          fecha_vigencia?: string | null
+          id?: string
+          nombre_completo?: string
+          notas?: string | null
+          password_anam?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          usuario_anam?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gafetes_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "gafete_departamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gafetes_historial: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estatus_anterior: string | null
+          estatus_nuevo: string
+          fecha_vigencia_anterior: string | null
+          fecha_vigencia_nueva: string | null
+          gafete_id: string
+          id: string
+          notas: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estatus_anterior?: string | null
+          estatus_nuevo: string
+          fecha_vigencia_anterior?: string | null
+          fecha_vigencia_nueva?: string | null
+          gafete_id: string
+          id?: string
+          notas?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estatus_anterior?: string | null
+          estatus_nuevo?: string
+          fecha_vigencia_anterior?: string | null
+          fecha_vigencia_nueva?: string | null
+          gafete_id?: string
+          id?: string
+          notas?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gafetes_historial_gafete_id_fkey"
+            columns: ["gafete_id"]
+            isOneToOne: false
+            referencedRelation: "gafetes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_ranges: {
         Row: {
           activo: boolean
@@ -1111,7 +1250,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "glosa"
+      app_role: "admin" | "glosa" | "juridico"
       review_status:
         | "REGISTRADO"
         | "ASIGNADO"
@@ -1249,7 +1388,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "glosa"],
+      app_role: ["admin", "glosa", "juridico"],
       review_status: [
         "REGISTRADO",
         "ASIGNADO",

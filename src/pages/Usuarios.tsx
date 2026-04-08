@@ -237,7 +237,7 @@ const Usuarios = () => {
                     <TableCell className="text-sm">{u.correo}</TableCell>
                     <TableCell>
                       <Badge variant={u.role === "admin" ? "default" : "secondary"} className="text-xs">
-                        {u.role === "admin" ? "Admin" : "Glosa"}
+                        {u.role === "admin" ? "Admin" : u.role === "juridico" ? "Jurídico" : "Glosa"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -292,6 +292,7 @@ const Usuarios = () => {
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="glosa">Glosador</SelectItem>
+                    <SelectItem value="juridico">Jurídico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -332,6 +333,7 @@ const Usuarios = () => {
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="glosa">Glosador</SelectItem>
+                    <SelectItem value="juridico">Jurídico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

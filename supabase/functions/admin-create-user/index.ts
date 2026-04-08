@@ -76,7 +76,7 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (!["admin", "glosa"].includes(role)) {
+      if (!["admin", "glosa", "juridico"].includes(role)) {
         return new Response(
           JSON.stringify({ error: "Rol inválido" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -142,7 +142,7 @@ serve(async (req) => {
     // ── CHANGE ROLE ──
     if (action === "change_role") {
       const { user_id, new_role } = body;
-      if (!user_id || !new_role || !["admin", "glosa"].includes(new_role)) {
+      if (!user_id || !new_role || !["admin", "glosa", "juridico"].includes(new_role)) {
         return new Response(
           JSON.stringify({ error: "user_id y new_role válido son requeridos" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
