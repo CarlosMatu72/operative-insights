@@ -57,7 +57,7 @@ interface Departamento { id: string; nombre: string; activo: boolean; }
 const EMPTY_FORM = {
   nombre_completo: "", departamento_id: "", usuario_anam: "", password_anam: "",
   doc_identificacion: false, doc_constancia_fiscal: false, doc_responsiva_firmada: false, doc_acuse_cita: false,
-  fecha_cita: "", fecha_entrega: "", fecha_vigencia: "", estatus: "activo" as const, activo: true, notas: "",
+  fecha_cita: "", fecha_entrega: "", fecha_vigencia: "", estatus: "activo" as "activo" | "baja" | "renovado", activo: true, notas: "",
 };
 
 // ── Status config ──────────────────────────────────────
