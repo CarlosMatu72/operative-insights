@@ -264,7 +264,7 @@ export function useReviewActions(caseId: string) {
         const { error } = await supabase.from("review_case_details").insert({ review_case_id: caseId, ...details });
         if (error) throw error;
       }
-      const caseUpdate: Record<string, string> = { updated_by: user!.id };
+      const caseUpdate: { updated_by: string; branch_id?: string; client_id?: string; executive_id?: string } = { updated_by: user!.id };
       if (details.branch_id) caseUpdate.branch_id = details.branch_id;
       if (details.client_id) caseUpdate.client_id = details.client_id;
       if (details.executive_id) caseUpdate.executive_id = details.executive_id;

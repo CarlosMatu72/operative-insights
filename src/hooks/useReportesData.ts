@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 export interface ReportFilters {
   dateFrom?: string;
@@ -35,10 +36,11 @@ export function useReportData(filters: ReportFilters) {
       if (filters.glosadorId) query = query.eq("assigned_glosador_user_id", filters.glosadorId);
       if (filters.clientId) query = query.eq("client_id", filters.clientId);
       if (filters.documentTypeId) query = query.eq("document_type_id", filters.documentTypeId);
-      if (filters.status) query = query.eq("status", filters.status as any);
+      if (filters.status) query = query.eq("status", filters.status as Database["public"]["Enums"]["review_status"]);
 
       // Fetch all rows (handle >1000 limit)
-      let allData: unknown[] = [];
+      type CaseRow = Awaited<ReturnType<typeof query.range>>["data"];
+      let allData: NonNullable<CaseRow> = [];
       let from = 0;
       const pageSize = 1000;
       while (true) {
@@ -59,7 +61,7 @@ export function useReportData(filters: ReportFilters) {
         if (filters.glosadorId) nextQuery = nextQuery.eq("assigned_glosador_user_id", filters.glosadorId);
         if (filters.clientId) nextQuery = nextQuery.eq("client_id", filters.clientId);
         if (filters.documentTypeId) nextQuery = nextQuery.eq("document_type_id", filters.documentTypeId);
-        if (filters.status) nextQuery = nextQuery.eq("status", filters.status as any);
+        if (filters.status) nextQuery = nextQuery.eq("status", filters.status as Database["public"]["Enums"]["review_status"]);
         query = nextQuery;
       }
       return allData;

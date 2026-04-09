@@ -229,7 +229,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       toast.success("Comentario agregado");
       setGeneralComment(""); setShowCommentForm(false);
       queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
-    } catch (err: unknown) { toast.error(err.message || "Error al agregar comentario"); }
+    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Error al agregar comentario"); }
   };
 
   const handleCopyText = () => {
@@ -297,7 +297,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     t += "\n";
     if (generalCommentsList.length > 0) {
       t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
-      generalCommentsList.forEach((c: { profiles?: { nombre: string } | null; created_at: string; comment_text: string }, i: number) => {
+      generalCommentsList.forEach((c, i: number) => {
         t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
       });
       t += "└──────────────────────────────────────────────────────┘\n\n";
@@ -781,7 +781,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               {generalCommentsList.map((c) => (
                 <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
+                    <span className="text-xs font-medium">{(c.profiles as { nombre: string } | null)?.nombre || "Usuario"}</span>
                     <span className="text-[10px] text-muted-foreground">
                       {new Date(c.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </span>
