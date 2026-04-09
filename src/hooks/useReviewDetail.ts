@@ -496,7 +496,10 @@ export function useReviewActions(caseId: string) {
         let scoreObservaciones = Math.round(80 * proportion);
 
         // Step 2: subtract direct penalties from observation_errors.descuento_puntos
-        const errorIds = (findingsRes.data ?? []).map((f) => f.observation_error_id).filter(Boolean) as string[];
+        // Deduplicate: same error repeated multiple times counts penalty only once
+        const errorIds = [...new Set(
+          (findingsRes.data ?? []).map((f) => f.observation_error_id).filter(Boolean) as string[]
+        )];
         if (errorIds.length > 0) {
           const { data: errorDetails } = await supabase
             .from("observation_errors")
