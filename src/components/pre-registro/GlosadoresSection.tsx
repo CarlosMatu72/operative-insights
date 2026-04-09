@@ -1,6 +1,5 @@
 import { useGlosadores } from "@/hooks/useTableroData";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Users } from "lucide-react";
 
@@ -55,16 +54,14 @@ export function GlosadoresSection() {
                     </AvatarFallback>
                   </Avatar>
 
-                  <Badge
-                    variant={g.isActive ? "default" : "secondary"}
-                    className={`text-[11px] ${
+                  <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${
                       g.isActive
                         ? "bg-destructive/10 text-destructive border-destructive/20"
                         : "bg-success/10 text-success border-success/20"
-                    }`}
-                  >
-                    {g.isActive ? "🔴 GLOSANDO" : "🟢 DISPONIBLE"}
-                  </Badge>
+                    }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${g.isActive ? "bg-destructive animate-pulse" : "bg-success"}`} />
+                    {g.isActive ? "Glosando" : "Disponible"}
+                  </span>
 
                   <p className="text-sm font-semibold text-foreground">{g.nombre}</p>
 
