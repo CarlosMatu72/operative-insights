@@ -27,6 +27,11 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       const docType = (documentTypes.data ?? []).find(d => d.code === "CONSOLIDADO");
       if (!docType) throw new Error("Tipo CONSOLIDADO no encontrado");
 
+      // Minimum length validation (only if user typed a custom reference)
+      if (referenciaConsolidado.trim() && referenciaConsolidado.trim().length < 7) {
+        throw new Error("La referencia debe tener al menos 7 caracteres");
+      }
+
       // Check for duplicate reference
       const refToCheck = referenciaConsolidado.trim() || selectedRemesa.remesa_base_reference || `CON-${selectedRemesa.internal_folio}`;
       if (refToCheck.trim()) {
@@ -109,7 +114,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         )}
         <div className="space-y-2">
           <Label>Referencia consolidado (opcional)</Label>
-          <Input value={referenciaConsolidado} onChange={e => setReferenciaConsolidado(e.target.value)} placeholder={selectedRemesa ? selectedRemesa.remesa_base_reference ?? "Auto-generado" : "Selecciona una remesa primero"} />
+          <Input value={referenciaConsolidado} onChange={e => setReferenciaConsolidado(e.target.value)} minLength={7} placeholder={selectedRemesa ? selectedRemesa.remesa_base_reference ?? "Auto-generado" : "Selecciona una remesa primero"} />
+          <p className="text-xs text-muted-foreground">Mínimo 7 caracteres si se ingresa manualmente</p>
         </div>
         <div className="space-y-2">
           <Label>Glosador</Label>
