@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { KpiCard } from "@/components/KpiCard";
 import { PendientesSection } from "@/components/pre-registro/PendientesSection";
 import { GlosadoresSection } from "@/components/pre-registro/GlosadoresSection";
 import { useKPIs, useRealtimeSessions } from "@/hooks/useTableroData";
@@ -65,17 +66,14 @@ const PreRegistro = () => {
         {/* KPIs */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           {kpiItems.map((k) => (
-            <div key={k.label} className="rounded-lg border bg-card p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className={`rounded-lg p-2 ${k.color}`}>
-                  <k.icon className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">{k.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{k.label}</p>
-                </div>
-              </div>
-            </div>
+            <KpiCard
+              key={k.label}
+              label={k.label}
+              value={k.value}
+              icon={k.icon}
+              colorClass={k.color}
+              size="sm"
+            />
           ))}
         </div>
 

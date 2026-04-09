@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
+import { KpiCard } from "@/components/KpiCard";
 import { useKPIs, useGlosadores, useRealtimeSessions } from "@/hooks/useTableroData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, XCircle, Users } from "lucide-react";
+import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 
 const Index = () => {
@@ -54,20 +55,13 @@ const Index = () => {
         {/* KPI Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((stat) => (
-            <div
+            <KpiCard
               key={stat.label}
-              className="rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`rounded-lg p-2.5 ${stat.color}`}>
-                  <stat.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </div>
+              label={stat.label}
+              value={stat.value}
+              icon={stat.icon}
+              colorClass={stat.color}
+            />
           ))}
         </div>
 
