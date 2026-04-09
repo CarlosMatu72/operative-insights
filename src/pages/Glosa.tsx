@@ -231,8 +231,18 @@ const Glosa = () => {
                     </TableCell>
                     <TableCell className="text-center text-sm text-muted-foreground">{c.findings_count || "—"}</TableCell>
                     <TableCell className="text-center text-sm text-muted-foreground">{c.rounds_count || "—"}</TableCell>
-                    <TableCell className="text-center text-sm font-medium">
-                      {c.score_total != null ? c.score_total : "—"}
+                    <TableCell className="text-center">
+                      {c.score_total != null ? (
+                        <span className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-bold border ${
+                          Number(c.score_total) >= 85
+                            ? "bg-success/10 text-success border-success/20"
+                            : Number(c.score_total) >= 70
+                            ? "bg-warning/10 text-warning border-warning/20"
+                            : "bg-destructive/10 text-destructive border-destructive/20"
+                        }`}>
+                          {c.score_total}
+                        </span>
+                      ) : "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatTime(c.active_time_seconds)}
