@@ -102,7 +102,8 @@ const Gafetes = () => {
         .select("*, gafete_departamentos(nombre)")
         .order("nombre_completo");
       if (error) throw error;
-      return (data ?? []) as Gafete[];
+      // Don't expose encrypted password_anam in list - strip it
+      return (data ?? []).map(g => ({ ...g, password_anam: null })) as Gafete[];
     },
     refetchInterval: 60000,
   });
