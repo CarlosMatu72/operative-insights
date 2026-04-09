@@ -28,7 +28,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       if (!docType) throw new Error("Tipo CONSOLIDADO no encontrado");
 
       // Check for duplicate reference
-      const refToCheck = referenciaConsolidado || `CON-${selectedRemesa.remesa_base_reference}`;
+      const refToCheck = referenciaConsolidado.trim() || selectedRemesa.remesa_base_reference || `CON-${selectedRemesa.internal_folio}`;
       if (refToCheck.trim()) {
         const { count } = await supabase
           .from("review_cases")
@@ -45,7 +45,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       // Create consolidado inheriting branch and client from remesa
       const { error: insertError } = await supabase.from("review_cases").insert({
         internal_folio: folio,
-        reference: referenciaConsolidado || `CON-${selectedRemesa.remesa_base_reference}`,
+        reference: referenciaConsolidado.trim() || selectedRemesa.remesa_base_reference || `CON-${selectedRemesa.internal_folio}`,
         document_type_id: docType.id,
         branch_id: selectedRemesa.branch_id,
         client_id: selectedRemesa.client_id,
@@ -109,7 +109,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         )}
         <div className="space-y-2">
           <Label>Referencia consolidado (opcional)</Label>
-          <Input value={referenciaConsolidado} onChange={e => setReferenciaConsolidado(e.target.value)} placeholder="Ej: CON-2026-001" />
+          <Input value={referenciaConsolidado} onChange={e => setReferenciaConsolidado(e.target.value)} placeholder={selectedRemesa ? selectedRemesa.remesa_base_reference ?? "Auto-generado" : "Selecciona una remesa primero"} />
         </div>
         <div className="space-y-2">
           <Label>Glosador</Label>
