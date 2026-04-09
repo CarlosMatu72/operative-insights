@@ -319,7 +319,10 @@ export function useReviewActions(caseId: string) {
 
   const addFinding = useMutation({
     mutationFn: async (finding: {
-      observation_error_id: string; comentario_inicial: string;
+      observation_error_id?: string;
+      comentario_inicial: string;
+      category_id?: string;
+      subcategory_id?: string;
     }) => {
       const { data: rounds } = await supabase
         .from("review_rounds").select("id")
@@ -328,7 +331,9 @@ export function useReviewActions(caseId: string) {
       const { error } = await supabase.from("review_findings").insert({
         review_case_id: caseId,
         review_round_id: rounds?.[0]?.id ?? null,
-        observation_error_id: finding.observation_error_id,
+        category_id: finding.category_id ?? null,
+        subcategory_id: finding.subcategory_id ?? null,
+        observation_error_id: finding.observation_error_id ?? null,
         comentario_inicial: finding.comentario_inicial,
         created_by: user!.id,
         current_status: "open",
