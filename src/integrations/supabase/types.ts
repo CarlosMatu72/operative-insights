@@ -1234,7 +1234,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_gafete_password: {
+        Args: { encrypted_text: string }
+        Returns: string
+      }
+      encrypt_gafete_password: { Args: { plain_text: string }; Returns: string }
       generate_internal_folio: { Args: { doc_code: string }; Returns: string }
+      get_gafetes_with_password: {
+        Args: never
+        Returns: {
+          activo: boolean
+          created_at: string
+          created_by: string
+          departamento_id: string
+          doc_acuse_cita: boolean
+          doc_constancia_fiscal: boolean
+          doc_identificacion: boolean
+          doc_responsiva_firmada: boolean
+          estatus: string
+          fecha_cita: string
+          fecha_entrega: string
+          fecha_vigencia: string
+          id: string
+          nombre_completo: string
+          notas: string
+          password_anam_decrypted: string
+          updated_at: string
+          updated_by: string
+          usuario_anam: string
+        }[]
+      }
       get_profiles_display: {
         Args: { _user_ids?: string[] }
         Returns: {
