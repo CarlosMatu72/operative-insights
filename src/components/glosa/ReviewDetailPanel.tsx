@@ -883,6 +883,46 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           </div>
         </div>
       )}
+
+      {/* New Client Dialog */}
+      <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Nuevo Cliente</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Nombre del cliente</Label>
+            <Input
+              value={newClientNombre}
+              onChange={e => setNewClientNombre(e.target.value)}
+              placeholder="Nombre de la empresa o persona"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewClientDialog(false)}>Cancelar</Button>
+            <Button
+              disabled={!newClientNombre.trim() || savingNewClient}
+              onClick={async () => {
+                setSavingNewClient(true);
+                try {
+                  const { data, error } = await supabase.from("clients").insert({ nombre: newClientNombre.trim() }).select().single();
+                  if (error) throw error;
+                  toast.success("Cliente registrado");
+                  setClientId(data.id);
+                  setNewClientNombre("");
+                  setShowNewClientDialog(false);
+                  queryClient.invalidateQueries({ queryKey: ["clients-active"] });
+                } catch (e: unknown) {
+                  toast.error(e instanceof Error ? e.message : "Error al crear cliente");
+                } finally {
+                  setSavingNewClient(false);
+                }
+              }}
+            >
+              {savingNewClient ? "Guardando..." : "Crear cliente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
