@@ -69,33 +69,30 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         throw new Error(`Todas las remesas indicadas ya existen: ${duplicates.join(", ")}`);
       }
 
-      // Create all remesas
-      const inserts = await Promise.all(
-        toCreate.map(async (num) => {
-          const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
-          if (!folio) throw new Error("Error generando folio");
-          const hasGlosador = glosadorId && glosadorId !== "_none";
-          return {
-            internal_folio: folio,
-            reference: `${selectedRemesa.remesa_base_reference}-${num}`,
-            document_type_id: docType.id,
-            branch_id: selectedRemesa.branch_id,
-            client_id: selectedRemesa.client_id,
-            assigned_glosador_user_id: hasGlosador ? glosadorId : null,
-            status: hasGlosador ? "ASIGNADO" as const : "REGISTRADO" as const,
-            assigned_at: hasGlosador ? new Date().toISOString() : null,
-            parent_case_id: selectedRemesa.id,
-            remesa_base_reference: selectedRemesa.remesa_base_reference,
-            remesa_revision_number: num,
-            is_active_remesa: false,
-            created_by: user?.id,
-            updated_by: user?.id,
-          };
-        })
-      );
+      // Create remesas sequentially to avoid duplicate folio race condition
+      const hasGlosador = glosadorId && glosadorId !== "_none";
+      for (const num of toCreate) {
+        const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
+        if (!folio) throw new Error("Error generando folio");
 
-      const { error } = await supabase.from("review_cases").insert(inserts);
-      if (error) throw error;
+        const { error } = await supabase.from("review_cases").insert({
+          internal_folio: folio,
+          reference: `${selectedRemesa.remesa_base_reference}-${num}`,
+          document_type_id: docType.id,
+          branch_id: selectedRemesa.branch_id,
+          client_id: selectedRemesa.client_id,
+          assigned_glosador_user_id: hasGlosador ? glosadorId : null,
+          status: hasGlosador ? "ASIGNADO" as const : "REGISTRADO" as const,
+          assigned_at: hasGlosador ? new Date().toISOString() : null,
+          parent_case_id: selectedRemesa.id,
+          remesa_base_reference: selectedRemesa.remesa_base_reference,
+          remesa_revision_number: num,
+          is_active_remesa: false,
+          created_by: user?.id,
+          updated_by: user?.id,
+        });
+        if (error) throw error;
+      }
 
       return { created: toCreate, skipped: duplicates };
     },
