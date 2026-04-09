@@ -24,6 +24,11 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       const docType = (documentTypes.data ?? []).find(d => d.code === "PEDIMENTO");
       if (!docType) throw new Error("Tipo de documento PEDIMENTO no encontrado");
 
+      // Minimum length validation
+      if (referencia.trim().length < 7) {
+        throw new Error("La referencia debe tener al menos 7 caracteres");
+      }
+
       // Check for duplicate reference
       if (referencia.trim()) {
         const { count } = await supabase
@@ -72,7 +77,8 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Referencia *</Label>
-          <Input value={referencia} onChange={e => setReferencia(e.target.value)} required placeholder="Ej: REF-2026-001" />
+          <Input value={referencia} onChange={e => setReferencia(e.target.value)} required minLength={7} placeholder="Ej: REF-2026-001" />
+          <p className="text-xs text-muted-foreground">Mínimo 7 caracteres</p>
         </div>
         <div className="space-y-2">
           <Label>Sucursal</Label>

@@ -362,7 +362,18 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     for (const r of rounds) {
       html += `<tr><td>${r.round_number}</td><td>${r.round_type ?? "—"}</td><td>${r.result_status ?? "En curso"}</td></tr>`;
     }
-    html += `</table></body></html>`;
+    html += `</table>`;
+    if (generalCommentsList.length > 0) {
+      html += `<h2>Comentarios Generales (${generalCommentsList.length})</h2>`;
+      html += `<table><tr><th>Usuario</th><th>Fecha</th><th>Comentario</th></tr>`;
+      for (const c of generalCommentsList) {
+        const autor = (c as unknown as { profiles?: { nombre?: string } }).profiles?.nombre || "Usuario";
+        const fecha = new Date(c.created_at).toLocaleDateString("es-MX");
+        html += `<tr><td>${autor}</td><td>${fecha}</td><td>${c.comment_text}</td></tr>`;
+      }
+      html += `</table>`;
+    }
+    html += `</body></html>`;
 
     const win = window.open("", "_blank");
     if (win) { win.document.write(html); win.document.close(); win.print(); }
