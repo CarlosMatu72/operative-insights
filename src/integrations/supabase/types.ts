@@ -922,6 +922,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "review_comments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "review_comments_review_case_id_fkey"
             columns: ["review_case_id"]
             isOneToOne: false
