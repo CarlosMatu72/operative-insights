@@ -94,7 +94,7 @@ export function HistoryTabs({ caseId, onReopen }: HistoryTabsProps) {
                             <span className="text-xs text-muted-foreground">En curso</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{r.reviewer?.nombre ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{(r as Record<string, unknown>).reviewer && typeof (r as Record<string, unknown>).reviewer === "object" ? ((r as Record<string, unknown>).reviewer as { nombre: string })?.nombre : "—"}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -192,9 +192,9 @@ export function HistoryTabs({ caseId, onReopen }: HistoryTabsProps) {
                       <TableCell className="text-xs text-muted-foreground">{fmtDate(r.rejected_at)}</TableCell>
                       <TableCell className="text-sm font-medium">{r.motivo}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{r.comentario ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.rejector?.nombre ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{(r as Record<string, unknown>).rejector && typeof (r as Record<string, unknown>).rejector === "object" ? ((r as Record<string, unknown>).rejector as { nombre: string })?.nombre : "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {r.reopened_at ? `${fmtDate(r.reopened_at)} — ${r.reopener?.nombre ?? ""}` : "—"}
+                        {r.reopened_at ? `${fmtDate(r.reopened_at)} — ${(r as Record<string, unknown>).reopener && typeof (r as Record<string, unknown>).reopener === "object" ? ((r as Record<string, unknown>).reopener as { nombre: string })?.nombre : ""}` : "—"}
                       </TableCell>
                       {isAdmin && onReopen && (
                         <TableCell>
