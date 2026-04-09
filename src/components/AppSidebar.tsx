@@ -1,5 +1,5 @@
 import {
-  Home, Users, FolderOpen, FileText, ClipboardCheck, BarChart3, LogOut, BadgeCheck,
+  Home, Users, FolderOpen, FileText, ClipboardCheck, LogOut, BadgeCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import gapLogo from "@/assets/gap-logo.png";
@@ -26,7 +26,7 @@ const mainItems: NavItem[] = [
   { title: "Catálogos", url: "/catalogos", icon: FolderOpen, adminOnly: true },
   { title: "Pre-Registro", url: "/pre-registro", icon: FileText },
   { title: "Panel de Glosa", url: "/glosa", icon: ClipboardCheck },
-  { title: "Reportes", url: "/reportes", icon: BarChart3 },
+  
   { title: "Gafetes ANAM", url: "/gafetes", icon: BadgeCheck, gafetesAccess: true },
 ];
 

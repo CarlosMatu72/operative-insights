@@ -12,7 +12,7 @@ import Usuarios from "./pages/Usuarios";
 import Catalogos from "./pages/Catalogos";
 import PreRegistro from "./pages/PreRegistro";
 import Glosa from "./pages/Glosa";
-import Reportes from "./pages/Reportes";
+
 import Gafetes from "./pages/Gafetes";
 import NotFound from "./pages/NotFound";
 
@@ -40,7 +40,6 @@ const App = () => (
             <Route path="/pre-registro" element={<ProtectedRoute><PreRegistro /></ProtectedRoute>} />
             <Route path="/glosa" element={<ProtectedRoute><Glosa /></ProtectedRoute>} />
             
-            <Route path="/reportes" element={<ProtectedRoute><Reportes /></ProtectedRoute>} />
             <Route path="/gafetes" element={<ProtectedRoute requiredRole="juridico"><Gafetes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
