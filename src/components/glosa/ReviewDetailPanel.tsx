@@ -103,6 +103,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [rejectMotivo, setRejectMotivo] = useState("");
   const [generalComment, setGeneralComment] = useState("");
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [newClientNombre, setNewClientNombre] = useState("");
+  const [savingNewClient, setSavingNewClient] = useState(false);
 
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
@@ -462,6 +465,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>{(executives.data ?? []).map((e) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}</SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Muestra todos los ejecutivos activos</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Cliente</Label>
@@ -469,6 +473,15 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                 <SelectContent>{(clients.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
               </Select>
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  className="text-xs text-primary underline underline-offset-2 hover:no-underline mt-0.5 text-left"
+                  onClick={() => setShowNewClientDialog(true)}
+                >
+                  + Registrar nuevo cliente
+                </button>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Clave Aduanera</Label>
@@ -870,6 +883,46 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           </div>
         </div>
       )}
+
+      {/* New Client Dialog */}
+      <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Nuevo Cliente</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Nombre del cliente</Label>
+            <Input
+              value={newClientNombre}
+              onChange={e => setNewClientNombre(e.target.value)}
+              placeholder="Nombre de la empresa o persona"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewClientDialog(false)}>Cancelar</Button>
+            <Button
+              disabled={!newClientNombre.trim() || savingNewClient}
+              onClick={async () => {
+                setSavingNewClient(true);
+                try {
+                  const { data, error } = await supabase.from("clients").insert({ nombre: newClientNombre.trim() }).select().single();
+                  if (error) throw error;
+                  toast.success("Cliente registrado");
+                  setClientId(data.id);
+                  setNewClientNombre("");
+                  setShowNewClientDialog(false);
+                  queryClient.invalidateQueries({ queryKey: ["clients-active"] });
+                } catch (e: unknown) {
+                  toast.error(e instanceof Error ? e.message : "Error al crear cliente");
+                } finally {
+                  setSavingNewClient(false);
+                }
+              }}
+            >
+              {savingNewClient ? "Guardando..." : "Crear cliente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
