@@ -36,7 +36,7 @@ const Index = () => {
     { label: "En revisión", value: kpis?.enRevision ?? "—", icon: ClipboardCheck, color: "bg-primary/10 text-primary" },
     { label: "En corrección / pausados", value: kpis?.pausados ?? "—", icon: AlertTriangle, color: "bg-warning/10 text-warning" },
     { label: "Aprobados (mes)", value: kpis?.aprobadosMes ?? "—", icon: CheckCircle, color: "bg-success/10 text-success" },
-    { label: "Glosadores activos", value: glosadores.filter((g: any) => g.isActive).length, icon: Users, color: "bg-success/10 text-success" },
+    { label: "Glosadores activos", value: glosadores.filter(g => g.isActive).length, icon: Users, color: "bg-success/10 text-success" },
   ];
 
   return (
@@ -92,16 +92,16 @@ const Index = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recentCases.map((c: any) => (
+                    {recentCases.map(c => (
                       <TableRow key={c.id}>
                         <TableCell className="text-xs font-medium">{c.reference ?? c.internal_folio}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-[10px]">
-                            {(c.document_types as any)?.name ?? "—"}
+                            {(c.document_types)?.name ?? "—"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{(c.branches as any)?.nombre ?? "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{(c.executives as any)?.nombre ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{(c.branches)?.nombre ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{(c.executives)?.nombre ?? "—"}</TableCell>
                         <TableCell><StatusBadge status={c.status} /></TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {format(new Date(c.registered_at), "dd/MM/yy")}
@@ -128,7 +128,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
-                {glosadores.map((g: any) => (
+                {glosadores.map(g => (
                   <div key={g.id} className="flex items-center gap-2 rounded-lg border bg-card p-2.5 min-w-[140px]">
                     <div className="relative">
                       <Avatar className="h-10 w-10">

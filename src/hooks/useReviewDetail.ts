@@ -264,7 +264,7 @@ export function useReviewActions(caseId: string) {
         const { error } = await supabase.from("review_case_details").insert({ review_case_id: caseId, ...details });
         if (error) throw error;
       }
-      const caseUpdate: any = { updated_by: user!.id };
+      const caseUpdate: Record<string, string> = { updated_by: user!.id };
       if (details.branch_id) caseUpdate.branch_id = details.branch_id;
       if (details.client_id) caseUpdate.client_id = details.client_id;
       if (details.executive_id) caseUpdate.executive_id = details.executive_id;
@@ -403,7 +403,7 @@ export function useReviewActions(caseId: string) {
         if (session.review_case_id !== caseId) {
           await supabase
             .from("review_cases")
-            .update({ status: "PAUSADO" as any, paused_at: new Date().toISOString(), updated_by: user!.id })
+            .update({ status: "PAUSADO" as const, paused_at: new Date().toISOString(), updated_by: user!.id })
             .eq("id", session.review_case_id);
         }
       }
@@ -431,7 +431,7 @@ export function useReviewActions(caseId: string) {
       });
 
       await supabase.from("review_cases").update({
-        status: "EN_CORRECCION" as any,
+        status: "EN_CORRECCION" as const,
         last_started_at: new Date().toISOString(),
         updated_by: user!.id,
       }).eq("id", caseId);
@@ -455,13 +455,13 @@ export function useReviewActions(caseId: string) {
         .update({ session_status: "completed", ended_at: new Date().toISOString() })
         .eq("review_case_id", caseId).eq("session_status", "active");
       await supabase.from("review_cases").update({
-        status: "APROBADO" as any, approved_at: new Date().toISOString(), updated_by: user!.id,
+        status: "APROBADO" as const, approved_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
 
       // Calculate and save score using PRD formula
       try {
         // correctionRounds = rounds with round_number > 1
-        const correctionRounds = (rounds ?? []).filter((r: any) => r.round_number > 1).length;
+        const correctionRounds = (rounds ?? []).filter(r => r.round_number > 1).length;
 
         // Fetch total active errors in catalog (denominator for observations score)
         const [findingsRes, totalErrorsRes] = await Promise.all([
@@ -533,7 +533,7 @@ export function useReviewActions(caseId: string) {
         .update({ session_status: "completed", ended_at: new Date().toISOString() })
         .eq("review_case_id", caseId).eq("session_status", "active");
       await supabase.from("review_cases").update({
-        status: "RECHAZADO" as any, rejected_at: new Date().toISOString(), updated_by: user!.id,
+        status: "RECHAZADO" as const, rejected_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
       await supabase.from("audit_logs").insert({
         action: "RECHAZAR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id, details: { motivo },
@@ -558,7 +558,7 @@ export function useReviewActions(caseId: string) {
         .update({ session_status: "completed", ended_at: new Date().toISOString() })
         .eq("review_case_id", caseId).eq("session_status", "active");
       await supabase.from("review_cases").update({
-        status: "CORRECCION_PENDIENTE" as any, updated_by: user!.id,
+        status: "CORRECCION_PENDIENTE" as const, updated_by: user!.id,
       }).eq("id", caseId);
     },
     onSuccess: () => { toast.success("Guardado con observaciones pendientes"); invalidate(); },
@@ -571,7 +571,7 @@ export function useReviewActions(caseId: string) {
         reopened_by: user!.id, reopened_at: new Date().toISOString(),
       }).eq("id", rejectionId);
       await supabase.from("review_cases").update({
-        status: "REABIERTO" as any, updated_by: user!.id,
+        status: "REABIERTO" as const, updated_by: user!.id,
       }).eq("id", caseId);
       await supabase.from("audit_logs").insert({
         action: "REABRIR_TRAMITE", table_name: "review_cases", record_id: caseId, user_id: user!.id,

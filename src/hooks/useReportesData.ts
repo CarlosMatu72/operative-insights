@@ -38,7 +38,7 @@ export function useReportData(filters: ReportFilters) {
       if (filters.status) query = query.eq("status", filters.status as any);
 
       // Fetch all rows (handle >1000 limit)
-      let allData: any[] = [];
+      let allData: unknown[] = [];
       let from = 0;
       const pageSize = 1000;
       while (true) {

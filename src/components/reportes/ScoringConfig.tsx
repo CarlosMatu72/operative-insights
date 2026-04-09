@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export function ScoringConfig() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
-  const [editRule, setEditRule] = useState<any>(null);
+  const [editRule, setEditRule] = useState<{ id?: string; nombre: string; activo: boolean } | null>(null);
   const [penaltyOpen, setPenaltyOpen] = useState(false);
   const [penaltyRuleId, setPenaltyRuleId] = useState("");
   const [penaltyErrorId, setPenaltyErrorId] = useState("");
@@ -49,7 +49,7 @@ export function ScoringConfig() {
   });
 
   const saveRule = useMutation({
-    mutationFn: async (rule: any) => {
+    mutationFn: async (rule: { id?: string; nombre: string; activo?: boolean }) => {
       if (rule.id) {
         await supabase.from("scoring_rules").update({
           nombre: rule.nombre,
@@ -102,7 +102,7 @@ export function ScoringConfig() {
     setEditOpen(true);
   };
 
-  const openEditRule = (r: any) => {
+  const openEditRule = r => {
     setEditRule({ id: r.id, nombre: r.nombre, activo: r.activo });
     setEditOpen(true);
   };
@@ -125,7 +125,7 @@ export function ScoringConfig() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rules.map((r: any) => (
+                {rules.map(r => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium text-sm">{r.nombre}</TableCell>
                     <TableCell>
@@ -164,7 +164,7 @@ export function ScoringConfig() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {penalties.map((p: any) => (
+                {penalties.map(p => (
                   <TableRow key={p.id}>
                     <TableCell className="text-sm">{p.scoring_rules?.nombre}</TableCell>
                     <TableCell className="text-sm">{p.observation_errors?.codigo_error ? `[${p.observation_errors.codigo_error}] ` : ""}{p.observation_errors?.descripcion}</TableCell>
@@ -220,7 +220,7 @@ export function ScoringConfig() {
               <Select value={penaltyRuleId} onValueChange={setPenaltyRuleId}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {rules.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
+                  {rules.map(r => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -229,7 +229,7 @@ export function ScoringConfig() {
               <Select value={penaltyErrorId} onValueChange={setPenaltyErrorId}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar error" /></SelectTrigger>
                 <SelectContent>
-                  {errors.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}</SelectItem>)}
+                  {errors.map(e => <SelectItem key={e.id} value={e.id}>{e.codigo_error ? `[${e.codigo_error}] ` : ""}{e.descripcion}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
