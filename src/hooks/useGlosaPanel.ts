@@ -12,6 +12,8 @@ export interface GlosaCaseRow {
   first_started_at: string | null;
   last_started_at: string | null;
   assigned_glosador_user_id: string | null;
+  branch_id: string | null;
+  executive_id: string | null;
   document_types: { code: string; name: string } | null;
   clients: { nombre: string } | null;
   branches: { nombre: string } | null;

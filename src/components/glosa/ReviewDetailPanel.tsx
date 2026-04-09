@@ -229,7 +229,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       toast.success("Comentario agregado");
       setGeneralComment(""); setShowCommentForm(false);
       queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
-    } catch (err: unknown) { toast.error(err.message || "Error al agregar comentario"); }
+    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Error al agregar comentario"); }
   };
 
   const handleCopyText = () => {
@@ -297,7 +297,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     t += "\n";
     if (generalCommentsList.length > 0) {
       t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
-      generalCommentsList.forEach((c: { profiles?: { nombre: string } | null; created_at: string; comment_text: string }, i: number) => {
+      generalCommentsList.forEach((c, i: number) => {
         t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
       });
       t += "└──────────────────────────────────────────────────────┘\n\n";

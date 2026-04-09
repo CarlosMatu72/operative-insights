@@ -216,6 +216,16 @@ export function useRejectionHistories(caseId: string) {
   });
 }
 
+export type ReviewComment = {
+  id: string;
+  comment_text: string;
+  created_at: string;
+  created_by: string | null;
+  review_case_id: string;
+  review_round_id: string | null;
+  profiles: { nombre: string } | null;
+};
+
 export function useReviewComments(caseId: string) {
   return useQuery({
     queryKey: ["review-comments", caseId],
@@ -225,7 +235,7 @@ export function useReviewComments(caseId: string) {
         .select("*, profiles:created_by(nombre)")
         .eq("review_case_id", caseId)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return (data ?? []) as unknown as ReviewComment[];
     },
     enabled: !!caseId,
   });
@@ -264,7 +274,7 @@ export function useReviewActions(caseId: string) {
         const { error } = await supabase.from("review_case_details").insert({ review_case_id: caseId, ...details });
         if (error) throw error;
       }
-      const caseUpdate: Record<string, string> = { updated_by: user!.id };
+      const caseUpdate: { updated_by: string; branch_id?: string; client_id?: string; executive_id?: string } = { updated_by: user!.id };
       if (details.branch_id) caseUpdate.branch_id = details.branch_id;
       if (details.client_id) caseUpdate.client_id = details.client_id;
       if (details.executive_id) caseUpdate.executive_id = details.executive_id;

@@ -53,28 +53,9 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       }).select().single();
       if (altaError) throw altaError;
 
-      // Create the first remesa revision automatically
-      const { data: folioRemesa } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
-      if (!folioRemesa) throw new Error("Error generando folio de remesa");
-
-      const { error: remesaError } = await supabase.from("review_cases").insert({
-        internal_folio: folioRemesa,
-        reference: `${referencia}-1`,
-        document_type_id: docTypeRemesa.id,
-        branch_id: sucursalId || null,
-        client_id: clienteId || null,
-        status: "REGISTRADO",
-        parent_case_id: altaCase.id,
-        remesa_base_reference: referencia,
-        remesa_revision_number: 1,
-        is_active_remesa: false,
-        created_by: user?.id,
-        updated_by: user?.id,
-      });
-      if (remesaError) throw remesaError;
     },
     onSuccess: () => {
-      toast.success("Alta de Remesa registrada con primera revisión creada");
+      toast.success("Alta de Remesa registrada. Ya puedes agregar revisiones con el formulario de Remesa.");
       setReferencia("");
       setSucursalId("");
       setClienteId("");

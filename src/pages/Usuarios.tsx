@@ -94,7 +94,7 @@ const Usuarios = () => {
       setNombre(""); setCorreo(""); setPassword(""); setRol("glosa");
       queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error' || "Error al crear usuario");
+      toast.error(err instanceof Error ? err.message : "Error al crear usuario");
     } finally {
       setSaving(false);
     }
@@ -111,7 +111,7 @@ const Usuarios = () => {
       setResetOpen(false);
       setNewPassword("");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error' || "Error al resetear contraseña");
+      toast.error(err instanceof Error ? err.message : "Error al resetear contraseña");
     }
   };
 
@@ -122,7 +122,7 @@ const Usuarios = () => {
       setRoleOpen(false);
       queryClient.invalidateQueries({ queryKey: ["users"] });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error' || "Error al cambiar rol");
+      toast.error(err instanceof Error ? err.message : "Error al cambiar rol");
     }
   };
 
