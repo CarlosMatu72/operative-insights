@@ -522,6 +522,7 @@ export function useReviewActions(caseId: string) {
         });
       } catch (e) {
         console.error("Error calculating score:", e);
+        toast.error("Trámite aprobado, pero hubo un error al calcular la calificación. Revisa en Reportes.");
       }
       // Audit
       await supabase.from("audit_logs").insert({
