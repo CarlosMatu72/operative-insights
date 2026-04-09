@@ -49,7 +49,7 @@ export function ClassificationRulesConfig({ featureId, featureName, onClose }: P
   const createRule = useMutation({
     mutationFn: async () => {
       if (!selectedId) throw new Error("Selecciona un elemento");
-      const payload: any = { classification_feature_id: featureId, default_value: defaultValue };
+      const payload: { classification_feature_id: string; default_value: boolean; sucursal_id?: string; cliente_id?: string; customs_key_id?: string } = { classification_feature_id: featureId, default_value: defaultValue };
       if (ruleType === "sucursal") payload.sucursal_id = selectedId;
       else if (ruleType === "cliente") payload.cliente_id = selectedId;
       else payload.customs_key_id = selectedId;
@@ -63,7 +63,7 @@ export function ClassificationRulesConfig({ featureId, featureName, onClose }: P
       setSelectedId("");
       setDefaultValue(false);
     },
-    onError: (err: any) => toast.error(err.message || "Error al crear regla"),
+    onError: (err: Error) => toast.error(err.message || "Error al crear regla"),
   });
 
   const deleteRule = useMutation({
@@ -77,14 +77,14 @@ export function ClassificationRulesConfig({ featureId, featureName, onClose }: P
     },
   });
 
-  const getRuleName = (rule: any) => {
+  const getRuleName = (rule: { branches: { nombre: string } | null; clients: { nombre: string } | null; customs_keys: { clave: string } | null }) => {
     if (rule.branches) return rule.branches.nombre;
     if (rule.clients) return rule.clients.nombre;
     if (rule.customs_keys) return rule.customs_keys.clave;
     return "—";
   };
 
-  const getRuleType = (rule: any) => {
+  const getRuleType = (rule: { sucursal_id: string | null; cliente_id: string | null; customs_key_id: string | null }) => {
     if (rule.sucursal_id) return "Sucursal";
     if (rule.cliente_id) return "Cliente";
     if (rule.customs_key_id) return "Clave";
@@ -113,7 +113,7 @@ export function ClassificationRulesConfig({ featureId, featureName, onClose }: P
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Tipo de Regla</Label>
-                <Select value={ruleType} onValueChange={(v: any) => { setRuleType(v); setSelectedId(""); }}>
+                <Select value={ruleType} onValueChange={(v: string) => { setRuleType(v as "sucursal" | "cliente" | "clave"); setSelectedId(""); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sucursal">Sucursal</SelectItem>

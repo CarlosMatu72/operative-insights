@@ -60,7 +60,7 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       onSuccess();
     },
-    onError: (err: any) => toast.error(err.message || "Error al registrar pedimento"),
+    onError: (err: Error) => toast.error(err.message || "Error al registrar pedimento"),
   });
 
   const filteredExecs = (executives.data ?? []).filter(

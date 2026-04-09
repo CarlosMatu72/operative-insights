@@ -75,7 +75,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       onSuccess();
     },
-    onError: (err: any) => toast.error(err.message || "Error al registrar consolidado"),
+    onError: (err: Error) => toast.error(err.message || "Error al registrar consolidado"),
   });
 
   return (
@@ -91,7 +91,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
               ) : (
                 activeRemesas.map(r => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.remesa_base_reference || r.reference} — {(r.branches as any)?.nombre ?? "Sin sucursal"}
+                    {r.remesa_base_reference || r.reference} — {r.branches?.nombre ?? "Sin sucursal"}
                   </SelectItem>
                 ))
               )}
@@ -100,8 +100,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         {selectedRemesa && (
           <div className="sm:col-span-2 rounded-lg bg-accent p-3 text-sm text-accent-foreground">
-            <p><strong>Sucursal:</strong> {(selectedRemesa.branches as any)?.nombre ?? "—"}</p>
-            <p><strong>Cliente:</strong> {(selectedRemesa.clients as any)?.nombre ?? "—"}</p>
+            <p><strong>Sucursal:</strong> {selectedRemesa.branches?.nombre ?? "—"}</p>
+            <p><strong>Cliente:</strong> {selectedRemesa.clients?.nombre ?? "—"}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Al consolidar, esta remesa dejará de estar activa para nuevas revisiones.
             </p>

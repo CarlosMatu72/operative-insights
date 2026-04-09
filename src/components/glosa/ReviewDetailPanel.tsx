@@ -113,9 +113,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   useEffect(() => {
     if (reviewCase) {
-      setBranchId((reviewCase as any).branch_id ?? "");
-      setClientId((reviewCase as any).client_id ?? "");
-      setExecutiveId((reviewCase as any).executive_id ?? "");
+      setBranchId(reviewCase.branch_id ?? "");
+      setClientId(reviewCase.client_id ?? "");
+      setExecutiveId(reviewCase.executive_id ?? "");
     }
   }, [reviewCase]);
 
@@ -139,7 +139,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
     const vals: Record<string, boolean> = {};
     for (const f of features) {
-      const existing = classifications.find((c) => (c as any).classification_feature_id === f.id);
+      const existing = classifications.find((c) => c.classification_feature_id === f.id);
 
       if (existing) {
         vals[f.id] = existing.value_boolean;
@@ -229,7 +229,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       toast.success("Comentario agregado");
       setGeneralComment(""); setShowCommentForm(false);
       queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
-    } catch (err: any) { toast.error(err.message || "Error al agregar comentario"); }
+    } catch (err: unknown) { toast.error(err.message || "Error al agregar comentario"); }
   };
 
   const handleCopyText = () => {
@@ -250,13 +250,13 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     t += "╚════════════════════════════════════════════════════╝\n\n";
     t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
     t += `│ Referencia:      ${reviewCase.reference || reviewCase.internal_folio}\n`;
-    t += `│ Tipo:            ${(reviewCase.document_types as any)?.name || "—"}\n`;
+    t += `│ Tipo:            ${reviewCase.document_types?.name || "—"}\n`;
     t += `│ Folio Interno:   ${reviewCase.internal_folio}\n`;
     t += `│ Estatus:         ${sl[reviewCase.status] || reviewCase.status}\n`;
-    t += `│ Sucursal:        ${(reviewCase.branches as any)?.nombre || "—"}\n`;
-    t += `│ Cliente:         ${(reviewCase.clients as any)?.nombre || "—"}\n`;
-    t += `│ Ejecutivo:       ${(reviewCase.executives as any)?.nombre || "—"}\n`;
-    t += `│ Glosador:        ${(reviewCase as any).glosador?.nombre || "Sin asignar"}\n`;
+    t += `│ Sucursal:        ${reviewCase.branches?.nombre || "—"}\n`;
+    t += `│ Cliente:         ${reviewCase.clients?.nombre || "—"}\n`;
+    t += `│ Ejecutivo:       ${reviewCase.executives?.nombre || "—"}\n`;
+    t += `│ Glosador:        ${reviewCase.glosador?.nombre || "Sin asignar"}\n`;
     t += `│ Fecha Registro:  ${fmt(reviewCase.registered_at)}\n`;
     if (reviewCase.approved_at) t += `│ Fecha Aprobación: ${fmt(reviewCase.approved_at)}\n`;
     if (reviewCase.rejected_at) t += `│ Fecha Rechazo:   ${fmt(reviewCase.rejected_at)}\n`;
@@ -278,11 +278,11 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     } else {
       findings.forEach((f) => {
         const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
-        const cat = (f as any).observation_categories?.nombre || "";
-        const sub = (f as any).observation_subcategories?.nombre || "";
-        const err = (f as any).observation_errors?.descripcion || "";
-        const pts = (f as any).observation_errors?.descuento_puntos;
-        const codigo = (f as any).observation_errors?.codigo_error;
+        const cat = f.observation_categories?.nombre || "";
+        const sub = f.observation_subcategories?.nombre || "";
+        const err = f.observation_errors?.descripcion || "";
+        const pts = f.observation_errors?.descuento_puntos;
+        const codigo = f.observation_errors?.codigo_error;
         t += `  Estatus = ${stl}\n`;
         if (cat) t += `  Categoria = ${cat}\n`;
         if (sub || err) {
@@ -297,7 +297,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     t += "\n";
     if (generalCommentsList.length > 0) {
       t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
-      generalCommentsList.forEach((c: any, i: number) => {
+      generalCommentsList.forEach((c: { profiles?: { nombre: string } | null; created_at: string; comment_text: string }, i: number) => {
         t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
       });
       t += "└──────────────────────────────────────────────────────┘\n\n";
@@ -311,10 +311,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const handleGeneratePDF = () => {
     const ref = reviewCase?.reference ?? reviewCase?.internal_folio ?? "";
-    const tipo = (reviewCase?.document_types as any)?.name ?? "";
-    const suc = (reviewCase?.branches as any)?.nombre ?? "";
-    const ejec = (reviewCase?.executives as any)?.nombre ?? "";
-    const cli = (reviewCase?.clients as any)?.nombre ?? "";
+    const tipo = reviewCase?.document_types?.name ?? "";
+    const suc = reviewCase?.branches?.nombre ?? "";
+    const ejec = reviewCase?.executives?.nombre ?? "";
+    const cli = reviewCase?.clients?.nombre ?? "";
 
     let html = `<html><head><title>Revisión ${ref}</title>
     <style>
@@ -341,9 +341,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     if (docComment) html += `<p><strong>Comentario:</strong> ${docComment}</p>`;
     html += `<h2>Observaciones (${findings.length})</h2>`;
     for (const f of findings) {
-      const cat = (f as any).observation_categories?.nombre ?? "";
-      const sub = (f as any).observation_subcategories?.nombre ?? "";
-      const err = (f as any).observation_errors?.descripcion ?? "";
+      const cat = f.observation_categories?.nombre ?? "";
+      const sub = f.observation_subcategories?.nombre ?? "";
+      const err = f.observation_errors?.descripcion ?? "";
       const cls = f.current_status === "CORRECTED" ? "corrected" : f.current_status === "NOT_CORRECTED" ? "not-corrected" : "";
       html += `<div class="obs-item ${cls}"><strong>${cat} &gt; ${sub}</strong> — <em>${f.current_status}</em><br/>${err}`;
       if (f.comentario_inicial) html += `<br/><small>${f.comentario_inicial}</small>`;
@@ -395,7 +395,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            {(reviewCase.document_types as any)?.name} — Folio: {reviewCase.internal_folio}
+            {reviewCase.document_types?.name} — Folio: {reviewCase.internal_folio}
             {rounds.length > 0 && ` — Ronda ${rounds.length}`}
           </p>
         </div>
@@ -652,13 +652,13 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   }`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {(f as any).observation_errors?.codigo_error && (
-                          <Badge variant="outline" className="text-[10px]">{(f as any).observation_errors.codigo_error}</Badge>
+                        {f.observation_errors?.codigo_error && (
+                          <Badge variant="outline" className="text-[10px]">{f.observation_errors.codigo_error}</Badge>
                         )}
-                        <span className="font-medium text-sm">{(f as any).observation_errors?.descripcion || "Error sin descripción"}</span>
+                        <span className="font-medium text-sm">{f.observation_errors?.descripcion || "Error sin descripción"}</span>
                       </div>
-                      {(f as any).observation_errors?.descuento_puntos && (
-                        <Badge variant="outline" className="text-[10px] mt-0.5">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
+                      {f.observation_errors?.descuento_puntos && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5">-{f.observation_errors.descuento_puntos} pts</Badge>
                       )}
                       {f.comentario_inicial && <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>}
                     </div>
@@ -702,13 +702,13 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   }`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {(f as any).observation_errors?.codigo_error && (
-                          <Badge variant="outline" className="text-[10px]">{(f as any).observation_errors.codigo_error}</Badge>
+                        {f.observation_errors?.codigo_error && (
+                          <Badge variant="outline" className="text-[10px]">{f.observation_errors.codigo_error}</Badge>
                         )}
-                        <span className="font-medium text-sm">{(f as any).observation_errors?.descripcion || "Error sin descripción"}</span>
+                        <span className="font-medium text-sm">{f.observation_errors?.descripcion || "Error sin descripción"}</span>
                       </div>
-                      {(f as any).observation_errors?.descuento_puntos && (
-                        <Badge variant="outline" className="text-[10px] mt-0.5">-{(f as any).observation_errors.descuento_puntos} pts</Badge>
+                      {f.observation_errors?.descuento_puntos && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5">-{f.observation_errors.descuento_puntos} pts</Badge>
                       )}
                       {f.comentario_inicial && <p className="text-xs text-muted-foreground mt-1 italic">{f.comentario_inicial}</p>}
                     </div>
@@ -778,7 +778,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             <p className="text-xs text-muted-foreground text-center py-4">Sin comentarios generales</p>
           ) : (
             <div className="space-y-2">
-              {generalCommentsList.map((c: any) => (
+              {generalCommentsList.map((c) => (
                 <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>

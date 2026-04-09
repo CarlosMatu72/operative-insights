@@ -66,7 +66,7 @@ const Usuarios = () => {
     },
   });
 
-  const adminAction = async (body: any) => {
+  const adminAction = async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("admin-create-user", { body });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
@@ -81,7 +81,7 @@ const Usuarios = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("Estado actualizado");
     },
-    onError: (e: any) => toast.error(e.message || "Error al actualizar"),
+    onError: (e: Error) => toast.error(e.message || "Error al actualizar"),
   });
 
   const createUser = async (e: React.FormEvent) => {
@@ -93,8 +93,8 @@ const Usuarios = () => {
       setCreateOpen(false);
       setNombre(""); setCorreo(""); setPassword(""); setRol("glosa");
       queryClient.invalidateQueries({ queryKey: ["users"] });
-    } catch (err: any) {
-      toast.error(err.message || "Error al crear usuario");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error' || "Error al crear usuario");
     } finally {
       setSaving(false);
     }
@@ -110,8 +110,8 @@ const Usuarios = () => {
       toast.success("Contraseña actualizada");
       setResetOpen(false);
       setNewPassword("");
-    } catch (err: any) {
-      toast.error(err.message || "Error al resetear contraseña");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error' || "Error al resetear contraseña");
     }
   };
 
@@ -121,8 +121,8 @@ const Usuarios = () => {
       toast.success("Rol actualizado");
       setRoleOpen(false);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-    } catch (err: any) {
-      toast.error(err.message || "Error al cambiar rol");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error' || "Error al cambiar rol");
     }
   };
 
@@ -164,8 +164,8 @@ const Usuarios = () => {
 
       toast.success("Foto actualizada");
       queryClient.invalidateQueries({ queryKey: ["users"] });
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Error'}`);
     } finally {
       setUploadingAvatar(null);
       setAvatarTargetUserId(null);

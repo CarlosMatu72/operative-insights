@@ -91,11 +91,11 @@ export function useGlosaCases(filters: {
 
       let result: GlosaCaseRow[] = (data ?? []).map((c) => ({
         ...c,
-        document_types: c.document_types as any,
-        clients: c.clients as any,
-        branches: c.branches as any,
-        executives: c.executives as any,
-        glosador: c.glosador as any,
+        document_types: c.document_types,
+        clients: c.clients,
+        branches: c.branches,
+        executives: c.executives,
+        glosador: c.glosador,
         findings_count: findingsMap[c.id] ?? 0,
         rounds_count: roundsMap[c.id] ?? 0,
         score_total: scoresMap[c.id] ?? null,
@@ -114,13 +114,13 @@ export function useGlosaCases(filters: {
         result = result.filter((c) => c.document_types?.code === filters.tipo);
       }
       if (filters.sucursal && filters.sucursal !== "_all") {
-        result = result.filter((c) => (c as any).branch_id === filters.sucursal);
+        result = result.filter((c) => c.branch_id === filters.sucursal);
       }
       if (filters.estatus && filters.estatus !== "_all") {
         result = result.filter((c) => c.status === filters.estatus);
       }
       if (filters.ejecutivo && filters.ejecutivo !== "_all") {
-        result = result.filter((c) => (c as any).executive_id === filters.ejecutivo);
+        result = result.filter((c) => c.executive_id === filters.ejecutivo);
       }
       if (filters.glosador && filters.glosador !== "_all") {
         result = result.filter((c) => c.assigned_glosador_user_id === filters.glosador);
@@ -172,7 +172,7 @@ export function useGlosaActions() {
       await supabase
         .from("review_cases")
         .update({
-          status: "PAUSADO" as any,
+          status: "PAUSADO" as const,
           paused_at: new Date().toISOString(),
           updated_by: user!.id,
         })
@@ -218,7 +218,7 @@ export function useGlosaActions() {
       await supabase
         .from("review_cases")
         .update({
-          status: "EN_REVISION" as any,
+          status: "EN_REVISION" as const,
           first_started_at: caseData?.first_started_at ?? now,
           last_started_at: now,
           updated_by: user!.id,
@@ -245,7 +245,7 @@ export function useGlosaActions() {
       await supabase
         .from("review_cases")
         .update({
-          status: "EN_REVISION" as any,
+          status: "EN_REVISION" as const,
           last_started_at: new Date().toISOString(),
           paused_at: null,
           updated_by: user!.id,
@@ -284,7 +284,7 @@ export function useGlosaActions() {
       await supabase
         .from("review_cases")
         .update({
-          status: "PAUSADO" as any,
+          status: "PAUSADO" as const,
           paused_at: new Date().toISOString(),
           updated_by: user!.id,
         })

@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-const mainItems = [
+interface NavItem {
+  title: string;
+  url: string;
+  icon: typeof Home;
+  adminOnly?: boolean;
+  gafetesAccess?: boolean;
+}
+
+const mainItems: NavItem[] = [
   { title: "Inicio", url: "/", icon: Home },
   { title: "Usuarios", url: "/usuarios", icon: Users, adminOnly: true },
   { title: "Catálogos", url: "/catalogos", icon: FolderOpen, adminOnly: true },
@@ -29,8 +37,8 @@ export function AppSidebar() {
   const { profile, role, signOut, isAdmin, isJuridico } = useAuth();
 
   const visibleItems = mainItems.filter((item) => {
-    if ((item as any).adminOnly) return isAdmin;
-    if ((item as any).gafetesAccess) return isAdmin || role === "juridico";
+    if (item.adminOnly) return isAdmin;
+    if (item.gafetesAccess) return isAdmin || role === "juridico";
     return true;
   });
 

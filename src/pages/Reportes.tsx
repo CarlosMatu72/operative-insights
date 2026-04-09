@@ -39,13 +39,13 @@ const Reportes = () => {
   const [showFilters, setShowFilters] = useState(true);
 
   const { data: cases = [], isLoading } = useReportData(filters);
-  const caseIds = useMemo(() => cases.map((c: any) => c.id), [cases]);
+  const caseIds = useMemo(() => cases.map(c => c.id), [cases]);
   const { data: scores = [] } = useReportScores(caseIds);
   const { data: findings = [] } = useReportFindings(caseIds);
   const { data: sessions = [] } = useReportSessions(caseIds);
 
   const scoreMap = useMemo(() => {
-    const m: Record<string, any> = {};
+    const m: Record<string, typeof scores[number]> = {};
     for (const s of scores) m[s.review_case_id] = s;
     return m;
   }, [scores]);
@@ -53,10 +53,10 @@ const Reportes = () => {
   // ── KPIs ──
   const kpis = useMemo(() => {
     const total = cases.length;
-    const aprobados = cases.filter((c: any) => c.status === "APROBADO").length;
-    const rechazados = cases.filter((c: any) => c.status === "RECHAZADO").length;
-    const pendientes = cases.filter((c: any) => ["REGISTRADO", "ASIGNADO"].includes(c.status)).length;
-    const enCorreccion = cases.filter((c: any) => ["CORRECCION_PENDIENTE", "EN_CORRECCION"].includes(c.status)).length;
+    const aprobados = cases.filter(c => c.status === "APROBADO").length;
+    const rechazados = cases.filter(c => c.status === "RECHAZADO").length;
+    const pendientes = cases.filter(c => ["REGISTRADO", "ASIGNADO"].includes(c.status)).length;
+    const enCorreccion = cases.filter(c => ["CORRECCION_PENDIENTE", "EN_CORRECCION"].includes(c.status)).length;
 
     const scoredCases = scores.filter((s) => s.score_total != null);
     const avgScore = scoredCases.length > 0
@@ -425,7 +425,7 @@ const Reportes = () => {
                       <TableBody>
                         {cases.length === 0 ? (
                           <TableRow><TableCell colSpan={11} className="text-center py-8 text-sm text-muted-foreground">Sin resultados</TableCell></TableRow>
-                        ) : cases.map((c: any) => {
+                        ) : cases.map(c => {
                           const s = scoreMap[c.id];
                           return (
                             <TableRow key={c.id}>

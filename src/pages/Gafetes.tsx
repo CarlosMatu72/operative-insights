@@ -197,7 +197,7 @@ const Gafetes = () => {
       toast.success(editId ? "Gafete actualizado" : "Gafete registrado");
       closeForm();
     },
-    onError: (e: any) => toast.error(e.message || "Error al guardar"),
+    onError: (e: Error) => toast.error(e.message || "Error al guardar"),
   });
 
   // ── Form helpers ──

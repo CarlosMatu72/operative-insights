@@ -82,7 +82,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
             branch_id: selectedRemesa.branch_id,
             client_id: selectedRemesa.client_id,
             assigned_glosador_user_id: hasGlosador ? glosadorId : null,
-            status: (hasGlosador ? "ASIGNADO" : "REGISTRADO") as any,
+            status: hasGlosador ? "ASIGNADO" as const : "REGISTRADO" as const,
             assigned_at: hasGlosador ? new Date().toISOString() : null,
             parent_case_id: selectedRemesa.id,
             remesa_base_reference: selectedRemesa.remesa_base_reference,
@@ -113,7 +113,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["tablero-kpis"] });
       onSuccess();
     },
-    onError: (err: any) => toast.error(err.message || "Error al registrar remesas"),
+    onError: (err: Error) => toast.error(err.message || "Error al registrar remesas"),
   });
 
   return (
@@ -128,8 +128,8 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
             ) : (
               activeRemesas.map(r => (
                 <SelectItem key={r.id} value={r.id}>
-                  {r.remesa_base_reference || r.reference} — {(r.branches as any)?.nombre ?? "Sin sucursal"}
-                  {(r as any).total_remesas_esperadas ? ` (${(r as any).total_remesas_esperadas} esperadas)` : ""}
+                  {r.remesa_base_reference || r.reference} — {r.branches?.nombre ?? "Sin sucursal"}
+                  {r.total_remesas_esperadas ? ` (${r.total_remesas_esperadas} esperadas)` : ""}
                 </SelectItem>
               ))
             )}
@@ -139,13 +139,13 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
 
       {selectedRemesa && (
         <div className="text-sm text-muted-foreground">
-          Sucursal: {(selectedRemesa.branches as any)?.nombre ?? "—"}
+          Sucursal: {selectedRemesa.branches?.nombre ?? "—"}
           {"  ·  "}
-          Cliente: {(selectedRemesa.clients as any)?.nombre ?? "—"}
-          {(selectedRemesa as any).total_remesas_esperadas && (
+          Cliente: {selectedRemesa.clients?.nombre ?? "—"}
+          {selectedRemesa.total_remesas_esperadas && (
             <>
               {"  ·  "}
-              Total esperado: {(selectedRemesa as any).total_remesas_esperadas}
+              Total esperado: {selectedRemesa.total_remesas_esperadas}
             </>
           )}
         </div>
