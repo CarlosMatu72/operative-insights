@@ -781,7 +781,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               {generalCommentsList.map((c) => (
                 <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-medium">{(c.profiles as { nombre: string } | null)?.nombre || "Usuario"}</span>
+                    <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
                     <span className="text-[10px] text-muted-foreground">
                       {new Date(c.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </span>

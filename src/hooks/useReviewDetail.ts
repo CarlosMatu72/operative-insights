@@ -216,6 +216,16 @@ export function useRejectionHistories(caseId: string) {
   });
 }
 
+export type ReviewComment = {
+  id: string;
+  comment_text: string;
+  created_at: string;
+  created_by: string | null;
+  review_case_id: string;
+  review_round_id: string | null;
+  profiles: { nombre: string } | null;
+};
+
 export function useReviewComments(caseId: string) {
   return useQuery({
     queryKey: ["review-comments", caseId],
@@ -225,7 +235,7 @@ export function useReviewComments(caseId: string) {
         .select("*, profiles:created_by(nombre)")
         .eq("review_case_id", caseId)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return (data ?? []) as unknown as ReviewComment[];
     },
     enabled: !!caseId,
   });
