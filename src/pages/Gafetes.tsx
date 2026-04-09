@@ -203,10 +203,19 @@ const Gafetes = () => {
 
   // ── Form helpers ──
   const openNew = () => { setForm({ ...EMPTY_FORM }); setEditId(null); setFormOpen(true); };
-  const openEdit = (g: Gafete) => {
+  const openEdit = async (g: Gafete) => {
+    let decryptedPwd = "";
+    try {
+      const { data } = await supabase.functions.invoke("gafete-decrypt-password", {
+        body: { gafete_id: g.id },
+      });
+      if (data?.password) decryptedPwd = data.password;
+    } catch {
+      // If decryption fails, leave empty
+    }
     setForm({
       nombre_completo: g.nombre_completo, departamento_id: g.departamento_id ?? "",
-      usuario_anam: g.usuario_anam ?? "", password_anam: g.password_anam ?? "",
+      usuario_anam: g.usuario_anam ?? "", password_anam: decryptedPwd,
       doc_identificacion: g.doc_identificacion, doc_constancia_fiscal: g.doc_constancia_fiscal,
       doc_responsiva_firmada: g.doc_responsiva_firmada, doc_acuse_cita: g.doc_acuse_cita,
       fecha_cita: g.fecha_cita ? g.fecha_cita.slice(0, 16) : "",
