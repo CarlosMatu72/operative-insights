@@ -70,7 +70,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const { data: findings = [] } = useReviewFindings(caseId);
   const { data: features = [] } = useClassificationFeatures();
   const { data: rules = [] } = useClassificationRules();
-  const { errors: obsErrors } = useObservationCatalog();
+  const { categories, subcategories, errors: obsErrors } = useObservationCatalog();
   const { data: itemRanges = [] } = useItemRanges();
   const { data: customsKeys = [] } = useCustomsKeys();
   const { data: rounds = [] } = useReviewRounds(caseId);
@@ -91,6 +91,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const [showObsForm, setShowObsForm] = useState(false);
   const [manuallyChanged, setManuallyChanged] = useState<Set<string>>(new Set());
+  const [obsCategoryId, setObsCategoryId] = useState("");
+  const [obsSubcategoryId, setObsSubcategoryId] = useState("");
   const [obsErrorId, setObsErrorId] = useState("");
   const [obsSearch, setObsSearch] = useState("");
   const [obsComment, setObsComment] = useState("");
@@ -192,13 +194,17 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   };
 
   const handleAddFinding = async () => {
-    if (!obsErrorId) {
-      toast.error("Selecciona un error");
+    if (!obsCategoryId || !obsSubcategoryId) {
+      toast.error("Selecciona categoría y subcategoría");
       return;
     }
     await actions.addFinding.mutateAsync({
-      observation_error_id: obsErrorId, comentario_inicial: obsComment,
+      observation_error_id: obsErrorId || undefined,
+      comentario_inicial: obsComment,
+      category_id: obsCategoryId || undefined,
+      subcategory_id: obsSubcategoryId || undefined,
     });
+    setObsCategoryId(""); setObsSubcategoryId("");
     setObsErrorId(""); setObsComment(""); setObsSearch("");
     setShowObsForm(false);
     toast.success("Observación agregada");
@@ -584,66 +590,91 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         <CardContent className="space-y-3">
           {showObsForm && (
             <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 space-y-3">
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Buscar y seleccionar error</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    value={obsSearch}
-                    onChange={(e) => { setObsSearch(e.target.value); setObsErrorId(""); }}
-                    placeholder="Escribe para filtrar errores..."
-                    className="h-9 text-sm pl-9"
-                  />
+              {/* Step 1: Category */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Categoría *</Label>
+                <Select value={obsCategoryId} onValueChange={(v) => {
+                  setObsCategoryId(v);
+                  setObsSubcategoryId("");
+                  setObsErrorId("");
+                  setObsSearch("");
+                }}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar categoría..." /></SelectTrigger>
+                  <SelectContent>
+                    {(categories.data ?? []).map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Step 2: Subcategory */}
+              {obsCategoryId && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Subcategoría *</Label>
+                  <Select value={obsSubcategoryId} onValueChange={(v) => {
+                    setObsSubcategoryId(v);
+                    setObsErrorId("");
+                    setObsSearch("");
+                  }}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar subcategoría..." /></SelectTrigger>
+                    <SelectContent>
+                      {(subcategories.data ?? [])
+                        .filter(s => s.category_id === obsCategoryId)
+                        .map(sub => (
+                          <SelectItem key={sub.id} value={sub.id}>{sub.nombre}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                {obsSearch.length > 1 && (
-                  <div className="rounded-md border bg-card shadow-sm max-h-48 overflow-y-auto divide-y divide-border">
-                    {activeErrors
-                      .filter(e =>
+              )}
+              {/* Step 3: Error (optional) */}
+              {obsSubcategoryId && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Error específico <span className="text-muted-foreground">(opcional)</span></Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input value={obsSearch} onChange={(e) => { setObsSearch(e.target.value); setObsErrorId(""); }}
+                      placeholder="Buscar error o dejar vacío..." className="h-9 text-sm pl-9" />
+                  </div>
+                  {obsSearch.length > 1 && (
+                    <div className="rounded-md border bg-card shadow-sm max-h-40 overflow-y-auto divide-y">
+                      {activeErrors.filter(e =>
                         e.descripcion.toLowerCase().includes(obsSearch.toLowerCase()) ||
                         (e.codigo_error && e.codigo_error.toLowerCase().includes(obsSearch.toLowerCase()))
-                      )
-                      .slice(0, 8)
-                      .map(error => (
-                        <button
-                          key={error.id}
-                          type="button"
+                      ).slice(0, 8).map(error => (
+                        <button key={error.id} type="button"
                           className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${obsErrorId === error.id ? "bg-primary/5 text-primary" : ""}`}
-                          onClick={() => { setObsErrorId(error.id); setObsSearch(error.descripcion); }}
-                        >
-                          <span className="font-medium">
-                            {error.codigo_error && <span className="text-xs text-muted-foreground mr-1.5">[{error.codigo_error}]</span>}
-                            {error.descripcion}
-                          </span>
-                          {error.descuento_puntos && (
-                            <span className="ml-2 text-xs text-destructive">−{error.descuento_puntos} pts</span>
-                          )}
+                          onClick={() => { setObsErrorId(error.id); setObsSearch(error.descripcion); }}>
+                          {error.codigo_error && <span className="text-xs text-muted-foreground mr-1.5">[{error.codigo_error}]</span>}
+                          {error.descripcion}
+                          {error.descuento_puntos && <span className="ml-2 text-xs text-destructive">−{error.descuento_puntos} pts</span>}
                         </button>
-                      ))
-                    }
-                    {activeErrors.filter(e => e.descripcion.toLowerCase().includes(obsSearch.toLowerCase()) || (e.codigo_error && e.codigo_error.toLowerCase().includes(obsSearch.toLowerCase()))).length === 0 && (
-                      <div className="px-3 py-3 text-sm text-muted-foreground text-center">Sin resultados</div>
-                    )}
-                  </div>
-                )}
-                {obsErrorId && (
-                  <div className="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-1.5">
-                    <span className="text-xs text-primary font-medium flex-1 truncate">{obsSearch}</span>
-                    <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setObsErrorId(""); setObsSearch(""); }}>
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                  {obsErrorId && (
+                    <div className="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-1.5">
+                      <span className="text-xs text-primary font-medium flex-1 truncate">{obsSearch}</span>
+                      <button type="button" onClick={() => { setObsErrorId(""); setObsSearch(""); }}>
+                        <X className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Comment */}
               <div className="flex items-end gap-3">
                 <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Comentario</Label>
                   <Input value={obsComment} onChange={(e) => setObsComment(e.target.value)}
-                    placeholder="Comentario opcional..." className="h-8 text-xs" />
+                    placeholder="Comentario de la observación..." className="h-8 text-xs mt-1" />
                 </div>
-                <Button size="sm" variant="outline" className="h-8 text-xs"
-                  onClick={() => { setShowObsForm(false); setObsErrorId(""); setObsComment(""); setObsSearch(""); }}>
+                <Button variant="outline" size="sm" className="h-8 text-xs"
+                  onClick={() => { setShowObsForm(false); setObsCategoryId(""); setObsSubcategoryId(""); setObsErrorId(""); setObsSearch(""); setObsComment(""); }}>
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={handleAddFinding} disabled={actions.addFinding.isPending || !obsErrorId}
+                <Button size="sm" onClick={handleAddFinding}
+                  disabled={actions.addFinding.isPending || !obsCategoryId || !obsSubcategoryId}
                   className="h-8 text-xs gap-1 shrink-0">
                   <Plus className="h-3 w-3" /> Agregar
                 </Button>
