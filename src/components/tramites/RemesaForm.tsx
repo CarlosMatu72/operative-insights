@@ -82,7 +82,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
             branch_id: selectedRemesa.branch_id,
             client_id: selectedRemesa.client_id,
             assigned_glosador_user_id: hasGlosador ? glosadorId : null,
-            status: hasGlosador ? "ASIGNADO" : "REGISTRADO",
+            status: (hasGlosador ? "ASIGNADO" : "REGISTRADO") as const,
             assigned_at: hasGlosador ? new Date().toISOString() : null,
             parent_case_id: selectedRemesa.id,
             remesa_base_reference: selectedRemesa.remesa_base_reference,

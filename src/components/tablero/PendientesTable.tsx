@@ -11,8 +11,22 @@ import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 
+interface ReviewCaseWithJoins {
+  id: string;
+  reference: string | null;
+  internal_folio: string;
+  status: string;
+  registered_at: string;
+  assigned_glosador_user_id: string | null;
+  branch_id: string | null;
+  document_types: { code: string; name: string } | null;
+  branches: { nombre: string } | null;
+  executives: { nombre: string } | null;
+  glosador: { nombre: string } | null;
+}
+
 interface PendientesTableProps {
-  cases: any[];
+  cases: ReviewCaseWithJoins[];
   isLoading: boolean;
 }
 
@@ -29,7 +43,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
         .update({
           assigned_glosador_user_id: glosadorId,
           assigned_at: new Date().toISOString(),
-          status: "ASIGNADO" as any,
+          status: "ASIGNADO" as const,
           updated_by: user?.id,
         })
         .eq("id", caseId);
@@ -52,7 +66,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
         .update({
           assigned_glosador_user_id: user?.id,
           assigned_at: new Date().toISOString(),
-          status: "ASIGNADO" as any,
+          status: "ASIGNADO" as const,
           updated_by: user?.id,
         })
         .eq("id", caseId);
@@ -104,11 +118,11 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
                 <TableCell className="font-medium text-sm">{c.reference ?? c.internal_folio}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-[11px] font-normal">
-                    {(c.document_types as any)?.name ?? "—"}
+                    {c.document_types?.name ?? "—"}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{(c.branches as any)?.nombre ?? "—"}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{(c.executives as any)?.nombre ?? "—"}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{c.branches?.nombre ?? "—"}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{c.executives?.nombre ?? "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {assigningId === c.id && isAdmin ? (
                     <Select
@@ -126,7 +140,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
                       </SelectContent>
                     </Select>
                   ) : (
-                    (c.glosador as any)?.nombre ?? "Sin asignar"
+                    c.glosador?.nombre ?? "Sin asignar"
                   )}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">

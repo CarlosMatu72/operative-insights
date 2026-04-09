@@ -94,7 +94,7 @@ export function HistoryTabs({ caseId, onReopen }: HistoryTabsProps) {
                             <span className="text-xs text-muted-foreground">En curso</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{(r as any).reviewer?.nombre ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{r.reviewer?.nombre ?? "—"}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -123,7 +123,7 @@ export function HistoryTabs({ caseId, onReopen }: HistoryTabsProps) {
                       <TableRow key={f.id} className="hover:bg-muted/30">
                         <TableCell className="text-sm">
                           <div>
-                            <span className="font-medium">{(f as any).observation_errors?.descripcion ?? "—"}</span>
+                            <span className="font-medium">{f.observation_errors?.descripcion ?? "—"}</span>
                             {f.comentario_inicial && (
                               <p className="text-xs text-muted-foreground italic mt-0.5">{f.comentario_inicial}</p>
                             )}
@@ -192,9 +192,9 @@ export function HistoryTabs({ caseId, onReopen }: HistoryTabsProps) {
                       <TableCell className="text-xs text-muted-foreground">{fmtDate(r.rejected_at)}</TableCell>
                       <TableCell className="text-sm font-medium">{r.motivo}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{r.comentario ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{(r as any).rejector?.nombre ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.rejector?.nombre ?? "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {r.reopened_at ? `${fmtDate(r.reopened_at)} — ${(r as any).reopener?.nombre ?? ""}` : "—"}
+                        {r.reopened_at ? `${fmtDate(r.reopened_at)} — ${r.reopener?.nombre ?? ""}` : "—"}
                       </TableCell>
                       {isAdmin && onReopen && (
                         <TableCell>
