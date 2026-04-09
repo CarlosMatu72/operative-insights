@@ -42,7 +42,7 @@ export function TramitesTable() {
   };
 
   const filtered = cases.filter(c => {
-    if (filterTipo && filterTipo !== "_all" && (c.document_types as any)?.code !== filterTipo) return false;
+    if (filterTipo && filterTipo !== "_all" && c.document_types?.code !== filterTipo) return false;
     if (filterSucursal && filterSucursal !== "_all" && c.branch_id !== filterSucursal) return false;
     if (filterEstatus && filterEstatus !== "_all" && c.status !== filterEstatus) return false;
     if (filterRef && !c.reference?.toLowerCase().includes(filterRef.toLowerCase()) && !c.internal_folio.toLowerCase().includes(filterRef.toLowerCase())) return false;
@@ -129,12 +129,12 @@ export function TramitesTable() {
                   <TableCell className="font-medium text-sm">{c.reference ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-[11px] font-normal">
-                      {(c.document_types as any)?.name ?? "—"}
+                      {c.document_types?.name ?? "—"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{(c.branches as any)?.nombre ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{(c.executives as any)?.nombre ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{(c.glosador as any)?.nombre ?? "Sin asignar"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{c.branches?.nombre ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{c.executives?.nombre ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{c.glosador?.nombre ?? "Sin asignar"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(c.registered_at).toLocaleDateString("es-MX")}
                   </TableCell>

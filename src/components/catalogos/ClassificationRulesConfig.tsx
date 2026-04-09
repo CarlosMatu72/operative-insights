@@ -49,7 +49,7 @@ export function ClassificationRulesConfig({ featureId, featureName, onClose }: P
   const createRule = useMutation({
     mutationFn: async () => {
       if (!selectedId) throw new Error("Selecciona un elemento");
-      const payload: Record<string, string | boolean> = { classification_feature_id: featureId, default_value: defaultValue };
+      const payload: { classification_feature_id: string; default_value: boolean; sucursal_id?: string; cliente_id?: string; customs_key_id?: string } = { classification_feature_id: featureId, default_value: defaultValue };
       if (ruleType === "sucursal") payload.sucursal_id = selectedId;
       else if (ruleType === "cliente") payload.cliente_id = selectedId;
       else payload.customs_key_id = selectedId;

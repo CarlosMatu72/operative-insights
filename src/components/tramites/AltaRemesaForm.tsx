@@ -83,7 +83,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       onSuccess();
     },
-    onError: (err: any) => toast.error(err.message || "Error al registrar alta de remesa"),
+    onError: (err: Error) => toast.error(err.message || "Error al registrar alta de remesa"),
   });
 
   return (
