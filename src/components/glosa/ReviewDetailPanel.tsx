@@ -1079,30 +1079,72 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           ) : (
             <div className="space-y-2">
               {generalCommentsList.map((c) => (
-                <div key={c.id} className="rounded-lg border border-info/30 bg-info/5 p-3">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(c.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      {isActiveReview && (
-                        <Button
-                          size="sm" variant="ghost"
-                          className="h-6 text-[10px] px-1.5 text-warning"
-                          title="Promover a observación (registra como error)"
-                          onClick={() => {
-                            setObsComment(c.comment_text);
-                            setShowObsForm(true);
-                            document.getElementById("obs-section")?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                        >
-                          ↑ Obs
-                        </Button>
-                      )}
+                <div key={c.id} className={`rounded-lg border p-3 space-y-1.5 ${
+                  (c as any).is_closed ? "border-muted bg-muted/5 opacity-60" : "border-info/30 bg-info/5"
+                }`}>
+                  {editingCommentId === c.id ? (
+                    <div className="space-y-2">
+                      <Textarea value={editCommentText} onChange={e => setEditCommentText(e.target.value)}
+                        rows={2} className="text-sm" />
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="outline" className="h-7 text-xs"
+                          onClick={() => setEditingCommentId(null)}>Cancelar</Button>
+                        <Button size="sm" className="h-7 text-xs"
+                          disabled={!editCommentText.trim()}
+                          onClick={async () => {
+                            try {
+                              await supabase.from("review_comments")
+                                .update({ comment_text: editCommentText.trim() })
+                                .eq("id", c.id);
+                              toast.success("Comentario actualizado");
+                              setEditingCommentId(null);
+                              queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
+                            } catch { toast.error("Error al actualizar"); }
+                          }}>Guardar</Button>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{c.comment_text}</p>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(c.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {(c as any).is_closed && (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Cerrado</span>
+                          )}
+                        </div>
+                        {isActiveReview && !(c as any).is_closed && (
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-6 text-[10px] px-1.5 text-warning"
+                              title="Promover a observación"
+                              onClick={() => {
+                                setObsComment(c.comment_text);
+                                setShowObsForm(true);
+                                document.getElementById("obs-section")?.scrollIntoView({ behavior: "smooth" });
+                              }}>↑ Obs</Button>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0"
+                              onClick={() => { setEditingCommentId(c.id); setEditCommentText(c.comment_text); }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-6 text-[10px] px-1.5 text-muted-foreground"
+                              title="Dar por cerrado"
+                              onClick={async () => {
+                                try {
+                                  await supabase.from("review_comments")
+                                    .update({ is_closed: true, closed_at: new Date().toISOString() })
+                                    .eq("id", c.id);
+                                  toast.success("Comentario cerrado");
+                                  queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
+                                } catch { toast.error("Error"); }
+                              }}>✓ Cerrar</Button>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{c.comment_text}</p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
