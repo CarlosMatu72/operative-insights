@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { KpiCard } from "@/components/KpiCard";
-import { useKPIs, useRealtimeSessions } from "@/hooks/useTableroData";
+import { useKPIs, useGlosadores, useRealtimeSessions } from "@/hooks/useTableroData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
