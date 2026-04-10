@@ -651,7 +651,7 @@ export function useReviewActions(caseId: string) {
 
   return {
     saveDetails, saveClassifications, saveDocumentation,
-    addFinding, removeFinding, updateFindingStatus,
+    addFinding, editFinding, removeFinding, updateFindingStatus,
     startCorrection, approveCase, rejectCase, saveWithObservations, reopenCase,
     saveAsDocumentoPendiente,
   };
