@@ -116,8 +116,17 @@ export function useKPIs() {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
+      // Get ALTA_REMESA id to exclude from pendientes count
+      const { data: docTypes } = await supabase.from("document_types").select("id, code");
+      const altaRemesaId = docTypes?.find(d => d.code === "ALTA_REMESA")?.id;
+
+      let pendQuery = supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]);
+      if (altaRemesaId) {
+        pendQuery = pendQuery.neq("document_type_id", altaRemesaId);
+      }
+
       const [pendRes, revRes, aprobRes, allApproved, pausRes, rechRes, totalRes] = await Promise.all([
-        supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]),
+        pendQuery,
         supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION"),
         supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
         supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
@@ -126,7 +135,6 @@ export function useKPIs() {
         supabase.from("review_cases").select("id", { count: "exact", head: true }),
       ]);
 
-      const { data: docTypes } = await supabase.from("document_types").select("id, code");
       const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
 
       let remesasMes = 0;
