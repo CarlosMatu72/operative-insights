@@ -54,7 +54,7 @@ const Glosa = () => {
     c.status === "ASIGNADO" && !c.first_started_at;
 
   const canContinue = (c: any) =>
-    ["PAUSADO", "REABIERTO"].includes(c.status) ||
+    ["PAUSADO", "REABIERTO", "DOCUMENTO_PENDIENTE"].includes(c.status) ||
     (c.status === "ASIGNADO" && c.first_started_at);
 
   const canPause = (c: any) =>
@@ -309,7 +309,15 @@ const Glosa = () => {
       </div>
 
       {/* Review Detail Sheet */}
-      <Sheet open={!!selectedCaseId} onOpenChange={(open) => { if (!open) setSelectedCaseId(null); }}>
+      <Sheet open={!!selectedCaseId} onOpenChange={async (open) => {
+        if (!open) {
+          const activeCase = cases.find(c => c.id === selectedCaseId && c.has_active_session);
+          if (activeCase) {
+            await pauseGlosa.mutateAsync(activeCase.id).catch(() => {});
+          }
+          setSelectedCaseId(null);
+        }
+      }}>
         <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl p-0 overflow-y-auto">
           {selectedCaseId && (
             <ReviewDetailPanel caseId={selectedCaseId} onClose={() => setSelectedCaseId(null)} />

@@ -61,7 +61,7 @@ function ScoreBadgeInline({ caseId }: { caseId: string }) {
 }
 
 const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const { data: reviewCase, isLoading } = useReviewCase(caseId);
   const { data: details } = useReviewDetails(caseId);
@@ -114,7 +114,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const isCorrection = ["EN_CORRECCION"].includes(status);
   const needsCorrection = status === "CORRECCION_PENDIENTE";
   const isReopened = status === "REABIERTO";
-  const isActiveReview = ["EN_REVISION", "EN_CORRECCION"].includes(status);
+  const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
+
+  const [loteInput, setLoteInput] = useState(reviewCase?.remesa_lote_descripcion ?? "");
+  const [savingLote, setSavingLote] = useState(false);
 
   useEffect(() => {
     if (reviewCase) {
@@ -173,8 +176,37 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     [obsErrors.data]
   );
 
+  useEffect(() => {
+    if (reviewCase?.remesa_lote_descripcion) {
+      setLoteInput(reviewCase.remesa_lote_descripcion);
+    }
+  }, [reviewCase?.remesa_lote_descripcion]);
+
+  // Auto-save general info when component unmounts during active review
+  useEffect(() => {
+    return () => {
+      if (isActiveReview && (branchId || clientId || executiveId || partidas || comments)) {
+        const p = parseInt(partidas);
+        actions.saveDetails.mutate({
+          branch_id: branchId || undefined,
+          client_id: clientId || undefined,
+          executive_id: executiveId || undefined,
+          customs_key_id: customsKeyId || undefined,
+          partidas: isNaN(p) ? undefined : p,
+          item_range_id: detectedRange?.id ?? undefined,
+          comments_generales: comments || undefined,
+        });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openFindings = findings.filter((f) => f.is_open);
-  const canApprove = openFindings.length === 0 && docStatus !== "PENDIENTE_NO_SE_PUEDE_GLOSAR";
+  const hasRequiredFields = !!(branchId && clientId && executiveId);
+  const canApprove = openFindings.length === 0
+    && docStatus !== "PENDIENTE_NO_SE_PUEDE_GLOSAR"
+    && status !== "DOCUMENTO_PENDIENTE"
+    && hasRequiredFields;
 
   const handleSaveAll = async () => {
     const p = parseInt(partidas);
@@ -190,6 +222,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     await actions.saveDocumentation.mutateAsync({ status: docStatus, comment: docComment });
     if (openFindings.length > 0) {
       await actions.saveWithObservations.mutateAsync();
+    } else if (docStatus === "PENDIENTE_SI_SE_PUEDE_GLOSAR" && openFindings.length === 0) {
+      await actions.saveAsDocumentoPendiente.mutateAsync();
     }
   };
 
@@ -524,7 +558,52 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         </CardContent>
       </Card>
 
-      {/* Classification + Documentation */}
+      {/* Lote de Remesas (REMESA type only) */}
+      {reviewCase?.document_types?.code === "REMESA" && reviewCase?.remesa_lote_descripcion && !isReadOnly && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold tracking-tight">Lote de Remesas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Números de remesas en este lote</Label>
+                <Input
+                  value={loteInput}
+                  onChange={e => setLoteInput(e.target.value)}
+                  placeholder="Ej: 1-10, 13, 25-27"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Actual: <span className="font-mono">{reviewCase.remesa_lote_descripcion}</span>
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9"
+                disabled={!loteInput.trim() || savingLote}
+                onClick={async () => {
+                  setSavingLote(true);
+                  try {
+                    await supabase.from("review_cases").update({
+                      remesa_lote_descripcion: loteInput.trim(),
+                      updated_by: user?.id,
+                    }).eq("id", caseId);
+                    toast.success("Lote actualizado");
+                    queryClient.invalidateQueries({ queryKey: ["review-case-detail", caseId] });
+                  } catch {
+                    toast.error("Error al actualizar lote");
+                  } finally { setSavingLote(false); }
+                }}
+              >
+                {savingLote ? "..." : "Actualizar"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold tracking-tight">Clasificación</CardTitle></CardHeader>
@@ -913,6 +992,11 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               )}
             </Button>
             <div className="flex items-center gap-2">
+              {!hasRequiredFields && (
+                <p className="text-xs text-destructive mr-2">
+                  Completa Sucursal, Cliente y Ejecutivo para aprobar
+                </p>
+              )}
               <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
                 disabled={!canApprove || actions.approveCase.isPending}
                 onClick={async () => { await actions.approveCase.mutateAsync(); onClose(); }}>
