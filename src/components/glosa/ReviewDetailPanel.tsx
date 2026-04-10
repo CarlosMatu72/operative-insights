@@ -274,6 +274,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       if (error) throw error;
       toast.success("Comentario agregado");
       setGeneralComment(""); setShowCommentForm(false);
+      setCommentCategory(""); setCommentSubcategory("");
       queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
     } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Error al agregar comentario"); }
   };
