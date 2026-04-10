@@ -787,6 +787,7 @@ export type Database = {
           registered_at: string
           rejected_at: string | null
           remesa_base_reference: string | null
+          remesa_lote_descripcion: string | null
           remesa_revision_number: number | null
           remesas_faltantes_comentario: string | null
           status: Database["public"]["Enums"]["review_status"]
@@ -815,6 +816,7 @@ export type Database = {
           registered_at?: string
           rejected_at?: string | null
           remesa_base_reference?: string | null
+          remesa_lote_descripcion?: string | null
           remesa_revision_number?: number | null
           remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
@@ -843,6 +845,7 @@ export type Database = {
           registered_at?: string
           rejected_at?: string | null
           remesa_base_reference?: string | null
+          remesa_lote_descripcion?: string | null
           remesa_revision_number?: number | null
           remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
@@ -1297,6 +1300,7 @@ export type Database = {
         | "APROBADO"
         | "RECHAZADO"
         | "REABIERTO"
+        | "DOCUMENTO_PENDIENTE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1435,6 +1439,7 @@ export const Constants = {
         "APROBADO",
         "RECHAZADO",
         "REABIERTO",
+        "DOCUMENTO_PENDIENTE",
       ],
     },
   },
