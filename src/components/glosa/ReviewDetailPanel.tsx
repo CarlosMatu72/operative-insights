@@ -558,7 +558,52 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         </CardContent>
       </Card>
 
-      {/* Classification + Documentation */}
+      {/* Lote de Remesas (REMESA type only) */}
+      {reviewCase?.document_types?.code === "REMESA" && reviewCase?.remesa_lote_descripcion && !isReadOnly && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold tracking-tight">Lote de Remesas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Números de remesas en este lote</Label>
+                <Input
+                  value={loteInput}
+                  onChange={e => setLoteInput(e.target.value)}
+                  placeholder="Ej: 1-10, 13, 25-27"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Actual: <span className="font-mono">{reviewCase.remesa_lote_descripcion}</span>
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9"
+                disabled={!loteInput.trim() || savingLote}
+                onClick={async () => {
+                  setSavingLote(true);
+                  try {
+                    await supabase.from("review_cases").update({
+                      remesa_lote_descripcion: loteInput.trim(),
+                      updated_by: user?.id,
+                    }).eq("id", caseId);
+                    toast.success("Lote actualizado");
+                    queryClient.invalidateQueries({ queryKey: ["review-case-detail", caseId] });
+                  } catch {
+                    toast.error("Error al actualizar lote");
+                  } finally { setSavingLote(false); }
+                }}
+              >
+                {savingLote ? "..." : "Actualizar"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold tracking-tight">Clasificación</CardTitle></CardHeader>
@@ -947,6 +992,11 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               )}
             </Button>
             <div className="flex items-center gap-2">
+              {!hasRequiredFields && (
+                <p className="text-xs text-destructive mr-2">
+                  Completa Sucursal, Cliente y Ejecutivo para aprobar
+                </p>
+              )}
               <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
                 disabled={!canApprove || actions.approveCase.isPending}
                 onClick={async () => { await actions.approveCase.mutateAsync(); onClose(); }}>
