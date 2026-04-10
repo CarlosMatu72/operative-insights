@@ -16,6 +16,7 @@ import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } fr
 const Index = () => {
   const { profile } = useAuth();
   const { data: kpis } = useKPIs();
+  const { data: glosadores = [] } = useGlosadores();
   useRealtimeSessions();
 
   const [dateFrom, setDateFrom] = useState("");
