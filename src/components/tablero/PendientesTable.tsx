@@ -92,7 +92,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
             <TableHead className="text-xs font-semibold">Sucursal</TableHead>
             <TableHead className="text-xs font-semibold">Ejecutivo</TableHead>
             <TableHead className="text-xs font-semibold">Glosador</TableHead>
-            <TableHead className="text-xs font-semibold">Fecha registro</TableHead>
+            <TableHead className="text-xs font-semibold">Registro</TableHead>
             <TableHead className="text-xs font-semibold">Estatus</TableHead>
             <TableHead className="w-24 text-xs font-semibold">Acción</TableHead>
           </TableRow>
@@ -143,8 +143,12 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
                     c.glosador?.nombre ?? "Sin asignar"
                   )}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {new Date(c.registered_at).toLocaleDateString("es-MX")}
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                  {new Date(c.registered_at).toLocaleDateString("es-MX", { 
+                    day: "2-digit", month: "short", year: "2-digit"
+                  })} {new Date(c.registered_at).toLocaleTimeString("es-MX", { 
+                    hour: "2-digit", minute: "2-digit" 
+                  })}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={c.status} />

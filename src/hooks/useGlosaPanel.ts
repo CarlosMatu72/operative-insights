@@ -9,6 +9,7 @@ export interface GlosaCaseRow {
   internal_folio: string;
   status: string;
   registered_at: string;
+  assigned_at: string | null;
   first_started_at: string | null;
   last_started_at: string | null;
   assigned_glosador_user_id: string | null;

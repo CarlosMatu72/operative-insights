@@ -167,13 +167,14 @@ const Glosa = () => {
                 <TableHead className="text-xs font-semibold text-center">Rev.</TableHead>
                 <TableHead className="text-xs font-semibold text-center">Calif.</TableHead>
                 <TableHead className="text-xs font-semibold">Tiempo</TableHead>
+                <TableHead className="text-xs font-semibold">Asignado</TableHead>
                 <TableHead className="text-xs font-semibold text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       <span className="text-sm">Cargando trámites...</span>
@@ -182,7 +183,7 @@ const Glosa = () => {
                 </TableRow>
               ) : cases.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-16">
+                  <TableCell colSpan={12} className="text-center py-16">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Inbox className="h-10 w-10 opacity-30" />
                       <p className="text-sm font-medium">
@@ -246,6 +247,12 @@ const Glosa = () => {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatTime(c.active_time_seconds)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      {c.assigned_at
+                        ? new Date(c.assigned_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })
+                          + " " + new Date(c.assigned_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">

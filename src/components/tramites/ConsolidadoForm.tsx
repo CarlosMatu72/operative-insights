@@ -89,8 +89,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       const hasGlosador = glosadorId && glosadorId !== "_none";
 
       if (sinRemesaBase) {
-        if (!referenciaLibre.trim() || referenciaLibre.trim().length < 7) {
-          throw new Error("La referencia debe tener al menos 7 caracteres");
+        if (!referenciaLibre.trim() || referenciaLibre.trim().length < 11) {
+          throw new Error("La referencia debe tener al menos 11 caracteres");
         }
 
         const { count } = await supabase
@@ -274,8 +274,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         {sinRemesaBase && (
           <div className="space-y-2 sm:col-span-2">
             <Label>Referencia *</Label>
-            <Input value={referenciaLibre} onChange={e => setReferenciaLibre(e.target.value)} required minLength={7} placeholder="Ej: CON-2026-001" />
-            <p className="text-xs text-muted-foreground">Mínimo 7 caracteres</p>
+            <Input value={referenciaLibre} onChange={e => setReferenciaLibre(e.target.value)} required minLength={11} placeholder="Ej: CON-2026-001" />
+            <p className="text-xs text-muted-foreground">Mínimo 11 caracteres</p>
           </div>
         )}
 
