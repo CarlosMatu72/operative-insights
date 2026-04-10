@@ -960,12 +960,28 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           ) : (
             <div className="space-y-2">
               {generalCommentsList.map((c) => (
-                <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
+                <div key={c.id} className="rounded-lg border border-info/30 bg-info/5 p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(c.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(c.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {isActiveReview && (
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 text-[10px] px-1.5 text-warning"
+                          title="Promover a observación (registra como error)"
+                          onClick={() => {
+                            setObsComment(c.comment_text);
+                            setShowObsForm(true);
+                            document.getElementById("obs-section")?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        >
+                          ↑ Obs
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{c.comment_text}</p>
                 </div>
