@@ -37,6 +37,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "Reabierto",
     className: "bg-info/10 text-info border-info/20",
   },
+  DOCUMENTO_PENDIENTE: {
+    label: "Doc. Pendiente",
+    className: "bg-info/10 text-info border-info/20",
+  },
 };
 
 interface StatusBadgeProps {
