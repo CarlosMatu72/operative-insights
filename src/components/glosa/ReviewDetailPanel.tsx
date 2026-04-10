@@ -61,7 +61,7 @@ function ScoreBadgeInline({ caseId }: { caseId: string }) {
 }
 
 const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const { data: reviewCase, isLoading } = useReviewCase(caseId);
   const { data: details } = useReviewDetails(caseId);
@@ -114,7 +114,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const isCorrection = ["EN_CORRECCION"].includes(status);
   const needsCorrection = status === "CORRECCION_PENDIENTE";
   const isReopened = status === "REABIERTO";
-  const isActiveReview = ["EN_REVISION", "EN_CORRECCION"].includes(status);
+  const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
+
+  const [loteInput, setLoteInput] = useState(reviewCase?.remesa_lote_descripcion ?? "");
+  const [savingLote, setSavingLote] = useState(false);
 
   useEffect(() => {
     if (reviewCase) {
@@ -173,8 +176,37 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     [obsErrors.data]
   );
 
+  useEffect(() => {
+    if (reviewCase?.remesa_lote_descripcion) {
+      setLoteInput(reviewCase.remesa_lote_descripcion);
+    }
+  }, [reviewCase?.remesa_lote_descripcion]);
+
+  // Auto-save general info when component unmounts during active review
+  useEffect(() => {
+    return () => {
+      if (isActiveReview && (branchId || clientId || executiveId || partidas || comments)) {
+        const p = parseInt(partidas);
+        actions.saveDetails.mutate({
+          branch_id: branchId || undefined,
+          client_id: clientId || undefined,
+          executive_id: executiveId || undefined,
+          customs_key_id: customsKeyId || undefined,
+          partidas: isNaN(p) ? undefined : p,
+          item_range_id: detectedRange?.id ?? undefined,
+          comments_generales: comments || undefined,
+        });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openFindings = findings.filter((f) => f.is_open);
-  const canApprove = openFindings.length === 0 && docStatus !== "PENDIENTE_NO_SE_PUEDE_GLOSAR";
+  const hasRequiredFields = !!(branchId && clientId && executiveId);
+  const canApprove = openFindings.length === 0
+    && docStatus !== "PENDIENTE_NO_SE_PUEDE_GLOSAR"
+    && status !== "DOCUMENTO_PENDIENTE"
+    && hasRequiredFields;
 
   const handleSaveAll = async () => {
     const p = parseInt(partidas);
@@ -190,6 +222,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     await actions.saveDocumentation.mutateAsync({ status: docStatus, comment: docComment });
     if (openFindings.length > 0) {
       await actions.saveWithObservations.mutateAsync();
+    } else if (docStatus === "PENDIENTE_SI_SE_PUEDE_GLOSAR" && openFindings.length === 0) {
+      await actions.saveAsDocumentoPendiente.mutateAsync();
     }
   };
 
