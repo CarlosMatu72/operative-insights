@@ -149,6 +149,17 @@ const Glosa = () => {
               ))}
             </SelectContent>
           </Select>
+          {isAdmin && (
+            <Select value={filterGlosador} onValueChange={setFilterGlosador}>
+              <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Glosador" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos</SelectItem>
+                {glosadores.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
               <FilterX className="h-3.5 w-3.5" /> Limpiar
