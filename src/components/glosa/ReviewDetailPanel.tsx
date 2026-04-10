@@ -105,6 +105,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [rejectMotivo, setRejectMotivo] = useState("");
   const [generalComment, setGeneralComment] = useState("");
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [commentCategory, setCommentCategory] = useState("");
+  const [commentSubcategory, setCommentSubcategory] = useState("");
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [newClientNombre, setNewClientNombre] = useState("");
   const [savingNewClient, setSavingNewClient] = useState(false);
