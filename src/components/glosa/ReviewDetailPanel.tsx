@@ -119,6 +119,19 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const isReopened = status === "REABIERTO";
   const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
 
+  const { data: scoreDetail } = useQuery({
+    queryKey: ["review-score-detail", caseId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("review_scores")
+        .select("*")
+        .eq("review_case_id", caseId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: status === "APROBADO",
+  });
+
   const [loteInput, setLoteInput] = useState(reviewCase?.remesa_lote_descripcion ?? "");
   const [savingLote, setSavingLote] = useState(false);
 
