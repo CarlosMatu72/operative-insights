@@ -105,6 +105,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [rejectMotivo, setRejectMotivo] = useState("");
   const [generalComment, setGeneralComment] = useState("");
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [commentCategory, setCommentCategory] = useState("");
+  const [commentSubcategory, setCommentSubcategory] = useState("");
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [newClientNombre, setNewClientNombre] = useState("");
   const [savingNewClient, setSavingNewClient] = useState(false);
@@ -115,6 +118,19 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const needsCorrection = status === "CORRECCION_PENDIENTE";
   const isReopened = status === "REABIERTO";
   const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
+
+  const { data: scoreDetail } = useQuery({
+    queryKey: ["review-score-detail", caseId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("review_scores")
+        .select("*")
+        .eq("review_case_id", caseId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: status === "APROBADO",
+  });
 
   const [loteInput, setLoteInput] = useState(reviewCase?.remesa_lote_descripcion ?? "");
   const [savingLote, setSavingLote] = useState(false);
@@ -271,6 +287,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       if (error) throw error;
       toast.success("Comentario agregado");
       setGeneralComment(""); setShowCommentForm(false);
+      setCommentCategory(""); setCommentSubcategory("");
       queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
     } catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Error al agregar comentario"); }
   };
@@ -443,10 +460,16 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
               {reviewCase.reference ?? reviewCase.internal_folio}
             </h1>
-            <StatusBadge status={status} />
-            {status === "APROBADO" && reviewCase && (
-              <ScoreBadgeInline caseId={caseId} />
-            )}
+             <StatusBadge status={status} />
+             {status === "APROBADO" && reviewCase && (
+               <ScoreBadgeInline caseId={caseId} />
+             )}
+             {status === "APROBADO" && (
+               <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground gap-1"
+                 onClick={() => setShowScoreBreakdown(true)}>
+                 Ver cálculo
+               </Button>
+             )}
           </div>
           <p className="text-sm text-muted-foreground">
             {reviewCase.document_types?.name} — Folio: {reviewCase.internal_folio}
@@ -658,7 +681,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       </div>
 
       {/* Observations */}
-      <Card>
+      <Card id="obs-section">
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold tracking-tight">
             Observaciones
@@ -891,18 +914,55 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           <p className="text-xs text-muted-foreground">Comentarios informativos que no afectan la calificación</p>
 
           {showCommentForm && (
-            <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-4 space-y-3">
+            <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium">Nuevo comentario general</span>
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setShowCommentForm(false)}>
+                <span className="text-xs font-medium text-info">
+                  Comentario general — no afecta calificación
+                </span>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0"
+                  onClick={() => { setShowCommentForm(false); setCommentCategory(""); setCommentSubcategory(""); setGeneralComment(""); }}>
                   <X className="h-3 w-3" />
                 </Button>
               </div>
-              <Textarea value={generalComment} onChange={(e) => setGeneralComment(e.target.value)}
-                placeholder="Escribe un comentario general sobre la revisión..." className="min-h-[60px] text-sm" />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Categoría</Label>
+                  <Select value={commentCategory} onValueChange={v => { setCommentCategory(v); setCommentSubcategory(""); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                    <SelectContent>
+                      {(categories.data ?? []).map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {commentCategory && (
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Subcategoría</Label>
+                    <Select value={commentSubcategory} onValueChange={setCommentSubcategory}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                      <SelectContent>
+                        {(subcategories.data ?? []).filter(s => s.category_id === commentCategory).map(sub => (
+                          <SelectItem key={sub.id} value={sub.id}>{sub.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <Textarea
+                value={generalComment}
+                onChange={e => setGeneralComment(e.target.value)}
+                placeholder="Escribe el comentario general..."
+                rows={2}
+                className="text-sm"
+              />
               <div className="flex justify-end">
-                <Button size="sm" onClick={handleAddComment} disabled={!generalComment.trim()} className="gap-1 text-xs">
-                  <Plus className="h-3 w-3" /> Agregar Comentario
+                <Button size="sm" onClick={handleAddComment}
+                  disabled={!generalComment.trim()} className="gap-1 text-xs">
+                  <Plus className="h-3 w-3" /> Agregar
                 </Button>
               </div>
             </div>
@@ -913,12 +973,28 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           ) : (
             <div className="space-y-2">
               {generalCommentsList.map((c) => (
-                <div key={c.id} className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3">
+                <div key={c.id} className="rounded-lg border border-info/30 bg-info/5 p-3">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-xs font-medium">{c.profiles?.nombre || "Usuario"}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(c.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(c.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {isActiveReview && (
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 text-[10px] px-1.5 text-warning"
+                          title="Promover a observación (registra como error)"
+                          onClick={() => {
+                            setObsComment(c.comment_text);
+                            setShowObsForm(true);
+                            document.getElementById("obs-section")?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        >
+                          ↑ Obs
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{c.comment_text}</p>
                 </div>
@@ -1047,6 +1123,49 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               {savingNewClient ? "Guardando..." : "Crear cliente"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Score Breakdown Dialog */}
+      <Dialog open={showScoreBreakdown} onOpenChange={setShowScoreBreakdown}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Cálculo de Calificación</DialogTitle></DialogHeader>
+          {scoreDetail ? (
+            <div className="space-y-4 text-sm">
+              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Clasificación (20 pts máx.)</span>
+                  <span className="font-bold">{scoreDetail.score_classification}/20</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Rondas de corrección: {scoreDetail.correction_rounds}
+                  {scoreDetail.correction_rounds === 0 ? " — puntuación perfecta" :
+                   scoreDetail.correction_rounds === 1 ? " — 18 pts" :
+                   scoreDetail.correction_rounds === 2 ? " — 15 pts" :
+                   scoreDetail.correction_rounds === 3 ? " — 12 pts" :
+                   scoreDetail.correction_rounds === 4 ? " — 8 pts" : " — 5 pts"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Observaciones (80 pts máx.)</span>
+                  <span className="font-bold">{scoreDetail.score_observations}/80</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Errores detectados: {scoreDetail.total_errors}
+                </p>
+              </div>
+              <div className="border-t pt-3 flex justify-between font-bold text-base">
+                <span>Total</span>
+                <span className={
+                  Number(scoreDetail.score_total) >= 85 ? "text-success" :
+                  Number(scoreDetail.score_total) >= 70 ? "text-warning" : "text-destructive"
+                }>{scoreDetail.score_total}/100</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">Sin datos de calificación</p>
+          )}
         </DialogContent>
       </Dialog>
     </div>
