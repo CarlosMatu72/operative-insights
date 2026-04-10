@@ -118,7 +118,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Se creará automáticamente la primera revisión de remesa asociada.
+        Una vez registrada, podrás agregar revisiones de remesa desde la pestaña "Remesa".
       </p>
       <div className="flex justify-end">
         <Button type="submit" disabled={mutation.isPending || !referencia}>
