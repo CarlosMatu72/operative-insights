@@ -25,8 +25,8 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       if (!docType) throw new Error("Tipo de documento PEDIMENTO no encontrado");
 
       // Minimum length validation
-      if (referencia.trim().length < 7) {
-        throw new Error("La referencia debe tener al menos 7 caracteres");
+      if (referencia.trim().length < 11) {
+        throw new Error("La referencia debe tener al menos 11 caracteres");
       }
 
       // Check for duplicate reference
@@ -77,8 +77,8 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Referencia *</Label>
-          <Input value={referencia} onChange={e => setReferencia(e.target.value)} required minLength={7} placeholder="Ej: REF-2026-001" />
-          <p className="text-xs text-muted-foreground">Mínimo 7 caracteres</p>
+          <Input value={referencia} onChange={e => setReferencia(e.target.value)} required minLength={11} placeholder="Ej: REF-2026-001" />
+          <p className="text-xs text-muted-foreground">Mínimo 11 caracteres</p>
         </div>
         <div className="space-y-2">
           <Label>Sucursal</Label>
@@ -116,7 +116,7 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
       <div className="flex justify-end">
-        <Button type="submit" disabled={mutation.isPending || !referencia}>
+        <Button type="submit" disabled={mutation.isPending || !referencia || referencia.trim().length < 11}>
           {mutation.isPending ? "Registrando..." : "Registrar Pedimento"}
         </Button>
       </div>
