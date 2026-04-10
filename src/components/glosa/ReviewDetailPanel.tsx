@@ -306,79 +306,69 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const handleCopyText = () => {
     if (!reviewCase) { toast.error("No hay datos para copiar"); return; }
-    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" }) : "—";
-    const sl: Record<string, string> = {
-      REGISTRADO: "Registrado", ASIGNADO: "Asignado", EN_REVISION: "En Revisión", PAUSADO: "Pausado",
-      CORRECCION_PENDIENTE: "Corrección Pendiente", EN_CORRECCION: "En Corrección",
-      APROBADO: "Aprobado", RECHAZADO: "Rechazado", REABIERTO: "Reabierto",
-    };
     const dsl: Record<string, string> = {
-      COMPLETO: "✓ Completo", PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
+      COMPLETO: "✓ Completo",
+      PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
       PENDIENTE_NO_SE_PUEDE_GLOSAR: "✗ Pendiente — NO se puede glosar",
     };
     let t = "";
-    t += "╔════════════════════════════════════════════════════╗\n";
-    t += "║     REPORTE DE REVISIÓN - CONTROL DE GLOSA        ║\n";
-    t += "╚════════════════════════════════════════════════════╝\n\n";
+    // ── INFORMACIÓN GENERAL ──
     t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
     t += `│ Referencia:      ${reviewCase.reference || reviewCase.internal_folio}\n`;
-    t += `│ Tipo:            ${reviewCase.document_types?.name || "—"}\n`;
-    t += `│ Folio Interno:   ${reviewCase.internal_folio}\n`;
-    t += `│ Estatus:         ${sl[reviewCase.status] || reviewCase.status}\n`;
-    t += `│ Sucursal:        ${reviewCase.branches?.nombre || "—"}\n`;
     t += `│ Cliente:         ${reviewCase.clients?.nombre || "—"}\n`;
     t += `│ Ejecutivo:       ${reviewCase.executives?.nombre || "—"}\n`;
     t += `│ Glosador:        ${reviewCase.glosador?.nombre || "Sin asignar"}\n`;
-    t += `│ Fecha Registro:  ${fmt(reviewCase.registered_at)}\n`;
-    if (reviewCase.approved_at) t += `│ Fecha Aprobación: ${fmt(reviewCase.approved_at)}\n`;
-    if (reviewCase.rejected_at) t += `│ Fecha Rechazo:   ${fmt(reviewCase.rejected_at)}\n`;
     t += "└──────────────────────────────────────────────────────┘\n\n";
-    if (documentation) {
+    // ── DOCUMENTACIÓN (only if not COMPLETO or has comment) ──
+    if (documentation && (documentation.documentation_status !== "COMPLETO" || documentation.documentation_comment)) {
       t += "┌─ DOCUMENTACIÓN ────────────────────────────────────┐\n";
       t += `│ Estado: ${dsl[documentation.documentation_status ?? ""] || documentation.documentation_status}\n`;
-      if (documentation.documentation_comment) t += `│ Comentario: ${documentation.documentation_comment}\n`;
+      if (documentation.documentation_comment) {
+        t += `│ Comentario: ${documentation.documentation_comment}\n`;
+      }
       t += "└──────────────────────────────────────────────────────┘\n\n";
     }
-    if (features.length > 0) {
-      t += "┌─ CLASIFICACIÓN ────────────────────────────────────┐\n";
-      features.forEach(f => { t += `│ ${classValues[f.id] ? "☑ Sí" : "☐ No"}  ${f.nombre}\n`; });
-      t += "└──────────────────────────────────────────────────────┘\n\n";
-    }
-    t += ">> Observaciones <<\n\n";
+    // ── OBSERVACIONES grouped by category ──
+    t += ">> Observaciones <<\n";
     if (findings.length === 0) {
       t += "  Sin observaciones detectadas.\n";
     } else {
-      findings.forEach((f) => {
-        const stl = findingStatusLabels[f.current_status]?.label || f.current_status;
-        const cat = f.observation_categories?.nombre || "";
-        const sub = f.observation_subcategories?.nombre || "";
-        const err = f.observation_errors?.descripcion || "";
-        const pts = f.observation_errors?.descuento_puntos;
-        const codigo = f.observation_errors?.codigo_error;
-        t += `  Estatus = ${stl}\n`;
-        if (cat) t += `  Categoria = ${cat}\n`;
-        if (sub || err) {
-          const errLabel = codigo ? `[${codigo}] ${err}` : err;
-          const ptsLabel = pts ? ` (-${pts} pts)` : "";
-          const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
-          t += `           ${sub ? sub + " --> " : ""}${errLabel}${ptsLabel}${comentario}\n`;
+      const byCategory: Record<string, typeof findings> = {};
+      const catOrder: string[] = [];
+      for (const f of findings) {
+        const catName = f.observation_categories?.nombre || "Sin categoría";
+        if (!byCategory[catName]) {
+          byCategory[catName] = [];
+          catOrder.push(catName);
         }
-        t += "\n";
+        byCategory[catName].push(f);
+      }
+      let counter = 1;
+      for (const catName of catOrder) {
+        t += `\n  Categoría = ${catName}\n`;
+        for (const f of byCategory[catName]) {
+          const sub = f.observation_subcategories?.nombre || "";
+          const err = f.observation_errors?.descripcion || "";
+          const pts = f.observation_errors?.descuento_puntos;
+          const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
+          const errorPart = err ? ` — ${err}${pts ? ` (-${pts} pts)` : ""}` : "";
+          t += `${counter}.\t ${sub ? sub + " --> " : ""}${errorPart}${comentario}\n`;
+          counter++;
+        }
+      }
+    }
+    // ── COMENTARIOS GENERALES (only open ones, no author) ──
+    const openComments = generalCommentsList.filter(c => !(c as any).is_closed);
+    if (openComments.length > 0) {
+      t += "\n     >>Comentarios<<\n";
+      openComments.forEach((c, i) => {
+        t += `        ${i + 1}. ${c.comment_text}\n`;
       });
     }
-    t += "\n";
-    if (generalCommentsList.length > 0) {
-      t += "┌─ COMENTARIOS GENERALES ────────────────────────────┐\n";
-      generalCommentsList.forEach((c, i: number) => {
-        t += `│ ${i + 1}. ${c.profiles?.nombre || "Usuario"} (${fmt(c.created_at)})\n│    "${c.comment_text}"\n│\n`;
-      });
-      t += "└──────────────────────────────────────────────────────┘\n\n";
-    }
-    t += `═══════════════════════════════════════════════════════\n`;
-    t += `Generado: ${new Date().toLocaleString("es-MX")}\n`;
-    t += `Sistema de Control de Glosa\n`;
-    t += `═══════════════════════════════════════════════════════\n`;
-    navigator.clipboard.writeText(t).then(() => toast.success("Texto copiado al portapapeles")).catch(() => toast.error("Error al copiar"));
+    navigator.clipboard
+      .writeText(t)
+      .then(() => toast.success("Texto copiado al portapapeles"))
+      .catch(() => toast.error("Error al copiar"));
   };
 
   const handleGeneratePDF = () => {
