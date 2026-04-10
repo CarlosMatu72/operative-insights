@@ -80,7 +80,11 @@ export function usePendientes() {
   return useQuery({
     queryKey: ["pendientes"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get ALTA_REMESA doc type id to exclude from queue
+      const { data: docTypes } = await supabase.from("document_types").select("id, code");
+      const altaRemesaId = docTypes?.find(d => d.code === "ALTA_REMESA")?.id;
+
+      let query = supabase
         .from("review_cases")
         .select(`
           *,
@@ -91,6 +95,12 @@ export function usePendientes() {
         `)
         .in("status", ["REGISTRADO", "ASIGNADO"])
         .order("registered_at", { ascending: true });
+
+      if (altaRemesaId) {
+        query = query.neq("document_type_id", altaRemesaId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },

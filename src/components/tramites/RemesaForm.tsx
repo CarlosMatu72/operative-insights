@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -26,6 +25,19 @@ function parseRangeInput(input: string): number[] {
     }
   }
   return Array.from(nums).sort((a, b) => a - b);
+}
+
+function buildLoteDescription(numbers: number[]): string {
+  if (numbers.length === 0) return "";
+  const sorted = [...numbers].sort((a, b) => a - b);
+  const ranges: string[] = [];
+  let start = sorted[0], end = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === end + 1) { end = sorted[i]; }
+    else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
+  }
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+  return ranges.join(", ");
 }
 
 export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
@@ -54,56 +66,48 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
       const docType = (documentTypes.data ?? []).find(d => d.code === "REMESA");
       if (!docType) throw new Error("Tipo REMESA no encontrado");
 
-      // Check which numbers already exist for this base reference
-      const { data: existing } = await supabase
+      const loteDescripcion = buildLoteDescription(parsedNumbers);
+      const referencia = `${selectedRemesa.remesa_base_reference} - ${loteDescripcion}`;
+
+      // Check this lote reference doesn't already exist
+      const { count } = await supabase
         .from("review_cases")
-        .select("remesa_revision_number")
-        .eq("remesa_base_reference", selectedRemesa.remesa_base_reference!)
-        .not("remesa_revision_number", "is", null);
-
-      const existingNums = new Set((existing ?? []).map(r => r.remesa_revision_number));
-      const toCreate = parsedNumbers.filter(n => !existingNums.has(n));
-      const duplicates = parsedNumbers.filter(n => existingNums.has(n));
-
-      if (toCreate.length === 0) {
-        throw new Error(`Todas las remesas indicadas ya existen: ${duplicates.join(", ")}`);
+        .select("id", { count: "exact", head: true })
+        .eq("reference", referencia)
+        .eq("remesa_base_reference", selectedRemesa.remesa_base_reference!);
+      if (count && count > 0) {
+        throw new Error(`Ya existe un registro para el lote "${loteDescripcion}" de esta remesa`);
       }
 
-      // Create remesas sequentially to avoid duplicate folio race condition
+      const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
+      if (!folio) throw new Error("Error generando folio");
+
       const hasGlosador = glosadorId && glosadorId !== "_none";
-      for (const num of toCreate) {
-        const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "REMESA" });
-        if (!folio) throw new Error("Error generando folio");
 
-        const { error } = await supabase.from("review_cases").insert({
-          internal_folio: folio,
-          reference: `${selectedRemesa.remesa_base_reference}-${num}`,
-          document_type_id: docType.id,
-          branch_id: selectedRemesa.branch_id,
-          client_id: selectedRemesa.client_id,
-          assigned_glosador_user_id: hasGlosador ? glosadorId : null,
-          status: hasGlosador ? "ASIGNADO" as const : "REGISTRADO" as const,
-          assigned_at: hasGlosador ? new Date().toISOString() : null,
-          parent_case_id: selectedRemesa.id,
-          remesa_base_reference: selectedRemesa.remesa_base_reference,
-          remesa_revision_number: num,
-          is_active_remesa: false,
-          created_by: user?.id,
-          updated_by: user?.id,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.from("review_cases").insert({
+        internal_folio: folio,
+        reference: referencia,
+        document_type_id: docType.id,
+        branch_id: selectedRemesa.branch_id,
+        client_id: selectedRemesa.client_id,
+        assigned_glosador_user_id: hasGlosador ? glosadorId : null,
+        status: hasGlosador ? "ASIGNADO" as const : "REGISTRADO" as const,
+        assigned_at: hasGlosador ? new Date().toISOString() : null,
+        parent_case_id: selectedRemesa.id,
+        remesa_base_reference: selectedRemesa.remesa_base_reference,
+        remesa_revision_number: parsedNumbers[0],
+        remesa_lote_descripcion: loteDescripcion,
+        is_active_remesa: false,
+        created_by: user?.id,
+        updated_by: user?.id,
+      });
+      if (error) throw error;
 
-      return { created: toCreate, skipped: duplicates };
+      return { referencia, loteDescripcion };
     },
     onSuccess: (result) => {
-      const msg = result.skipped.length > 0
-        ? `${result.created.length} remesa(s) creada(s). Omitidas por duplicado: ${result.skipped.join(", ")}`
-        : `${result.created.length} remesa(s) registrada(s) exitosamente`;
-      toast.success(msg);
-      setRemesaBaseId("");
-      setGlosadorId("");
-      setRangeInput("");
+      toast.success(`Remesa registrada: ${result.referencia}`);
+      setRemesaBaseId(""); setGlosadorId(""); setRangeInput("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       queryClient.invalidateQueries({ queryKey: ["pendientes"] });
@@ -162,7 +166,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {parsedNumbers.length > 0 && (
-        <div className="space-y-2">
+        <div className="rounded-lg border bg-card p-3 space-y-1">
           <div className="flex items-center gap-2">
             {isValidInput ? (
               <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -170,19 +174,13 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
               <AlertCircle className="h-4 w-4 text-destructive" />
             )}
             <span className="text-sm font-medium">
-              {parsedNumbers.length} remesa{parsedNumbers.length !== 1 ? "s" : ""} a registrar
+              Lote: <span className="font-mono">{buildLoteDescription(parsedNumbers)}</span>
+              <span className="text-muted-foreground ml-2">({parsedNumbers.length} remesas)</span>
             </span>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {parsedNumbers.slice(0, 50).map(n => (
-              <Badge key={n} variant="secondary" className="text-xs">
-                {selectedRemesa?.remesa_base_reference ?? "REM"}-{n}
-              </Badge>
-            ))}
-            {parsedNumbers.length > 50 && (
-              <Badge variant="outline" className="text-xs">+{parsedNumbers.length - 50} más</Badge>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Referencia: <span className="font-mono">{selectedRemesa?.remesa_base_reference} - {buildLoteDescription(parsedNumbers)}</span>
+          </p>
           {parsedNumbers.length > 100 && (
             <p className="text-xs text-destructive">Máximo 100 remesas por registro. Divide en lotes.</p>
           )}
@@ -204,7 +202,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={mutation.isPending || !remesaBaseId || !isValidInput}>
-          {mutation.isPending ? "Registrando..." : `Registrar ${parsedNumbers.length > 0 ? parsedNumbers.length : ""} remesa${parsedNumbers.length !== 1 ? "s" : ""}`}
+          {mutation.isPending ? "Registrando..." : "Registrar Remesa"}
         </Button>
       </div>
     </form>
