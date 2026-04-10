@@ -345,6 +345,29 @@ export function useReviewActions(caseId: string) {
     onError: () => toast.error("Error al registrar observación"),
   });
 
+  const editFinding = useMutation({
+    mutationFn: async (payload: {
+      findingId: string;
+      category_id?: string;
+      subcategory_id?: string;
+      observation_error_id?: string | null;
+      comentario_inicial?: string;
+    }) => {
+      const { error } = await supabase
+        .from("review_findings")
+        .update({
+          category_id: payload.category_id ?? null,
+          subcategory_id: payload.subcategory_id ?? null,
+          observation_error_id: payload.observation_error_id ?? null,
+          comentario_inicial: payload.comentario_inicial ?? null,
+        })
+        .eq("id", payload.findingId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Observación actualizada"); invalidate(); },
+    onError: () => toast.error("Error al actualizar"),
+  });
+
   const removeFinding = useMutation({
     mutationFn: async (findingId: string) => {
       const { error } = await supabase
