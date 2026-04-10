@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { KpiCard } from "@/components/KpiCard";
@@ -5,12 +6,12 @@ import { useKPIs, useGlosadores, useRealtimeSessions } from "@/hooks/useTableroD
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } from "lucide-react";
-import { format } from "date-fns";
 
 const Index = () => {
   const { profile } = useAuth();
@@ -18,18 +19,39 @@ const Index = () => {
   const { data: glosadores = [] } = useGlosadores();
   useRealtimeSessions();
 
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const { data: recentCases = [] } = useQuery({
-    queryKey: ["recent-cases-dashboard"],
+    queryKey: ["recent-cases-dashboard", dateFrom, dateTo],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("review_cases")
-        .select("*, document_types(name), branches(nombre), executives(nombre)")
-        .order("registered_at", { ascending: false })
-        .limit(10);
-      return data ?? [];
+        .select(`
+          *, 
+          document_types(name, code), 
+          glosador:profiles!review_cases_glosador_profile_fkey(nombre),
+          review_scores(score_total),
+          review_findings(id)
+        `)
+        .eq("status", "APROBADO")
+        .order("approved_at", { ascending: false })
+        .limit(50);
+
+      if (dateFrom) query = query.gte("approved_at", dateFrom);
+      if (dateTo) query = query.lte("approved_at", dateTo + "T23:59:59");
+
+      const { data } = await query;
+      return (data ?? []).map(c => ({
+        ...c,
+        score_total: c.review_scores?.[0]?.score_total ?? null,
+        findings_count: c.review_findings?.length ?? 0,
+      }));
     },
     refetchInterval: 30000,
   });
+
+  const filteredCases = recentCases;
 
   const stats = [
     { label: "Total trámites", value: kpis?.total ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
@@ -37,7 +59,7 @@ const Index = () => {
     { label: "En revisión", value: kpis?.enRevision ?? "—", icon: ClipboardCheck, color: "bg-primary/10 text-primary" },
     { label: "En corrección / pausados", value: kpis?.pausados ?? "—", icon: AlertTriangle, color: "bg-warning/10 text-warning" },
     { label: "Aprobados (mes)", value: kpis?.aprobadosMes ?? "—", icon: CheckCircle, color: "bg-success/10 text-success" },
-    { label: "Glosadores activos", value: glosadores.filter(g => g.isActive).length, icon: Users, color: "bg-success/10 text-success" },
+    { label: "Glosadores activos", value: glosadores.filter((g: any) => g.isActive).length, icon: Users, color: "bg-success/10 text-success" },
   ];
 
   return (
@@ -65,88 +87,97 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Bottom sections: Recent Cases + Glosadores */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Recent Cases - 2/3 */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Trámites Recientes</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Referencia</TableHead>
-                      <TableHead className="text-xs">Tipo</TableHead>
-                      <TableHead className="text-xs">Sucursal</TableHead>
-                      <TableHead className="text-xs">Ejecutivo</TableHead>
-                      <TableHead className="text-xs">Estatus</TableHead>
-                      <TableHead className="text-xs">Fecha</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentCases.map(c => (
-                      <TableRow key={c.id}>
-                        <TableCell className="text-xs font-medium">{c.reference ?? c.internal_folio}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
-                            {(c.document_types)?.name ?? "—"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{(c.branches)?.nombre ?? "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{(c.executives)?.nombre ?? "—"}</TableCell>
-                        <TableCell><StatusBadge status={c.status} /></TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {format(new Date(c.registered_at), "dd/MM/yy")}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {recentCases.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">
-                          Sin trámites registrados
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Glosadores - 1/3 */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Glosadores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                {glosadores.map(g => (
-                  <div key={g.id} className="flex items-center gap-2 rounded-lg border bg-card p-2.5 min-w-[140px]">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={g.avatar_url ?? undefined} />
-                        <AvatarFallback className="text-xs bg-muted">
-                          {g.nombre?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span
-                        className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card ${
-                         g.isActive ? "bg-destructive animate-pulse" : "bg-success"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-foreground truncate">{g.nombre}</span>
-                  </div>
-                ))}
-                {glosadores.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Sin glosadores activos</p>
+        {/* Recent / Filtered Cases */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <CardTitle className="text-base">Trámites Revisados</CardTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">Desde</Label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                    className="h-8 text-xs w-36"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">Hasta</Label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                    className="h-8 text-xs w-36"
+                  />
+                </div>
+                {(dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  >
+                    Limpiar
+                  </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Referencia</TableHead>
+                    <TableHead className="text-xs">Tipo</TableHead>
+                    <TableHead className="text-xs">Glosador</TableHead>
+                    <TableHead className="text-xs">Observaciones</TableHead>
+                    <TableHead className="text-xs">Calificación</TableHead>
+                    <TableHead className="text-xs">Aprobado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCases.map(c => (
+                    <TableRow key={c.id}>
+                      <TableCell className="text-xs font-medium">{c.reference ?? c.internal_folio}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">{c.document_types?.name ?? "—"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {c.glosador?.nombre ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-center text-muted-foreground">
+                        {c.findings_count ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-center">
+                        {c.score_total != null ? (
+                          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold ${
+                            Number(c.score_total) >= 85 ? "bg-success/10 text-success" :
+                            Number(c.score_total) >= 70 ? "bg-warning/10 text-warning" :
+                            "bg-destructive/10 text-destructive"
+                          }`}>{c.score_total}/100</span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {c.approved_at
+                          ? new Date(c.approved_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })
+                            + " " + new Date(c.approved_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
+                          : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredCases.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">
+                        {dateFrom || dateTo ? "Sin trámites en el rango seleccionado" : "Sin trámites aprobados"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
