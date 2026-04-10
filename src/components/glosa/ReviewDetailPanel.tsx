@@ -79,6 +79,19 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const actions = useReviewActions(caseId);
   const queryClient = useQueryClient();
 
+  const { data: scoreDetail } = useQuery({
+    queryKey: ["review-score-detail", caseId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("review_scores")
+        .select("*")
+        .eq("review_case_id", caseId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: status === "APROBADO",
+  });
+
   const [branchId, setBranchId] = useState("");
   const [clientId, setClientId] = useState("");
   const [executiveId, setExecutiveId] = useState("");
