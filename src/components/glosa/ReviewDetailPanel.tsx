@@ -1125,6 +1125,49 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Score Breakdown Dialog */}
+      <Dialog open={showScoreBreakdown} onOpenChange={setShowScoreBreakdown}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Cálculo de Calificación</DialogTitle></DialogHeader>
+          {scoreDetail ? (
+            <div className="space-y-4 text-sm">
+              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Clasificación (20 pts máx.)</span>
+                  <span className="font-bold">{scoreDetail.score_classification}/20</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Rondas de corrección: {scoreDetail.correction_rounds}
+                  {scoreDetail.correction_rounds === 0 ? " — puntuación perfecta" :
+                   scoreDetail.correction_rounds === 1 ? " — 18 pts" :
+                   scoreDetail.correction_rounds === 2 ? " — 15 pts" :
+                   scoreDetail.correction_rounds === 3 ? " — 12 pts" :
+                   scoreDetail.correction_rounds === 4 ? " — 8 pts" : " — 5 pts"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Observaciones (80 pts máx.)</span>
+                  <span className="font-bold">{scoreDetail.score_observations}/80</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Errores detectados: {scoreDetail.total_errors}
+                </p>
+              </div>
+              <div className="border-t pt-3 flex justify-between font-bold text-base">
+                <span>Total</span>
+                <span className={
+                  Number(scoreDetail.score_total) >= 85 ? "text-success" :
+                  Number(scoreDetail.score_total) >= 70 ? "text-warning" : "text-destructive"
+                }>{scoreDetail.score_total}/100</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">Sin datos de calificación</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
