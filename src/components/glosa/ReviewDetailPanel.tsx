@@ -447,10 +447,16 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
               {reviewCase.reference ?? reviewCase.internal_folio}
             </h1>
-            <StatusBadge status={status} />
-            {status === "APROBADO" && reviewCase && (
-              <ScoreBadgeInline caseId={caseId} />
-            )}
+             <StatusBadge status={status} />
+             {status === "APROBADO" && reviewCase && (
+               <ScoreBadgeInline caseId={caseId} />
+             )}
+             {status === "APROBADO" && (
+               <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground gap-1"
+                 onClick={() => setShowScoreBreakdown(true)}>
+                 Ver cálculo
+               </Button>
+             )}
           </div>
           <p className="text-sm text-muted-foreground">
             {reviewCase.document_types?.name} — Folio: {reviewCase.internal_folio}
