@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useGlosaCases, useGlosaActions } from "@/hooks/useGlosaPanel";
 import { useCatalogs } from "@/hooks/useCatalogs";
+import { useGlosadores } from "@/hooks/useTableroData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +23,9 @@ function formatTime(seconds: number): string {
 }
 
 const Glosa = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { branches, documentTypes, executives } = useCatalogs();
+  const { data: glosadores = [] } = useGlosadores();
   const { startGlosa, continueGlosa, pauseGlosa } = useGlosaActions();
 
   const [filterRef, setFilterRef] = useState("");
@@ -31,6 +33,7 @@ const Glosa = () => {
   const [filterSucursal, setFilterSucursal] = useState("");
   const [filterEstatus, setFilterEstatus] = useState("");
   const [filterEjecutivo, setFilterEjecutivo] = useState("");
+  const [filterGlosador, setFilterGlosador] = useState("");
 
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
@@ -40,18 +43,19 @@ const Glosa = () => {
     sucursal: filterSucursal,
     estatus: filterEstatus,
     ejecutivo: filterEjecutivo,
-    glosador: "",
+    glosador: filterGlosador,
   });
 
-  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo;
+  const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo || filterGlosador;
 
   const clearFilters = () => {
     setFilterRef(""); setFilterTipo(""); setFilterSucursal("");
-    setFilterEstatus(""); setFilterEjecutivo("");
+    setFilterEstatus(""); setFilterEjecutivo(""); setFilterGlosador("");
   };
 
   const canGlosar = (c: any) =>
-    c.status === "ASIGNADO" && !c.first_started_at;
+    c.status === "ASIGNADO" && !c.first_started_at &&
+    (!isAdmin || c.assigned_glosador_user_id === user?.id);
 
   const canContinue = (c: any) =>
     ["PAUSADO", "REABIERTO", "DOCUMENTO_PENDIENTE"].includes(c.status) ||
