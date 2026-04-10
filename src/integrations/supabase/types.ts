@@ -900,26 +900,32 @@ export type Database = {
       }
       review_comments: {
         Row: {
+          closed_at: string | null
           comment_text: string
           created_at: string
           created_by: string | null
           id: string
+          is_closed: boolean
           review_case_id: string
           review_round_id: string | null
         }
         Insert: {
+          closed_at?: string | null
           comment_text: string
           created_at?: string
           created_by?: string | null
           id?: string
+          is_closed?: boolean
           review_case_id: string
           review_round_id?: string | null
         }
         Update: {
+          closed_at?: string | null
           comment_text?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          is_closed?: boolean
           review_case_id?: string
           review_round_id?: string | null
         }
