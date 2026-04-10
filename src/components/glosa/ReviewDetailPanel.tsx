@@ -668,7 +668,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       </div>
 
       {/* Observations */}
-      <Card>
+      <Card id="obs-section">
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold tracking-tight">
             Observaciones
@@ -901,18 +901,55 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           <p className="text-xs text-muted-foreground">Comentarios informativos que no afectan la calificación</p>
 
           {showCommentForm && (
-            <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-4 space-y-3">
+            <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium">Nuevo comentario general</span>
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setShowCommentForm(false)}>
+                <span className="text-xs font-medium text-info">
+                  Comentario general — no afecta calificación
+                </span>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0"
+                  onClick={() => { setShowCommentForm(false); setCommentCategory(""); setCommentSubcategory(""); setGeneralComment(""); }}>
                   <X className="h-3 w-3" />
                 </Button>
               </div>
-              <Textarea value={generalComment} onChange={(e) => setGeneralComment(e.target.value)}
-                placeholder="Escribe un comentario general sobre la revisión..." className="min-h-[60px] text-sm" />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Categoría</Label>
+                  <Select value={commentCategory} onValueChange={v => { setCommentCategory(v); setCommentSubcategory(""); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                    <SelectContent>
+                      {(categories.data ?? []).map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {commentCategory && (
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Subcategoría</Label>
+                    <Select value={commentSubcategory} onValueChange={setCommentSubcategory}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                      <SelectContent>
+                        {(subcategories.data ?? []).filter(s => s.category_id === commentCategory).map(sub => (
+                          <SelectItem key={sub.id} value={sub.id}>{sub.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <Textarea
+                value={generalComment}
+                onChange={e => setGeneralComment(e.target.value)}
+                placeholder="Escribe el comentario general..."
+                rows={2}
+                className="text-sm"
+              />
               <div className="flex justify-end">
-                <Button size="sm" onClick={handleAddComment} disabled={!generalComment.trim()} className="gap-1 text-xs">
-                  <Plus className="h-3 w-3" /> Agregar Comentario
+                <Button size="sm" onClick={handleAddComment}
+                  disabled={!generalComment.trim()} className="gap-1 text-xs">
+                  <Plus className="h-3 w-3" /> Agregar
                 </Button>
               </div>
             </div>
