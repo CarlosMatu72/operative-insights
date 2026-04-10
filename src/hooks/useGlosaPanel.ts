@@ -54,7 +54,9 @@ export function useGlosaCases(filters: {
         .order("registered_at", { ascending: false });
 
       // Always filter to current user's assigned cases only
-      query = query.eq("assigned_glosador_user_id", user!.id);
+      if (!isAdmin) {
+        query = query.eq("assigned_glosador_user_id", user!.id);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
