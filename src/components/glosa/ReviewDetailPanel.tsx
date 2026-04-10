@@ -112,6 +112,18 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [newClientNombre, setNewClientNombre] = useState("");
   const [savingNewClient, setSavingNewClient] = useState(false);
 
+  // Edit finding states
+  const [editingFindingId, setEditingFindingId] = useState<string | null>(null);
+  const [editCategoryId, setEditCategoryId] = useState("");
+  const [editSubcategoryId, setEditSubcategoryId] = useState("");
+  const [editErrorId, setEditErrorId] = useState("");
+  const [editErrorSearch, setEditErrorSearch] = useState("");
+  const [editComment, setEditComment] = useState("");
+
+  // Edit comment states
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
+
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
   const isCorrection = ["EN_CORRECCION"].includes(status);
