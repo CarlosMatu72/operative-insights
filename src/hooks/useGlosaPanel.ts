@@ -51,16 +51,12 @@ export function useGlosaCases(filters: {
           executives(nombre),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
-        .not("status", "in", '("REGISTRADO","ALTA_REMESA")')
+        .not("status", "eq", "REGISTRADO")
         .order("registered_at", { ascending: filters.sortAsc });
 
       if (!isAdmin) {
-        query = query.eq("assigned_glosador_user_id", user!.id);
-      }
-
-      // Non-admin: hide completed cases
-      if (!isAdmin) {
         query = query
+          .eq("assigned_glosador_user_id", user!.id)
           .not("status", "eq", "APROBADO")
           .not("status", "eq", "RECHAZADO");
       }
