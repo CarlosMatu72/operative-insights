@@ -223,7 +223,13 @@ export type ReviewComment = {
   created_by: string | null;
   review_case_id: string;
   review_round_id: string | null;
+  is_closed: boolean;
+  closed_at: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   profiles: { nombre: string } | null;
+  observation_categories?: { nombre: string } | null;
+  observation_subcategories?: { nombre: string } | null;
 };
 
 export function useReviewComments(caseId: string) {
@@ -232,7 +238,12 @@ export function useReviewComments(caseId: string) {
     queryFn: async () => {
       const { data } = await supabase
         .from("review_comments")
-        .select("*, profiles:created_by(nombre)")
+        .select(`
+          *, 
+          profiles:created_by(nombre),
+          observation_categories(nombre),
+          observation_subcategories(nombre)
+        `)
         .eq("review_case_id", caseId)
         .order("created_at", { ascending: false });
       return (data ?? []) as unknown as ReviewComment[];
@@ -257,6 +268,7 @@ export function useReviewActions(caseId: string) {
     queryClient.invalidateQueries({ queryKey: ["finding-histories", caseId] });
     queryClient.invalidateQueries({ queryKey: ["rejection-histories", caseId] });
     queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
+    queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
   };
 
   const saveDetails = useMutation({
@@ -366,6 +378,58 @@ export function useReviewActions(caseId: string) {
     },
     onSuccess: () => { toast.success("Observación actualizada"); invalidate(); },
     onError: () => toast.error("Error al actualizar"),
+  });
+
+  const duplicateFinding = useMutation({
+    mutationFn: async (findingId: string) => {
+      const { data: original } = await supabase
+        .from("review_findings")
+        .select("*")
+        .eq("id", findingId)
+        .single();
+      if (!original) throw new Error("Observación no encontrada");
+      const { data: rounds } = await supabase
+        .from("review_rounds")
+        .select("id")
+        .eq("review_case_id", caseId)
+        .order("round_number", { ascending: false })
+        .limit(1);
+      const { error } = await supabase.from("review_findings").insert({
+        review_case_id: caseId,
+        review_round_id: rounds?.[0]?.id ?? null,
+        category_id: original.category_id,
+        subcategory_id: original.subcategory_id,
+        observation_error_id: original.observation_error_id,
+        comentario_inicial: original.comentario_inicial,
+        current_status: "open",
+        is_open: true,
+        created_by: user!.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Observación duplicada"); invalidate(); },
+    onError: () => toast.error("Error al duplicar"),
+  });
+
+  const duplicateComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const { data: original } = await supabase
+        .from("review_comments")
+        .select("*")
+        .eq("id", commentId)
+        .single();
+      if (!original) throw new Error("Comentario no encontrado");
+      const { error } = await supabase.from("review_comments").insert({
+        review_case_id: caseId,
+        comment_text: original.comment_text,
+        category_id: original.category_id ?? null,
+        subcategory_id: original.subcategory_id ?? null,
+        created_by: user!.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Comentario duplicado"); invalidate(); },
+    onError: () => toast.error("Error al duplicar"),
   });
 
   const removeFinding = useMutation({
@@ -651,7 +715,7 @@ export function useReviewActions(caseId: string) {
 
   return {
     saveDetails, saveClassifications, saveDocumentation,
-    addFinding, editFinding, removeFinding, updateFindingStatus,
+    addFinding, editFinding, duplicateFinding, duplicateComment, removeFinding, updateFindingStatus,
     startCorrection, approveCase, rejectCase, saveWithObservations, reopenCase,
     saveAsDocumentoPendiente,
   };
