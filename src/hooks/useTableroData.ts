@@ -76,9 +76,9 @@ export function useGlosadores() {
   });
 }
 
-export function usePendientes() {
+export function usePendientes(sortAsc = true) {
   return useQuery({
-    queryKey: ["pendientes"],
+    queryKey: ["pendientes", sortAsc],
     queryFn: async () => {
       // Get ALTA_REMESA doc type id to exclude from queue
       const { data: docTypes } = await supabase.from("document_types").select("id, code");
@@ -94,7 +94,7 @@ export function usePendientes() {
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .in("status", ["REGISTRADO", "ASIGNADO"])
-        .order("registered_at", { ascending: true });
+        .order("registered_at", { ascending: sortAsc });
 
       if (altaRemesaId) {
         query = query.neq("document_type_id", altaRemesaId);
