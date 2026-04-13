@@ -900,6 +900,7 @@ export type Database = {
       }
       review_comments: {
         Row: {
+          category_id: string | null
           closed_at: string | null
           comment_text: string
           created_at: string
@@ -908,8 +909,10 @@ export type Database = {
           is_closed: boolean
           review_case_id: string
           review_round_id: string | null
+          subcategory_id: string | null
         }
         Insert: {
+          category_id?: string | null
           closed_at?: string | null
           comment_text: string
           created_at?: string
@@ -918,8 +921,10 @@ export type Database = {
           is_closed?: boolean
           review_case_id: string
           review_round_id?: string | null
+          subcategory_id?: string | null
         }
         Update: {
+          category_id?: string | null
           closed_at?: string | null
           comment_text?: string
           created_at?: string
@@ -928,8 +933,16 @@ export type Database = {
           is_closed?: boolean
           review_case_id?: string
           review_round_id?: string | null
+          subcategory_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "review_comments_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "observation_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "review_comments_created_by_fkey"
             columns: ["created_by"]
@@ -949,6 +962,13 @@ export type Database = {
             columns: ["review_round_id"]
             isOneToOne: false
             referencedRelation: "review_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_comments_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "observation_subcategories"
             referencedColumns: ["id"]
           },
         ]
