@@ -352,11 +352,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         t += `\n  Categoría = ${catName}\n`;
         for (const f of byCategory[catName]) {
           const sub = f.observation_subcategories?.nombre || "";
-          const err = f.observation_errors?.descripcion || "";
-          const pts = f.observation_errors?.descuento_puntos;
           const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
-          const errorPart = err ? ` — ${err}${pts ? ` (-${pts} pts)` : ""}` : "";
-          t += `${counter}.\t ${sub ? sub + " --> " : ""}${errorPart}${comentario}\n`;
+          t += `${counter}.\t ${sub ? sub + " --> " : ""}${comentario}\n`;
           counter++;
         }
       }

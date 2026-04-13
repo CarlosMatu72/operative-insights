@@ -34,6 +34,7 @@ const Glosa = () => {
   const [filterEstatus, setFilterEstatus] = useState("");
   const [filterEjecutivo, setFilterEjecutivo] = useState("");
   const [filterGlosador, setFilterGlosador] = useState("");
+  const [sortAsc, setSortAsc] = useState(false);
 
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
@@ -44,6 +45,7 @@ const Glosa = () => {
     estatus: filterEstatus,
     ejecutivo: filterEjecutivo,
     glosador: filterGlosador,
+    sortAsc,
   });
 
   const hasFilters = filterRef || filterTipo || filterSucursal || filterEstatus || filterEjecutivo || filterGlosador;
@@ -135,9 +137,11 @@ const Glosa = () => {
             <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Estatus" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">Todos</SelectItem>
-              {Object.entries(statusConfig).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v.label}</SelectItem>
-              ))}
+              {Object.entries(statusConfig)
+                .filter(([k]) => isAdmin || !["APROBADO", "RECHAZADO"].includes(k))
+                .map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <Select value={filterEjecutivo} onValueChange={setFilterEjecutivo}>
@@ -160,6 +164,19 @@ const Glosa = () => {
               </SelectContent>
             </Select>
           )}
+          <Button
+            variant="outline" size="sm"
+            className="h-9 gap-1.5 text-xs"
+            onClick={() => setSortAsc(!sortAsc)}
+            title={sortAsc ? "Más recientes primero" : "Más antiguos primero"}
+          >
+            {sortAsc ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8l4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h4"/><path d="M11 16h7"/><path d="M11 20h10"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 16l4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h4"/><path d="M11 8h7"/><path d="M11 12h10"/></svg>
+            )}
+            {sortAsc ? "Más antiguos" : "Más recientes"}
+          </Button>
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
               <FilterX className="h-3.5 w-3.5" /> Limpiar

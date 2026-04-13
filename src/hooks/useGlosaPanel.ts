@@ -34,6 +34,7 @@ export function useGlosaCases(filters: {
   estatus: string;
   ejecutivo: string;
   glosador: string;
+  sortAsc: boolean;
 }) {
   const { user, isAdmin } = useAuth();
 
@@ -50,12 +51,18 @@ export function useGlosaCases(filters: {
           executives(nombre),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
-        .not("status", "eq", "REGISTRADO")
-        .order("registered_at", { ascending: false });
+        .not("status", "in", '("REGISTRADO","ALTA_REMESA")')
+        .order("registered_at", { ascending: filters.sortAsc });
 
-      // Always filter to current user's assigned cases only
       if (!isAdmin) {
         query = query.eq("assigned_glosador_user_id", user!.id);
+      }
+
+      // Non-admin: hide completed cases
+      if (!isAdmin) {
+        query = query
+          .not("status", "eq", "APROBADO")
+          .not("status", "eq", "RECHAZADO");
       }
 
       const { data, error } = await query;
