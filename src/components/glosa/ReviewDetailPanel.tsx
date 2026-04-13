@@ -1081,7 +1081,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             <div className="space-y-2">
               {generalCommentsList.map((c) => (
                 <div key={c.id} className={`rounded-lg border p-3 space-y-1.5 ${
-                  (c as any).is_closed ? "border-muted bg-muted/5 opacity-60" : "border-info/30 bg-info/5"
+                  c.is_closed ? "border-muted bg-muted/5 opacity-60" : "border-info/30 bg-info/5"
                 }`}>
                   {editingCommentId === c.id ? (
                     <div className="space-y-2">
