@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
 import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } from "lucide-react";
 
 const Index = () => {
@@ -21,6 +23,7 @@ const Index = () => {
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedAprobadoId, setSelectedAprobadoId] = useState<string | null>(null);
 
   const { data: recentCases = [] } = useQuery({
     queryKey: ["recent-cases-dashboard", dateFrom, dateTo],
@@ -128,7 +131,7 @@ const Index = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">Referencia</TableHead>
+                    <TableHead className="text-xs">Referencia <span className="text-muted-foreground font-normal">(ver detalle →)</span></TableHead>
                     <TableHead className="text-xs">Tipo</TableHead>
                     <TableHead className="text-xs">Glosador</TableHead>
                     <TableHead className="text-xs">Observaciones</TableHead>
@@ -138,8 +141,14 @@ const Index = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredCases.map(c => (
-                    <TableRow key={c.id}>
-                      <TableCell className="text-xs font-medium">{c.reference ?? c.internal_folio}</TableCell>
+                    <TableRow 
+                      key={c.id} 
+                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      onClick={() => setSelectedAprobadoId(c.id)}
+                    >
+                      <TableCell className="text-xs font-medium">
+                        <span className="text-primary hover:underline">{c.reference ?? c.internal_folio}</span>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-[10px]">{c.document_types?.name ?? "—"}</Badge>
                       </TableCell>
@@ -178,6 +187,20 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Sheet 
+          open={!!selectedAprobadoId} 
+          onOpenChange={(open) => { if (!open) setSelectedAprobadoId(null); }}
+        >
+          <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl p-0 overflow-y-auto">
+            {selectedAprobadoId && (
+              <ReviewDetailPanel 
+                caseId={selectedAprobadoId} 
+                onClose={() => setSelectedAprobadoId(null)} 
+              />
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AppLayout>
   );
