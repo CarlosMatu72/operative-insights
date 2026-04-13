@@ -362,7 +362,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       }
     }
     // ── COMENTARIOS GENERALES (only open ones, no author) ──
-    const openComments = generalCommentsList.filter(c => !(c as any).is_closed);
+    const openComments = generalCommentsList.filter(c => !c.is_closed);
     if (openComments.length > 0) {
       t += "\n     >>Comentarios<<\n";
       openComments.forEach((c, i) => {
