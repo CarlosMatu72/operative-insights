@@ -334,12 +334,13 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     }
     // ── OBSERVACIONES grouped by category ──
     t += ">> Observaciones <<\n";
-    if (findings.length === 0) {
-      t += "  Sin observaciones detectadas.\n";
+    const copyFindings = findings.filter(f => f.current_status !== "CORRECTED");
+    if (copyFindings.length === 0) {
+      t += "  Sin observaciones pendientes.\n";
     } else {
       const byCategory: Record<string, typeof findings> = {};
       const catOrder: string[] = [];
-      for (const f of findings) {
+      for (const f of copyFindings) {
         const catName = f.observation_categories?.nombre || "Sin categoría";
         if (!byCategory[catName]) {
           byCategory[catName] = [];
@@ -981,8 +982,13 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                               </Button>
                             )}
                             {!isCorrection && f.is_open && !isReadOnly && (
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0"
-                                onClick={() => actions.removeFinding.mutate(f.id)}>
+                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive/60 hover:text-destructive"
+                                title="Eliminar observación"
+                                onClick={async () => {
+                                  await supabase.from("review_findings").delete().eq("id", f.id);
+                                  queryClient.invalidateQueries({ queryKey: ["review-findings", caseId] });
+                                  toast.success("Observación eliminada");
+                                }}>
                                 <X className="h-3.5 w-3.5" />
                               </Button>
                             )}
@@ -1161,6 +1167,15 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                                   .eq("id", c.id);
                                 queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
                               }}>✓</Button>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive/60 hover:text-destructive"
+                              title="Eliminar comentario"
+                              onClick={async () => {
+                                await supabase.from("review_comments").delete().eq("id", c.id);
+                                queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
+                                toast.success("Comentario eliminado");
+                              }}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         )}
                       </div>
