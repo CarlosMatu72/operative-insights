@@ -30,9 +30,14 @@ function formatTime(seconds: number): string {
 
 const Glosa = () => {
   const { isAdmin, user } = useAuth();
+  const queryClient = useQueryClient();
   const { branches, documentTypes, executives } = useCatalogs();
   const { data: glosadores = [] } = useGlosadores();
   const { startGlosa, continueGlosa, pauseGlosa } = useGlosaActions();
+
+  const [deletingCaseId, setDeletingCaseId] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteIsPending, setDeleteIsPending] = useState(false);
 
   const [filterRef, setFilterRef] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
