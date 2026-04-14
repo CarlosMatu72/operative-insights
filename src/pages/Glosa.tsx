@@ -348,6 +348,17 @@ const Glosa = () => {
                             <ClipboardCheck className="h-3 w-3" /> Correcciones
                           </Button>
                         )}
+                        {isAdmin && !["APROBADO", "RECHAZADO"].includes(c.status) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-destructive/60 hover:text-destructive"
+                            title="Eliminar trámite"
+                            onClick={(e) => { e.stopPropagation(); setDeletingCaseId(c.id); setDeleteReason(""); }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
