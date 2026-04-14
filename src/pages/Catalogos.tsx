@@ -150,16 +150,32 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
     saveMutation.mutate(formData);
   };
 
+  const filteredItems = items.filter((item: any) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return config.fields.some((f) => String(item[f.name] ?? "").toLowerCase().includes(q))
+      || (config.key === "executives" && (item.branches as any)?.nombre?.toLowerCase().includes(q));
+  });
+
   return (
     <div className="space-y-4">
-      {isAdmin && (
-        <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={`Buscar ${config.label.toLowerCase()}...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        {isAdmin && (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Agregar
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="rounded-lg border bg-card shadow-sm">
         <Table>
