@@ -308,3 +308,24 @@ export function useGlosaActions() {
 
   return { startGlosa, continueGlosa, pauseGlosa };
 }
+
+export function useDeletedCases() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["deleted-cases"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("review_cases")
+        .select(`
+          id, reference, internal_folio, status, registered_at,
+          deleted_at, delete_reason,
+          document_types(name)
+        `)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+}

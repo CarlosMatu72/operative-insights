@@ -111,6 +111,8 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [newClientNombre, setNewClientNombre] = useState("");
   const [savingNewClient, setSavingNewClient] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
 
   // Edit finding states
   const [editingFindingId, setEditingFindingId] = useState<string | null>(null);
