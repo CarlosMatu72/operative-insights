@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Catalogos = lazy(() => import("./pages/Catalogos"));
 const Gafetes = lazy(() => import("./pages/Gafetes"));
+const HistoricoAdmin = lazy(() => import("./pages/HistoricoAdmin"));
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/pre-registro" element={<ProtectedRoute><PreRegistro /></ProtectedRoute>} />
               <Route path="/glosa" element={<ProtectedRoute><Glosa /></ProtectedRoute>} />
               <Route path="/gafetes" element={<ProtectedRoute requiredRole="juridico"><Gafetes /></ProtectedRoute>} />
+              <Route path="/historico-admin" element={<ProtectedRoute requiredRole="admin"><HistoricoAdmin /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

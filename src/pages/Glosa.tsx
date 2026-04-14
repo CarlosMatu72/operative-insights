@@ -4,15 +4,21 @@ import { useGlosaCases, useGlosaActions } from "@/hooks/useGlosaPanel";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { useGlosadores } from "@/hooks/useTableroData";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox } from "lucide-react";
+import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2 } from "lucide-react";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
+import { toast } from "sonner";
 
 function formatTime(seconds: number): string {
   if (seconds === 0) return "—";
@@ -24,9 +30,14 @@ function formatTime(seconds: number): string {
 
 const Glosa = () => {
   const { isAdmin, user } = useAuth();
+  const queryClient = useQueryClient();
   const { branches, documentTypes, executives } = useCatalogs();
   const { data: glosadores = [] } = useGlosadores();
   const { startGlosa, continueGlosa, pauseGlosa } = useGlosaActions();
+
+  const [deletingCaseId, setDeletingCaseId] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteIsPending, setDeleteIsPending] = useState(false);
 
   const [filterRef, setFilterRef] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -337,6 +348,17 @@ const Glosa = () => {
                             <ClipboardCheck className="h-3 w-3" /> Correcciones
                           </Button>
                         )}
+                        {isAdmin && !["APROBADO", "RECHAZADO"].includes(c.status) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-destructive/60 hover:text-destructive"
+                            title="Eliminar trámite"
+                            onClick={(e) => { e.stopPropagation(); setDeletingCaseId(c.id); setDeleteReason(""); }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -363,6 +385,68 @@ const Glosa = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!deletingCaseId} onOpenChange={(v) => !v && setDeletingCaseId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Eliminar trámite</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              El trámite quedará en el Histórico Admin con toda su información.
+              Su referencia podrá reutilizarse. Esta acción queda registrada.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Motivo de eliminación</Label>
+              <Textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Describe el motivo..."
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingCaseId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteIsPending}
+              onClick={async () => {
+                if (!deletingCaseId) return;
+                setDeleteIsPending(true);
+                try {
+                  await supabase.from("review_cases").update({
+                    deleted_at: new Date().toISOString(),
+                    deleted_by: user?.id,
+                    delete_reason: deleteReason || null,
+                    updated_by: user?.id,
+                  }).eq("id", deletingCaseId);
+                  await supabase.from("audit_logs").insert({
+                    action: "ADMIN_DELETE_CASE",
+                    table_name: "review_cases",
+                    record_id: deletingCaseId,
+                    user_id: user?.id,
+                    details: { reason: deleteReason },
+                  });
+                  toast.success("Trámite eliminado");
+                  setDeletingCaseId(null);
+                  queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
+                  queryClient.invalidateQueries({ queryKey: ["deleted-cases-full"] });
+                } catch {
+                  toast.error("Error al eliminar");
+                } finally {
+                  setDeleteIsPending(false);
+                }
+              }}
+            >
+              {deleteIsPending ? "Eliminando..." : "Eliminar trámite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
