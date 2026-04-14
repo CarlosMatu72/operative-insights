@@ -560,51 +560,55 @@ export function useReviewActions(caseId: string) {
         status: "APROBADO" as const, approved_at: new Date().toISOString(), updated_by: user!.id,
       }).eq("id", caseId);
 
-      // Calculate and save score using PRD formula
+      // Fetch findings for scoring
+      const { data: findingsData } = await supabase
+        .from("review_findings")
+        .select("observation_error_id")
+        .eq("review_case_id", caseId);
+      const findingsRes = { data: findingsData };
+
+      // Calculate score — 3-part formula (100 pts total)
       try {
-        // correctionRounds = rounds with round_number > 1
-        const correctionRounds = (rounds ?? []).filter(r => r.round_number > 1).length;
-
-        // Fetch total active errors in catalog (denominator for observations score)
-        const [findingsRes, totalErrorsRes] = await Promise.all([
-          supabase.from("review_findings").select("observation_error_id").eq("review_case_id", caseId),
-          supabase.from("observation_errors").select("id", { count: "exact", head: true }).eq("activo", true),
-        ]);
-        const errorsDetected = (findingsRes.data ?? []).length;
-        const totalPossibleErrors = totalErrorsRes.count ?? 1;
-
-        // SCORE CLASIFICACIÓN (20 pts max) — fixed scale by correction rounds
-        const classScaleMap: Record<number, number> = { 0: 20, 1: 18, 2: 15, 3: 12, 4: 8 };
-        const scoreClasificacion = correctionRounds >= 5 ? 5 : (classScaleMap[correctionRounds] ?? 5);
-
-        // SCORE OBSERVACIONES (80 pts max)
-        // Step 1: proportion = (total_posibles - detectados) / total_posibles × 80
-        const proportion = Math.max(0, (totalPossibleErrors - errorsDetected) / totalPossibleErrors);
-        let scoreObservaciones = Math.round(80 * proportion);
-
-        // Step 2: subtract direct penalties from observation_errors.descuento_puntos
-        // Deduplicate: same error repeated multiple times counts penalty only once
+        const totalObservations = (findingsRes.data ?? []).length;
+        // ── PART 1: Error penalties (70 pts base) ──
+        // Deduplicate error IDs — same error counts only once
         const errorIds = [...new Set(
-          (findingsRes.data ?? []).map((f) => f.observation_error_id).filter(Boolean) as string[]
+          (findingsRes.data ?? [])
+            .map((f) => f.observation_error_id)
+            .filter(Boolean) as string[]
         )];
+        let totalPenalty = 0;
         if (errorIds.length > 0) {
           const { data: errorDetails } = await supabase
             .from("observation_errors")
             .select("descuento_puntos")
             .in("id", errorIds);
-          const totalPenalty = (errorDetails ?? []).reduce((sum, e) => sum + Number(e.descuento_puntos ?? 0), 0);
-          scoreObservaciones = Math.max(0, scoreObservaciones - totalPenalty);
+          totalPenalty = (errorDetails ?? [])
+            .reduce((sum, e) => sum + Number(e.descuento_puntos ?? 0), 0);
         }
+        const scoreErrors = Math.max(0, 70 - totalPenalty);
 
-        const scoreTotal = scoreClasificacion + scoreObservaciones;
+        // ── PART 2: Observation count (20 pts) ──
+        const scoreObservations =
+          totalObservations <= 5 ? 20 :
+          totalObservations <= 10 ? 10 : 0;
+
+        // ── PART 3: Revision rounds (10 pts) ──
+        const totalRounds = (rounds ?? []).length;
+        const scoreRevisions =
+          totalRounds <= 2 ? 10 :
+          totalRounds === 3 ? 5 : 0;
+
+        const scoreTotal = scoreErrors + scoreObservations + scoreRevisions;
 
         await supabase.from("review_scores").insert({
           review_case_id: caseId,
           score_total: scoreTotal,
-          score_classification: scoreClasificacion,
-          score_observations: scoreObservaciones,
-          total_errors: errorsDetected,
-          correction_rounds: correctionRounds,
+          score_classification: scoreErrors,
+          score_observations: scoreObservations,
+          score_revisions: scoreRevisions,
+          total_errors: totalObservations,
+          correction_rounds: totalRounds,
           calculated_by: user!.id,
         });
       } catch (e) {
@@ -713,10 +717,59 @@ export function useReviewActions(caseId: string) {
     onError: () => toast.error("Error al guardar"),
   });
 
+  const adminReopenApproved = useMutation({
+    mutationFn: async () => {
+      // Close active sessions
+      await supabase.from("review_sessions")
+        .update({ session_status: "completed", ended_at: new Date().toISOString() })
+        .eq("review_case_id", caseId).eq("session_status", "active");
+      // Delete the score so it gets recalculated on next approval
+      await supabase.from("review_scores")
+        .delete()
+        .eq("review_case_id", caseId);
+      // Revert status to REABIERTO so admin can review
+      await supabase.from("review_cases").update({
+        status: "REABIERTO" as const,
+        approved_at: null,
+        updated_by: user!.id,
+      }).eq("id", caseId);
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        action: "ADMIN_REOPEN_APPROVED",
+        table_name: "review_cases",
+        record_id: caseId,
+        user_id: user!.id,
+        details: { reason: "Admin reopened approved case for review" },
+      });
+    },
+    onSuccess: () => { toast.success("Caso reabierto para revisión"); invalidate(); },
+    onError: () => toast.error("Error al reabrir caso"),
+  });
+
+  const deleteCase = useMutation({
+    mutationFn: async (reason: string) => {
+      await supabase.from("review_cases").update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: user!.id,
+        delete_reason: reason || null,
+        updated_by: user!.id,
+      }).eq("id", caseId);
+      await supabase.from("audit_logs").insert({
+        action: "ADMIN_DELETE_CASE",
+        table_name: "review_cases",
+        record_id: caseId,
+        user_id: user!.id,
+        details: { reason },
+      });
+    },
+    onSuccess: () => { toast.success("Trámite eliminado"); invalidate(); },
+    onError: () => toast.error("Error al eliminar"),
+  });
+
   return {
     saveDetails, saveClassifications, saveDocumentation,
     addFinding, editFinding, duplicateFinding, duplicateComment, removeFinding, updateFindingStatus,
     startCorrection, approveCase, rejectCase, saveWithObservations, reopenCase,
-    saveAsDocumentoPendiente,
+    saveAsDocumentoPendiente, adminReopenApproved, deleteCase,
   };
 }

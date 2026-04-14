@@ -774,6 +774,9 @@ export type Database = {
           client_id: string | null
           created_at: string
           created_by: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           document_type_id: string | null
           executive_id: string | null
           first_started_at: string | null
@@ -803,6 +806,9 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           document_type_id?: string | null
           executive_id?: string | null
           first_started_at?: string | null
@@ -832,6 +838,9 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           document_type_id?: string | null
           executive_id?: string | null
           first_started_at?: string | null
@@ -1101,6 +1110,7 @@ export type Database = {
           review_case_id: string
           score_classification: number | null
           score_observations: number | null
+          score_revisions: number | null
           score_total: number | null
           total_errors: number | null
         }
@@ -1112,6 +1122,7 @@ export type Database = {
           review_case_id: string
           score_classification?: number | null
           score_observations?: number | null
+          score_revisions?: number | null
           score_total?: number | null
           total_errors?: number | null
         }
@@ -1123,6 +1134,7 @@ export type Database = {
           review_case_id?: string
           score_classification?: number | null
           score_observations?: number | null
+          score_revisions?: number | null
           score_total?: number | null
           total_errors?: number | null
         }
