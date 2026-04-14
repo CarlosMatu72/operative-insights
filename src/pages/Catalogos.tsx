@@ -196,14 +196,14 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
                   Cargando...
                 </TableCell>
               </TableRow>
-            ) : items.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={config.fields.length + (isExecutives ? 3 : 2)} className="text-center py-8 text-muted-foreground">
-                  Sin registros
+                  {search ? "Sin resultados" : "Sin registros"}
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((item: any) => (
+              filteredItems.map((item: any) => (
                 <TableRow key={item.id}>
                   {config.fields.map((f) => (
                     <TableCell key={f.name}>{item[f.name] ?? "—"}</TableCell>
