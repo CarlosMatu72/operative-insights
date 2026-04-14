@@ -28,14 +28,21 @@ const HistoricoAdmin = () => {
         .from("review_cases")
         .select(`
           id, reference, internal_folio, status, registered_at,
-          deleted_at, delete_reason,
+          deleted_at, delete_reason, deleted_by,
           document_types(name),
-          deleter:profiles!review_cases_deleted_by_fkey(nombre),
           clients(nombre), branches(nombre)
         `)
         .not("deleted_at", "is", null)
         .order("deleted_at", { ascending: false });
-      return (data ?? []) as any[];
+      
+      // Resolve deleter names via profiles
+      const deleterIds = [...new Set((data ?? []).map((c: any) => c.deleted_by).filter(Boolean))];
+      let deleterMap: Record<string, string> = {};
+      if (deleterIds.length > 0) {
+        const { data: profiles } = await supabase.rpc("get_profiles_display", { _user_ids: deleterIds });
+        deleterMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.nombre]));
+      }
+      return (data ?? []).map((c: any) => ({ ...c, deleter_nombre: deleterMap[c.deleted_by] ?? null }));
     },
   });
 
@@ -44,14 +51,18 @@ const HistoricoAdmin = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("audit_logs")
-        .select(`
-          id, action, created_at, record_id, details,
-          actor:profiles!audit_logs_user_id_fkey(nombre)
-        `)
+        .select("id, action, created_at, record_id, details, user_id")
         .in("action", ["ADMIN_DELETE_CASE", "ADMIN_REOPEN_APPROVED", "APROBAR_TRAMITE"])
         .order("created_at", { ascending: false })
         .limit(200);
-      return (data ?? []) as any[];
+      
+      const actorIds = [...new Set((data ?? []).map((l: any) => l.user_id).filter(Boolean))];
+      let actorMap: Record<string, string> = {};
+      if (actorIds.length > 0) {
+        const { data: profiles } = await supabase.rpc("get_profiles_display", { _user_ids: actorIds });
+        actorMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.nombre]));
+      }
+      return (data ?? []).map((l: any) => ({ ...l, actor_nombre: actorMap[l.user_id] ?? null }));
     },
   });
 
