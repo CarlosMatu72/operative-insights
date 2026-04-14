@@ -4,15 +4,21 @@ import { useGlosaCases, useGlosaActions } from "@/hooks/useGlosaPanel";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { useGlosadores } from "@/hooks/useTableroData";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox } from "lucide-react";
+import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2 } from "lucide-react";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
+import { toast } from "sonner";
 
 function formatTime(seconds: number): string {
   if (seconds === 0) return "—";
