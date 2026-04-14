@@ -489,6 +489,20 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           <Button variant="ghost" size="sm" onClick={handleGeneratePDF} className="h-8 gap-1.5 text-xs">
             <FileDown className="h-3.5 w-3.5" /> PDF
           </Button>
+          {isAdmin && status === "APROBADO" && (
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs"
+              onClick={() => actions.adminReopenApproved.mutate()}
+              disabled={actions.adminReopenApproved.isPending}>
+              <RotateCcw className="h-3.5 w-3.5" /> Reabrir
+            </Button>
+          )}
+          {isAdmin && (
+            <Button variant="outline" size="sm" 
+              className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive border-destructive/30"
+              onClick={() => setShowDeleteDialog(true)}>
+              <X className="h-3.5 w-3.5" /> Eliminar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1317,28 +1331,36 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Cálculo de Calificación</DialogTitle></DialogHeader>
           {scoreDetail ? (
-            <div className="space-y-4 text-sm">
-              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Clasificación (20 pts máx.)</span>
-                  <span className="font-bold">{scoreDetail.score_classification}/20</span>
+                  <span className="text-muted-foreground">Penalizaciones por errores (70 pts base)</span>
+                  <span className="font-bold">{scoreDetail.score_classification}/70</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Rondas de corrección: {scoreDetail.correction_rounds}
-                  {scoreDetail.correction_rounds === 0 ? " — puntuación perfecta" :
-                   scoreDetail.correction_rounds === 1 ? " — 18 pts" :
-                   scoreDetail.correction_rounds === 2 ? " — 15 pts" :
-                   scoreDetail.correction_rounds === 3 ? " — 12 pts" :
-                   scoreDetail.correction_rounds === 4 ? " — 8 pts" : " — 5 pts"}
+                  {scoreDetail.total_errors} observación(es) registrada(s)
                 </p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Observaciones (80 pts máx.)</span>
-                  <span className="font-bold">{scoreDetail.score_observations}/80</span>
+                  <span className="text-muted-foreground">Cantidad de observaciones (20 pts)</span>
+                  <span className="font-bold">{scoreDetail.score_observations}/20</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Errores detectados: {scoreDetail.total_errors}
+                  {Number(scoreDetail.total_errors) <= 5 ? "0–5 obs. → 20 pts" :
+                   Number(scoreDetail.total_errors) <= 10 ? "6–10 obs. → 10 pts" :
+                   "11+ obs. → 0 pts"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Rondas de revisión (10 pts)</span>
+                  <span className="font-bold">{(scoreDetail as any).score_revisions ?? "—"}/10</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {Number(scoreDetail.correction_rounds) <= 2 ? "1–2 rondas → 10 pts" :
+                   Number(scoreDetail.correction_rounds) === 3 ? "3 rondas → 5 pts" :
+                   "4+ rondas → 0 pts"}
                 </p>
               </div>
               <div className="border-t pt-3 flex justify-between font-bold text-base">
@@ -1352,6 +1374,46 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">Sin datos de calificación</p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Case Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Eliminar trámite</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              El trámite quedará en el historial de administración y su referencia 
+              podrá reutilizarse. Esta acción queda registrada con tu usuario.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Motivo de eliminación</Label>
+              <Textarea
+                value={deleteReason}
+                onChange={e => setDeleteReason(e.target.value)}
+                placeholder="Describe el motivo..."
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={actions.deleteCase.isPending}
+              onClick={async () => {
+                await actions.deleteCase.mutateAsync(deleteReason);
+                setShowDeleteDialog(false);
+                onClose();
+              }}>
+              {actions.deleteCase.isPending ? "Eliminando..." : "Eliminar trámite"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
