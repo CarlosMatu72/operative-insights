@@ -52,6 +52,7 @@ export function useGlosaCases(filters: {
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .not("status", "eq", "REGISTRADO")
+        .is("deleted_at", null)
         .order("registered_at", { ascending: filters.sortAsc });
 
       if (!isAdmin) {
