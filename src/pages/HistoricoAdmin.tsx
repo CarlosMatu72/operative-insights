@@ -168,7 +168,7 @@ const HistoricoAdmin = () => {
                       <TableCell className="text-sm">
                         {c.status}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{c.deleter?.nombre ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{c.deleter_nombre ?? "—"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {fmt(c.deleted_at)}
                       </TableCell>
@@ -216,7 +216,7 @@ const HistoricoAdmin = () => {
                             {cfg.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{l.actor?.nombre ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{l.actor_nombre ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono text-muted-foreground">
                           {l.record_id?.slice(0, 8)}…
                         </TableCell>
