@@ -385,6 +385,68 @@ const Glosa = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!deletingCaseId} onOpenChange={(v) => !v && setDeletingCaseId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Eliminar trámite</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              El trámite quedará en el Histórico Admin con toda su información.
+              Su referencia podrá reutilizarse. Esta acción queda registrada.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Motivo de eliminación</Label>
+              <Textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Describe el motivo..."
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingCaseId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteIsPending}
+              onClick={async () => {
+                if (!deletingCaseId) return;
+                setDeleteIsPending(true);
+                try {
+                  await supabase.from("review_cases").update({
+                    deleted_at: new Date().toISOString(),
+                    deleted_by: user?.id,
+                    delete_reason: deleteReason || null,
+                    updated_by: user?.id,
+                  }).eq("id", deletingCaseId);
+                  await supabase.from("audit_logs").insert({
+                    action: "ADMIN_DELETE_CASE",
+                    table_name: "review_cases",
+                    record_id: deletingCaseId,
+                    user_id: user?.id,
+                    details: { reason: deleteReason },
+                  });
+                  toast.success("Trámite eliminado");
+                  setDeletingCaseId(null);
+                  queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
+                  queryClient.invalidateQueries({ queryKey: ["deleted-cases-full"] });
+                } catch {
+                  toast.error("Error al eliminar");
+                } finally {
+                  setDeleteIsPending(false);
+                }
+              }}
+            >
+              {deleteIsPending ? "Eliminando..." : "Eliminar trámite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
