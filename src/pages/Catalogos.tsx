@@ -72,6 +72,7 @@ function CatalogTab({ config }: { config: CatalogConfig }) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [editId, setEditId] = useState<string | null>(null);
   const [sucursalId, setSucursalId] = useState("");
+  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
 
