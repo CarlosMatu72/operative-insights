@@ -81,7 +81,7 @@ const HistoricoAdmin = () => {
   const filteredAudit = auditLogs.filter((l: any) =>
     !search ||
     l.record_id?.toLowerCase().includes(search.toLowerCase()) ||
-    l.actor?.nombre?.toLowerCase().includes(search.toLowerCase())
+    l.actor_nombre?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
