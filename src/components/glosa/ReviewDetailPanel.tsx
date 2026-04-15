@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCatalogs } from "@/hooks/useCatalogs";
@@ -213,19 +213,32 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   }, [reviewCase?.remesa_lote_descripcion]);
 
   // Auto-save general info when component unmounts during active review
+  const formStateRef = useRef({
+    branchId, clientId, executiveId, customsKeyId, partidas, comments, docStatus, docComment
+  });
+
+  useEffect(() => {
+    formStateRef.current = {
+      branchId, clientId, executiveId, customsKeyId, partidas, comments, docStatus, docComment
+    };
+  });
+
   useEffect(() => {
     return () => {
-      if (isActiveReview && (branchId || clientId || executiveId || partidas || comments)) {
-        const p = parseInt(partidas);
+      const s = formStateRef.current;
+      if (isActiveReview && (s.branchId || s.clientId || s.executiveId || s.partidas || s.comments)) {
+        const p = parseInt(s.partidas);
         actions.saveDetails.mutate({
-          branch_id: branchId || undefined,
-          client_id: clientId || undefined,
-          executive_id: executiveId || undefined,
-          customs_key_id: customsKeyId || undefined,
+          branch_id: s.branchId || undefined,
+          client_id: s.clientId || undefined,
+          executive_id: s.executiveId || undefined,
+          customs_key_id: s.customsKeyId || undefined,
           partidas: isNaN(p) ? undefined : p,
-          item_range_id: detectedRange?.id ?? undefined,
-          comments_generales: comments || undefined,
+          comments_generales: s.comments || undefined,
         });
+        if (s.docStatus && s.docStatus !== "COMPLETO") {
+          actions.saveDocumentation.mutate({ status: s.docStatus, comment: s.docComment });
+        }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,6 +252,9 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     && hasRequiredFields;
 
   const handleSaveAll = async () => {
+    if (!branchId || !clientId || !executiveId) {
+      toast.warning("Recuerda completar Sucursal, Cliente y Ejecutivo antes de aprobar");
+    }
     const p = parseInt(partidas);
     await actions.saveDetails.mutateAsync({
       branch_id: branchId || undefined, client_id: clientId || undefined,
@@ -1281,7 +1297,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               )}
               <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
                 disabled={!canApprove || actions.approveCase.isPending}
-                onClick={async () => { await actions.approveCase.mutateAsync(); onClose(); }}>
+                onClick={async () => { await handleSaveAll(); await actions.approveCase.mutateAsync(); onClose(); }}>
                 <CheckCircle className="h-4 w-4" /> Aprobar
               </Button>
               <Button variant="destructive" className="gap-1.5 h-9" onClick={() => setShowRejectDialog(true)}>
