@@ -365,7 +365,15 @@ export function useReviewActions(caseId: string) {
       observation_error_id?: string | null;
       comentario_inicial?: string;
     }) => {
-      const { error } = await supabase
+      // Verify the finding exists first
+      const { data: existing } = await supabase
+        .from("review_findings")
+        .select("id, created_by")
+        .eq("id", payload.findingId)
+        .single();
+      if (!existing) throw new Error("Observación no encontrada");
+
+      const { data: updated, error } = await supabase
         .from("review_findings")
         .update({
           category_id: payload.category_id ?? null,
@@ -373,11 +381,15 @@ export function useReviewActions(caseId: string) {
           observation_error_id: payload.observation_error_id ?? null,
           comentario_inicial: payload.comentario_inicial ?? null,
         })
-        .eq("id", payload.findingId);
+        .eq("id", payload.findingId)
+        .select("id");
       if (error) throw error;
+      if (!updated || updated.length === 0) {
+        throw new Error("No tienes permiso para editar esta observación");
+      }
     },
     onSuccess: () => { toast.success("Observación actualizada"); invalidate(); },
-    onError: () => toast.error("Error al actualizar"),
+    onError: (e: Error) => toast.error(e?.message || "Error al actualizar"),
   });
 
   const duplicateFinding = useMutation({
