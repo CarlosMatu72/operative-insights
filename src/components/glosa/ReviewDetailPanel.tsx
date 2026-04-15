@@ -476,7 +476,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   return (
     <div className="space-y-5 p-6 pb-28">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="gap-4 flex-col flex items-start justify-center">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
