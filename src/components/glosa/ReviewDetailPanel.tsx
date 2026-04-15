@@ -1113,13 +1113,19 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                           disabled={!editCommentText.trim()}
                           onClick={async () => {
                             try {
-                              await supabase.from("review_comments")
+                              const { data: updated, error } = await supabase
+                                .from("review_comments")
                                 .update({ comment_text: editCommentText.trim() })
-                                .eq("id", c.id);
+                                .eq("id", c.id)
+                                .select("id");
+                              if (error) throw error;
+                              if (!updated || updated.length === 0) {
+                                throw new Error("No se pudo guardar el comentario");
+                              }
                               toast.success("Comentario actualizado");
                               setEditingCommentId(null);
                               queryClient.invalidateQueries({ queryKey: ["review-comments", caseId] });
-                            } catch { toast.error("Error al actualizar"); }
+                            } catch (e: any) { toast.error(e?.message || "Error al guardar comentario"); }
                           }}>Guardar</Button>
                       </div>
                     </div>
