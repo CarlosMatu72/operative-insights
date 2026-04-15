@@ -58,9 +58,10 @@ export function useGlosadores() {
         }
       }
 
-      const maxWorkload = Math.max(
+      // Total across ALL glosadores = denominator for true proportion
+      const totalWorkload = Math.max(
         1,
-        ...Object.values(statsMap).map((s) => s.pedConsolidados + s.remesas)
+        Object.values(statsMap).reduce((sum, s) => sum + s.pedConsolidados + s.remesas, 0)
       );
 
       return (profiles ?? []).filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((p) => ({
@@ -68,7 +69,7 @@ export function useGlosadores() {
         isActive: activeUserIds.has(p.id),
         pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,
         remesas: statsMap[p.id]?.remesas ?? 0,
-        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / maxWorkload * 100),
+        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / totalWorkload * 100),
       }));
     },
     refetchInterval: 30000,
