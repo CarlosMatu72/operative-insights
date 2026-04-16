@@ -73,7 +73,7 @@ export function useGlosaCases(filters: {
         supabase.from("review_findings").select("review_case_id").in("review_case_id", caseIds),
         supabase.from("review_rounds").select("review_case_id").in("review_case_id", caseIds),
         supabase.from("review_scores").select("review_case_id, score_total").in("review_case_id", caseIds),
-        supabase.from("review_sessions").select("review_case_id, duration_seconds, session_status").in("review_case_id", caseIds),
+        supabase.from("review_sessions").select("review_case_id, duration_seconds, session_status, started_at, paused_at").in("review_case_id", caseIds),
       ]);
 
       const findingsMap: Record<string, number> = {};
@@ -94,8 +94,13 @@ export function useGlosaCases(filters: {
       const timeMap: Record<string, number> = {};
       const activeSessionMap: Record<string, boolean> = {};
       for (const s of sessionsRes.data ?? []) {
-        timeMap[s.review_case_id] = (timeMap[s.review_case_id] ?? 0) + (s.duration_seconds ?? 0);
-        if (s.session_status === "active") activeSessionMap[s.review_case_id] = true;
+        let secs = s.duration_seconds ?? 0;
+        if (s.session_status === "active" && s.started_at) {
+          const resumedAt = s.paused_at ?? s.started_at;
+          secs += Math.floor((Date.now() - new Date(resumedAt).getTime()) / 1000);
+          activeSessionMap[s.review_case_id] = true;
+        }
+        timeMap[s.review_case_id] = (timeMap[s.review_case_id] ?? 0) + secs;
       }
 
       let result: GlosaCaseRow[] = (data ?? []).map((c) => ({
