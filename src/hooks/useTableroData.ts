@@ -95,6 +95,7 @@ export function usePendientes(sortAsc = true) {
           glosador:profiles!review_cases_glosador_profile_fkey(nombre)
         `)
         .in("status", ["REGISTRADO", "ASIGNADO"])
+        .is("deleted_at", null)
         .order("registered_at", { ascending: sortAsc });
 
       if (altaRemesaId) {
