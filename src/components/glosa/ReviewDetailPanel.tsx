@@ -125,6 +125,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   // Edit comment states
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
@@ -236,13 +237,48 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           partidas: isNaN(p) ? undefined : p,
           comments_generales: s.comments || undefined,
         });
-        if (s.docStatus && s.docStatus !== "COMPLETO") {
+        if (s.docStatus) {
           actions.saveDocumentation.mutate({ status: s.docStatus, comment: s.docComment });
         }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Live timer — counts up while session is active
+  useEffect(() => {
+    if (!reviewCase?.last_started_at || !["EN_REVISION", "EN_CORRECCION"].includes(status)) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const getAccumulated = async () => {
+      const { data: sessions } = await supabase
+        .from("review_sessions")
+        .select("duration_seconds, session_status, started_at, paused_at")
+        .eq("review_case_id", caseId);
+      const completed = (sessions ?? [])
+        .filter(s => s.session_status !== "active")
+        .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
+      const active = (sessions ?? []).find(s => s.session_status === "active");
+      const activeSecs = active
+        ? Math.floor((Date.now() - new Date(active.paused_at ?? active.started_at).getTime()) / 1000)
+        : 0;
+      setElapsedSeconds(completed + activeSecs);
+    };
+    getAccumulated();
+    const interval = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [caseId, status, reviewCase?.last_started_at]);
+
+  const formatTimer = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  };
 
   const openFindings = findings.filter((f) => f.is_open);
   const hasRequiredFields = !!(branchId && clientId && executiveId);
@@ -491,9 +527,15 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                  onClick={() => setShowScoreBreakdown(true)}>
                  Ver cálculo
                </Button>
-             )}
-          </div>
-          <p className="text-sm text-muted-foreground">
+              )}
+              {["EN_REVISION", "EN_CORRECCION"].includes(status) && (
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/5 border border-primary/20 px-2.5 py-0.5 text-sm font-mono font-medium text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  {formatTimer(elapsedSeconds)}
+                </span>
+              )}
+           </div>
+           <p className="text-sm text-muted-foreground">
             {reviewCase.document_types?.name} — Folio: {reviewCase.internal_folio}
             {rounds.length > 0 && ` — Ronda ${rounds.length}`}
           </p>

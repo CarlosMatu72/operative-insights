@@ -6,9 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface ReviewCaseWithJoins {
@@ -35,6 +38,9 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
   const { glosadores } = useCatalogs();
   const queryClient = useQueryClient();
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deletePending, setDeletePending] = useState(false);
 
   const assignMutation = useMutation({
     mutationFn: async ({ caseId, glosadorId }: { caseId: string; glosadorId: string }) => {
@@ -82,6 +88,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
   });
 
   return (
+    <>
     <div className="rounded-lg border bg-card shadow-sm overflow-auto">
       <Table>
         <TableHeader>
@@ -154,28 +161,26 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
                   <StatusBadge status={c.status} />
                 </TableCell>
                 <TableCell>
-                  {isAdmin && assigningId !== c.id && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => setAssigningId(c.id)}
-                    >
-                      <UserPlus className="h-3.5 w-3.5 mr-1" />
-                      Asignar
-                    </Button>
-                  )}
-                  {!isAdmin && !c.assigned_glosador_user_id && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => selfAssign.mutate(c.id)}
-                      disabled={selfAssign.isPending}
-                    >
-                      Tomar
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {isAdmin && (
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        onClick={() => { setDeletingId(c.id); setDeleteReason(""); }}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {isAdmin && assigningId !== c.id && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs"
+                        onClick={() => setAssigningId(c.id)}>
+                        <UserPlus className="h-3.5 w-3.5 mr-1" /> Asignar
+                      </Button>
+                    )}
+                    {!isAdmin && !c.assigned_glosador_user_id && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => selfAssign.mutate(c.id)} disabled={selfAssign.isPending}>
+                        Tomar
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -183,5 +188,59 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
         </TableBody>
       </Table>
     </div>
+
+    <Dialog open={!!deletingId} onOpenChange={(v) => !v && setDeletingId(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Eliminar trámite</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            El trámite pasará al Histórico Admin. Su referencia podrá reutilizarse.
+            Esta acción queda registrada con tu usuario.
+          </p>
+          <div className="space-y-1.5">
+            <Label>Motivo de eliminación</Label>
+            <Textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder="Describe el motivo..." rows={2} className="text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDeletingId(null)}>Cancelar</Button>
+          <Button variant="destructive" disabled={deletePending}
+            onClick={async () => {
+              if (!deletingId) return;
+              setDeletePending(true);
+              try {
+                await supabase.from("review_cases").update({
+                  deleted_at: new Date().toISOString(),
+                  deleted_by: user?.id,
+                  delete_reason: deleteReason || null,
+                  updated_by: user?.id,
+                }).eq("id", deletingId);
+                await supabase.from("audit_logs").insert({
+                  action: "ADMIN_DELETE_CASE",
+                  table_name: "review_cases",
+                  record_id: deletingId,
+                  user_id: user?.id,
+                  details: { reason: deleteReason },
+                });
+                toast.success("Trámite eliminado");
+                setDeletingId(null);
+                queryClient.invalidateQueries({ queryKey: ["pendientes"] });
+                queryClient.invalidateQueries({ queryKey: ["tablero-kpis"] });
+                queryClient.invalidateQueries({ queryKey: ["deleted-cases-full"] });
+              } catch {
+                toast.error("Error al eliminar");
+              } finally {
+                setDeletePending(false);
+              }
+            }}>
+            {deletePending ? "Eliminando..." : "Eliminar trámite"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
