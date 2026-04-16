@@ -88,6 +88,7 @@ export function PendientesTable({ cases, isLoading }: PendientesTableProps) {
   });
 
   return (
+    <>
     <div className="rounded-lg border bg-card shadow-sm overflow-auto">
       <Table>
         <TableHeader>
