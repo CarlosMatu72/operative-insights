@@ -122,19 +122,19 @@ export function useKPIs() {
       const { data: docTypes } = await supabase.from("document_types").select("id, code");
       const altaRemesaId = docTypes?.find(d => d.code === "ALTA_REMESA")?.id;
 
-      let pendQuery = supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]);
+      let pendQuery = supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["REGISTRADO", "ASIGNADO"]).is("deleted_at", null);
       if (altaRemesaId) {
         pendQuery = pendQuery.neq("document_type_id", altaRemesaId);
       }
 
       const [pendRes, revRes, aprobRes, allApproved, pausRes, rechRes, totalRes] = await Promise.all([
         pendQuery,
-        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION"),
-        supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
-        supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").gte("approved_at", startOfMonth.toISOString()),
-        supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]),
-        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "RECHAZADO"),
-        supabase.from("review_cases").select("id", { count: "exact", head: true }),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION").is("deleted_at", null),
+        supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").is("deleted_at", null).gte("approved_at", startOfMonth.toISOString()),
+        supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").is("deleted_at", null).gte("approved_at", startOfMonth.toISOString()),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]).is("deleted_at", null),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "RECHAZADO").is("deleted_at", null),
+        supabase.from("review_cases").select("id", { count: "exact", head: true }).is("deleted_at", null),
       ]);
 
       const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
