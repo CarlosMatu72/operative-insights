@@ -29,12 +29,14 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
         throw new Error("La referencia debe tener al menos 11 caracteres");
       }
 
-      // Check for duplicate reference
+      // Check for duplicate reference (same doc type, excluding soft-deleted)
       if (referencia.trim()) {
         const { count } = await supabase
           .from("review_cases")
           .select("id", { count: "exact", head: true })
-          .eq("reference", referencia.trim());
+          .eq("reference", referencia.trim())
+          .eq("document_type_id", docType.id)
+          .is("deleted_at", null);
         if (count && count > 0) throw new Error(`La referencia "${referencia.trim()}" ya existe en el sistema`);
       }
 

@@ -74,7 +74,8 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         .from("review_cases")
         .select("id", { count: "exact", head: true })
         .eq("reference", referencia)
-        .eq("remesa_base_reference", selectedRemesa.remesa_base_reference!);
+        .eq("remesa_base_reference", selectedRemesa.remesa_base_reference!)
+        .is("deleted_at", null);
       if (count && count > 0) {
         throw new Error(`Ya existe un registro para el lote "${loteDescripcion}" de esta remesa`);
       }

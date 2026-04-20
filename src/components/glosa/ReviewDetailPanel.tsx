@@ -19,7 +19,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck, MessageSquare, Search } from "lucide-react";
+import { Save, Copy, FileDown, CheckCircle, XCircle, Plus, X, RotateCcw, AlertTriangle, FileCheck, MessageSquare, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -320,10 +323,10 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       category_id: obsCategoryId || undefined,
       subcategory_id: obsSubcategoryId || undefined,
     });
-    setObsCategoryId(""); setObsSubcategoryId("");
+    // Keep category and subcategory for consecutive entries
     setObsErrorId(""); setObsComment(""); setObsSearch("");
-    setShowObsForm(false);
-    toast.success("Observación agregada");
+    // Don't close the form — user likely wants to add more observations
+    toast.success("Observación agregada", { duration: 1500 });
   };
 
   const handleStartCorrection = async () => {
@@ -613,18 +616,86 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Ejecutivo</Label>
-              <Select value={executiveId} onValueChange={setExecutiveId} disabled={isReadOnly}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                <SelectContent>{(executives.data ?? []).map((e) => <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>)}</SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    disabled={isReadOnly}
+                    className="h-9 text-sm w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {executiveId
+                        ? (executives.data ?? []).find(e => e.id === executiveId)?.nombre ?? "Seleccionar..."
+                        : "Seleccionar ejecutivo..."}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar ejecutivo..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>Sin resultados</CommandEmpty>
+                      <CommandGroup>
+                        {(executives.data ?? []).map(e => (
+                          <CommandItem
+                            key={e.id}
+                            value={e.nombre}
+                            onSelect={() => setExecutiveId(e.id)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", executiveId === e.id ? "opacity-100" : "opacity-0")} />
+                            {e.nombre}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="text-xs text-muted-foreground">Muestra todos los ejecutivos activos</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Cliente</Label>
-              <Select value={clientId} onValueChange={setClientId} disabled={isReadOnly}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                <SelectContent>{(clients.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    disabled={isReadOnly}
+                    className="h-9 text-sm w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {clientId
+                        ? (clients.data ?? []).find(c => c.id === clientId)?.nombre ?? "Seleccionar..."
+                        : "Seleccionar cliente..."}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>Sin resultados</CommandEmpty>
+                      <CommandGroup>
+                        {(clients.data ?? []).map(c => (
+                          <CommandItem
+                            key={c.id}
+                            value={c.nombre}
+                            onSelect={() => setClientId(c.id)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", clientId === c.id ? "opacity-100" : "opacity-0")} />
+                            {c.nombre}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {!isReadOnly && (
                 <button
                   type="button"

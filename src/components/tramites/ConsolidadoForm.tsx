@@ -97,7 +97,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
           .from("review_cases")
           .select("id", { count: "exact", head: true })
           .eq("reference", referenciaLibre.trim())
-          .eq("document_type_id", docType.id);
+          .eq("document_type_id", docType.id)
+          .is("deleted_at", null);
         if (count && count > 0) {
           throw new Error(`Ya existe un consolidado con la referencia "${referenciaLibre.trim()}"`);
         }
@@ -131,7 +132,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
             .from("review_cases")
             .select("id", { count: "exact", head: true })
             .eq("reference", referenciaConsolidado.trim())
-            .eq("document_type_id", docType.id);
+            .eq("document_type_id", docType.id)
+            .is("deleted_at", null);
           if (count && count > 0) {
             throw new Error(`Ya existe un consolidado con la referencia "${referenciaConsolidado.trim()}"`);
           }
