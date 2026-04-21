@@ -31,6 +31,7 @@ export function ObservationsCard({ state }: Props) {
     showObsForm, setShowObsForm,
     obsCategoryId, setObsCategoryId, obsSubcategoryId, setObsSubcategoryId,
     obsErrorId, setObsErrorId, obsSearch, setObsSearch, obsComment, setObsComment,
+    errorPopoverOpen, setErrorPopoverOpen,
     handleAddFinding, actions, queryClient,
     editingFindingId, setEditingFindingId,
     editCategoryId, setEditCategoryId, editSubcategoryId, setEditSubcategoryId,
