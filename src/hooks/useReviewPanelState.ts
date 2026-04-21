@@ -52,6 +52,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
   const [obsErrorId, setObsErrorId] = useState("");
   const [obsSearch, setObsSearch] = useState("");
   const [obsComment, setObsComment] = useState("");
+  const [errorPopoverOpen, setErrorPopoverOpen] = useState(false);
 
   // Status update dialog
   const [statusUpdateFinding, setStatusUpdateFinding] = useState<string | null>(null);
