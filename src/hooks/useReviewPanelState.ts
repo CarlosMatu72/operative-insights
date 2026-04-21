@@ -342,6 +342,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     showObsForm, setShowObsForm,
     obsCategoryId, setObsCategoryId, obsSubcategoryId, setObsSubcategoryId,
     obsErrorId, setObsErrorId, obsSearch, setObsSearch, obsComment, setObsComment,
+    errorPopoverOpen, setErrorPopoverOpen,
     // status update dialog
     statusUpdateFinding, setStatusUpdateFinding,
     statusUpdateValue, setStatusUpdateValue,
