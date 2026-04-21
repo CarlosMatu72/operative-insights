@@ -113,10 +113,29 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     }
     const openComments = generalCommentsList.filter(c => !c.is_closed);
     if (openComments.length > 0) {
+      // Group comments by category, same as observations
+      const byCat: Record<string, typeof openComments> = {};
+      const catOrderC: string[] = [];
+      for (const c of openComments) {
+        const catName = c.observation_categories?.nombre || "";
+        const key = catName || "__none__";
+        if (!byCat[key]) { byCat[key] = []; catOrderC.push(key); }
+        byCat[key].push(c);
+      }
+
       t += "\n     >>Comentarios<<\n";
-      openComments.forEach((c, i) => {
-        t += `        ${i + 1}. ${c.comment_text}\n`;
-      });
+      let commentCounter = 1;
+      for (const key of catOrderC) {
+        if (key !== "__none__") {
+          t += `\n  Categoría = ${key}\n`;
+        }
+        for (const c of byCat[key]) {
+          const sub = c.observation_subcategories?.nombre;
+          const prefix = sub ? `${sub} --> ` : "";
+          t += `        ${commentCounter}. ${prefix}${c.comment_text}\n`;
+          commentCounter++;
+        }
+      }
     }
     navigator.clipboard.writeText(t)
       .then(() => toast.success("Texto copiado al portapapeles"))

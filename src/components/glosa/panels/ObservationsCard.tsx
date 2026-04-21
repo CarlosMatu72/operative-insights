@@ -4,7 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Search, FileCheck } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, X, FileCheck, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ReviewPanelState } from "@/hooks/useReviewPanelState";
@@ -28,6 +31,7 @@ export function ObservationsCard({ state }: Props) {
     showObsForm, setShowObsForm,
     obsCategoryId, setObsCategoryId, obsSubcategoryId, setObsSubcategoryId,
     obsErrorId, setObsErrorId, obsSearch, setObsSearch, obsComment, setObsComment,
+    errorPopoverOpen, setErrorPopoverOpen,
     handleAddFinding, actions, queryClient,
     editingFindingId, setEditingFindingId,
     editCategoryId, setEditCategoryId, editSubcategoryId, setEditSubcategoryId,
@@ -98,34 +102,65 @@ export function ObservationsCard({ state }: Props) {
             {obsSubcategoryId && (
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Error específico <span className="text-muted-foreground">(opcional)</span></Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input value={obsSearch} onChange={(e) => { setObsSearch(e.target.value); setObsErrorId(""); }}
-                    placeholder="Buscar error o dejar vacío..." className="h-9 text-sm pl-9" />
-                </div>
-                {obsSearch.length > 1 && (
-                  <div className="rounded-md border bg-card shadow-sm max-h-40 overflow-y-auto divide-y">
-                    {activeErrors.filter(e =>
-                      e.descripcion.toLowerCase().includes(obsSearch.toLowerCase()) ||
-                      (e.codigo_error && e.codigo_error.toLowerCase().includes(obsSearch.toLowerCase()))
-                    ).slice(0, 8).map(error => (
-                      <button key={error.id} type="button"
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 transition-colors ${obsErrorId === error.id ? "bg-primary/5 text-primary" : ""}`}
-                        onClick={() => { setObsErrorId(error.id); setObsSearch(error.descripcion); }}>
-                        {error.codigo_error && <span className="text-xs text-muted-foreground mr-1.5">[{error.codigo_error}]</span>}
-                        {error.descripcion}
-                        {error.descuento_puntos && <span className="ml-2 text-xs text-destructive">−{error.descuento_puntos} pts</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <Popover open={errorPopoverOpen} onOpenChange={setErrorPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={errorPopoverOpen}
+                      className="w-full h-9 text-sm justify-between font-normal"
+                    >
+                      <span className="truncate text-left">
+                        {obsErrorId
+                          ? activeErrors.find(e => e.id === obsErrorId)?.descripcion ?? "Seleccionar error..."
+                          : "Seleccionar o escribir para filtrar..."}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar error..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>Sin resultados</CommandEmpty>
+                        <CommandGroup>
+                          {activeErrors.map(error => (
+                            <CommandItem
+                              key={error.id}
+                              value={`${error.codigo_error ?? ""} ${error.descripcion}`}
+                              onSelect={() => {
+                                const isSame = obsErrorId === error.id;
+                                setObsErrorId(isSame ? "" : error.id);
+                                setObsSearch(isSame ? "" : error.descripcion);
+                                setErrorPopoverOpen(false);
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-3.5 w-3.5", obsErrorId === error.id ? "opacity-100" : "opacity-0")} />
+                              <span className="flex-1 truncate">
+                                {error.codigo_error && (
+                                  <span className="text-xs text-muted-foreground mr-1.5">[{error.codigo_error}]</span>
+                                )}
+                                {error.descripcion}
+                              </span>
+                              {error.descuento_puntos && (
+                                <span className="ml-2 text-xs text-destructive shrink-0">−{error.descuento_puntos} pts</span>
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {obsErrorId && (
-                  <div className="flex items-center gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-1.5">
-                    <span className="text-xs text-primary font-medium flex-1 truncate">{obsSearch}</span>
-                    <button type="button" onClick={() => { setObsErrorId(""); setObsSearch(""); }}>
-                      <X className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+                    onClick={() => { setObsErrorId(""); setObsSearch(""); }}
+                  >
+                    <X className="h-3 w-3" /> Quitar error seleccionado
+                  </button>
                 )}
               </div>
             )}
