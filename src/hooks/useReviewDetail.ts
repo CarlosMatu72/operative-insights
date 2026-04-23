@@ -82,7 +82,8 @@ export function useReviewFindings(caseId: string) {
           *,
           observation_categories(nombre),
           observation_subcategories(nombre),
-          observation_errors(descripcion, codigo_error, descuento_puntos)
+          observation_errors(descripcion, codigo_error, descuento_puntos),
+          finding_histories(new_status, comment, created_at)
         `)
         .eq("review_case_id", caseId)
         .order("created_at", { ascending: true });
