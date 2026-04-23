@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCatalogs } from "@/hooks/useCatalogs";
@@ -98,6 +98,39 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
   const needsCorrection = status === "CORRECCION_PENDIENTE";
   const isReopened = status === "REABIERTO";
   const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
+
+  const pauseSession = useMutation({
+    mutationFn: async () => {
+      const { data: activeSessions } = await supabase
+        .from("review_sessions")
+        .select("id, started_at, paused_at, duration_seconds")
+        .eq("review_case_id", caseId)
+        .eq("session_status", "active");
+
+      for (const s of activeSessions ?? []) {
+        const resumedAt = s.paused_at ?? s.started_at;
+        const newElapsed = Math.floor(
+          (Date.now() - new Date(resumedAt).getTime()) / 1000
+        );
+        await supabase.from("review_sessions").update({
+          session_status: "paused",
+          paused_at: new Date().toISOString(),
+          duration_seconds: (s.duration_seconds ?? 0) + newElapsed,
+        }).eq("id", s.id);
+      }
+      await supabase.from("review_cases").update({
+        status: "PAUSADO" as const,
+        paused_at: new Date().toISOString(),
+        updated_by: user!.id,
+      }).eq("id", caseId);
+    },
+    onSuccess: () => {
+      toast.success("Revisión pausada");
+      queryClient.invalidateQueries({ queryKey: ["review-case-detail", caseId] });
+      queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
+    },
+    onError: () => toast.error("Error al pausar"),
+  });
 
   const { data: scoreDetail } = useQuery({
     queryKey: ["review-score-detail", caseId],
