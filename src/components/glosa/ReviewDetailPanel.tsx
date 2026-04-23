@@ -427,31 +427,79 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       {/* History */}
       <HistoryTabs caseId={caseId} onReopen={isReadOnly && status === "RECHAZADO" && isAdmin ? handleReopen : undefined} />
 
-      {/* Sticky Action Bar */}
-      {isActiveReview && !needsCorrection && !isReopened && (
+      {/* Sticky Action Bar — always visible for active cases (no X button to close) */}
+      {!isReadOnly && (isActiveReview || needsCorrection || isReopened) && (
         <div className="fixed bottom-0 right-0 z-50 w-full sm:max-w-3xl lg:max-w-4xl border-t border-border bg-card/95 backdrop-blur-sm shadow-lg">
-          <div className="flex items-center justify-between px-6 py-3">
-            <Button onClick={handleSaveAll} disabled={
-              actions.saveDetails.isPending || (docStatus === "PENDIENTE_NO_SE_PUEDE_GLOSAR" && !docComment.trim())
-            } className="gap-1.5 h-9 min-w-[100px]">
-              {actions.saveDetails.isPending ? (
-                <><div className="h-3.5 w-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Guardando</>
-              ) : (
-                <><Save className="h-4 w-4" /> Guardar</>
-              )}
-            </Button>
+          <div className="flex items-center justify-between gap-3 px-6 py-3">
+            {/* LEFT: Pausar — saves and closes panel, pauses timer */}
             <div className="flex items-center gap-2">
-              {!hasRequiredFields && (
+              {isActiveReview && (
+                <Button
+                  variant="outline"
+                  className="gap-1.5 h-9"
+                  disabled={actions.pauseSession.isPending}
+                  onClick={async () => {
+                    await handleSaveAll().catch(() => {});
+                    await actions.pauseSession.mutateAsync().catch(() => {});
+                    onClose();
+                  }}
+                >
+                  <Pause className="h-4 w-4" /> Pausar
+                </Button>
+              )}
+
+              {/* CENTER: Fin de Glosa — saves with observations pending, closes panel */}
+              {isActiveReview && !needsCorrection && (
+                <Button
+                  variant="secondary"
+                  className="gap-1.5 h-9"
+                  disabled={actions.saveDetails.isPending || actions.saveWithObservations.isPending}
+                  onClick={async () => {
+                    await handleSaveAll();
+                    if (state.openFindings.length > 0) {
+                      await actions.saveWithObservations.mutateAsync().catch(() => {});
+                    }
+                    onClose();
+                  }}
+                >
+                  {actions.saveDetails.isPending || actions.saveWithObservations.isPending ? (
+                    <>
+                      <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Guardando
+                    </>
+                  ) : (
+                    <><Save className="h-4 w-4" /> Fin de Glosa</>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {/* RIGHT: Aprobar / Rechazar */}
+            <div className="flex items-center gap-2">
+              {!hasRequiredFields && isActiveReview && (
                 <p className="text-xs text-destructive mr-2">
                   Completa Sucursal, Cliente y Ejecutivo para aprobar
                 </p>
               )}
-              <Button variant="default" className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
-                disabled={!canApprove || actions.approveCase.isPending}
-                onClick={async () => { await handleSaveAll(); await actions.approveCase.mutateAsync(); onClose(); }}>
-                <CheckCircle className="h-4 w-4" /> Aprobar
-              </Button>
-              <Button variant="destructive" className="gap-1.5 h-9" onClick={() => setShowRejectDialog(true)}>
+              {(isActiveReview || isReopened) && !needsCorrection && (
+                <Button
+                  variant="default"
+                  className="gap-1.5 h-9 bg-success hover:bg-success/90 text-success-foreground"
+                  disabled={!canApprove || actions.approveCase.isPending}
+                  onClick={async () => {
+                    await handleSaveAll();
+                    await actions.approveCase.mutateAsync();
+                    onClose();
+                  }}
+                >
+                  <CheckCircle className="h-4 w-4" /> Aprobar
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                className="gap-1.5 h-9"
+                onClick={() => setShowRejectDialog(true)}
+              >
                 <XCircle className="h-4 w-4" /> Rechazar
               </Button>
             </div>
