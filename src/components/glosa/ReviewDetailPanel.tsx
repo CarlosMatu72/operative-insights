@@ -439,6 +439,18 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   className="gap-1.5 h-9"
                   disabled={actions.pauseSession.isPending}
                   onClick={async () => {
+                    if (state.showObsForm && (state.obsComment || state.obsErrorId || state.obsCategoryId)) {
+                      const confirm = window.confirm(
+                        "Tienes una observación en edición que no has agregado. ¿Pausar de todas formas y descartar ese borrador?"
+                      );
+                      if (!confirm) return;
+                    }
+                    if (state.showCommentForm && state.generalComment) {
+                      const confirm = window.confirm(
+                        "Tienes un comentario escrito que no has enviado. ¿Pausar de todas formas y descartar ese texto?"
+                      );
+                      if (!confirm) return;
+                    }
                     await handleSaveAll().catch(() => {});
                     await actions.pauseSession.mutateAsync().catch(() => {});
                     onClose();
