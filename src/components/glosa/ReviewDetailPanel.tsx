@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   Save, Copy, FileDown, CheckCircle, XCircle, X, RotateCcw,
-  AlertTriangle, FileCheck,
+  AlertTriangle, FileCheck, Pause,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -107,6 +107,14 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           const sub = f.observation_subcategories?.nombre || "";
           const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
           t += `${counter}.\t ${sub ? sub + " --> " : ""}${comentario}\n`;
+          // Add NOT_CORRECTED comment from finding history if present
+          const histories = (f as unknown as { finding_histories?: Array<{ new_status: string; comment: string | null; created_at: string }> }).finding_histories ?? [];
+          const notCorrectedEntry = [...histories]
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .find((h) => h.new_status === "NOT_CORRECTED" && h.comment);
+          if (notCorrectedEntry) {
+            t += `\t   No corregido: ${notCorrectedEntry.comment}\n`;
+          }
           counter++;
         }
       }
