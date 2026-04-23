@@ -365,7 +365,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     features, rules, categories, subcategories, obsErrors, itemRanges, customsKeys,
     rounds, generalCommentsList, branches, clients, executives, scoreDetail,
     // actions / queryClient
-    actions, queryClient,
+    actions: { ...actions, pauseSession }, queryClient,
     // form state
     branchId, setBranchId, clientId, setClientId, executiveId, setExecutiveId,
     customsKeyId, setCustomsKeyId, partidas, setPartidas, comments, setComments,
