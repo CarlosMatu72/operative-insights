@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
-import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } from "lucide-react";
+import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users, Search, X } from "lucide-react";
 
 const Index = () => {
   const { profile } = useAuth();
