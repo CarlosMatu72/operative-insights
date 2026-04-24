@@ -41,6 +41,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "Doc. Pendiente",
     className: "bg-info/10 text-info border-info/20",
   },
+  CONSULTA_PENDIENTE: {
+    label: "Consulta Pendiente",
+    className: "bg-secondary/20 text-secondary-foreground border-secondary/30 font-semibold",
+  },
 };
 
 interface StatusBadgeProps {
