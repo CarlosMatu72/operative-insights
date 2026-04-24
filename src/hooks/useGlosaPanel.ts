@@ -61,13 +61,12 @@ export function useGlosaCases(filters: {
           .not("status", "eq", "APROBADO")
           .not("status", "eq", "RECHAZADO");
       } else {
-        // Admins see active cases only in the panel — approved/rejected
-        // live in the Dashboard "Trámites Revisados" section.
-        // Limit to last 150 to keep performance fast.
-        query = query
-          .not("status", "eq", "APROBADO")
-          .not("status", "eq", "RECHAZADO")
-          .limit(150);
+        // Admins see: all active cases + today's approved/rejected
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        query = query.or(
+          `status.not.in.(APROBADO,RECHAZADO),and(status.in.(APROBADO,RECHAZADO),updated_at.gte.${todayStart.toISOString()})`
+        );
       }
 
       const { data, error } = await query;
