@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
-import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users } from "lucide-react";
+import { FileText, Clock, ClipboardCheck, AlertTriangle, CheckCircle, Users, Search, X } from "lucide-react";
 
 const Index = () => {
   const { profile } = useAuth();
@@ -23,6 +23,7 @@ const Index = () => {
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [searchRef, setSearchRef] = useState("");
   const [selectedAprobadoId, setSelectedAprobadoId] = useState<string | null>(null);
 
   const { data: recentCases = [] } = useQuery({
@@ -54,8 +55,13 @@ const Index = () => {
     refetchInterval: 30000,
   });
 
-  const filteredCases = recentCases;
-
+  const filteredCases = recentCases.filter(c => {
+    if (searchRef) {
+      const ref = (c.reference ?? c.internal_folio ?? "").toLowerCase();
+      if (!ref.includes(searchRef.toLowerCase())) return false;
+    }
+    return true;
+  });
   const stats = [
     { label: "Total trámites", value: kpis?.total ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
     { label: "Pendientes de asignar", value: kpis?.pendientes ?? "—", icon: Clock, color: "bg-muted text-muted-foreground" },
@@ -96,6 +102,23 @@ const Index = () => {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <CardTitle className="text-base">Trámites Revisados</CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar referencia..."
+                    value={searchRef}
+                    onChange={e => setSearchRef(e.target.value)}
+                    className="h-8 text-xs pl-8 pr-7 w-44"
+                  />
+                  {searchRef && (
+                    <button
+                      onClick={() => setSearchRef("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5">
                   <Label className="text-xs text-muted-foreground whitespace-nowrap">Desde</Label>
                   <Input
