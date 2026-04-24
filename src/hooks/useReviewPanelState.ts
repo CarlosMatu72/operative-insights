@@ -95,7 +95,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
   const status = reviewCase?.status ?? "";
   const isReadOnly = ["APROBADO", "RECHAZADO"].includes(status);
   const isCorrection = ["EN_CORRECCION"].includes(status);
-  const needsCorrection = status === "CORRECCION_PENDIENTE";
+  const needsCorrection = ["CORRECCION_PENDIENTE", "CONSULTA_PENDIENTE"].includes(status);
   const isReopened = status === "REABIERTO";
   const isActiveReview = ["EN_REVISION", "EN_CORRECCION", "DOCUMENTO_PENDIENTE"].includes(status);
 
