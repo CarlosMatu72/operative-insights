@@ -55,8 +55,13 @@ const Index = () => {
     refetchInterval: 30000,
   });
 
-  const filteredCases = recentCases;
-
+  const filteredCases = recentCases.filter(c => {
+    if (searchRef) {
+      const ref = (c.reference ?? c.internal_folio ?? "").toLowerCase();
+      if (!ref.includes(searchRef.toLowerCase())) return false;
+    }
+    return true;
+  });
   const stats = [
     { label: "Total trámites", value: kpis?.total ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
     { label: "Pendientes de asignar", value: kpis?.pendientes ?? "—", icon: Clock, color: "bg-muted text-muted-foreground" },
