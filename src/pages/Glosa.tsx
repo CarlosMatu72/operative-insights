@@ -72,7 +72,7 @@ const Glosa = () => {
     (!isAdmin || c.assigned_glosador_user_id === user?.id);
 
   const canContinue = (c: GlosaCaseRow) =>
-    ["PAUSADO", "REABIERTO", "DOCUMENTO_PENDIENTE"].includes(c.status) ||
+    ["PAUSADO", "REABIERTO", "DOCUMENTO_PENDIENTE", "CONSULTA_PENDIENTE"].includes(c.status) ||
     (c.status === "ASIGNADO" && !!c.first_started_at);
 
   const canPause = (c: GlosaCaseRow) =>
