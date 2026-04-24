@@ -53,13 +53,21 @@ export function useGlosaCases(filters: {
         `)
         .not("status", "eq", "REGISTRADO")
         .is("deleted_at", null)
-        .order("registered_at", { ascending: filters.sortAsc });
+        .order("updated_at", { ascending: filters.sortAsc });
 
       if (!isAdmin) {
         query = query
           .eq("assigned_glosador_user_id", user!.id)
           .not("status", "eq", "APROBADO")
           .not("status", "eq", "RECHAZADO");
+      } else {
+        // Admins see active cases only in the panel — approved/rejected
+        // live in the Dashboard "Trámites Revisados" section.
+        // Limit to last 150 to keep performance fast.
+        query = query
+          .not("status", "eq", "APROBADO")
+          .not("status", "eq", "RECHAZADO")
+          .limit(150);
       }
 
       const { data, error } = await query;
@@ -68,32 +76,66 @@ export function useGlosaCases(filters: {
       const caseIds = (data ?? []).map((c) => c.id);
       if (caseIds.length === 0) return [];
 
-      // Batch fetch findings, rounds, scores, sessions
-      const [findingsRes, roundsRes, scoresRes, sessionsRes] = await Promise.all([
-        supabase.from("review_findings").select("review_case_id").in("review_case_id", caseIds),
-        supabase.from("review_rounds").select("review_case_id").in("review_case_id", caseIds),
-        supabase.from("review_scores").select("review_case_id, score_total").in("review_case_id", caseIds),
-        supabase.from("review_sessions").select("review_case_id, duration_seconds, session_status, started_at, paused_at").in("review_case_id", caseIds),
+      // Split IDs into chunks to avoid Supabase URL length limits
+      const chunkSize = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < caseIds.length; i += chunkSize) {
+        chunks.push(caseIds.slice(i, i + chunkSize));
+      }
+      const fetchAll = async <T>(
+        table: string,
+        columns: string,
+        idField: string
+      ): Promise<T[]> => {
+        const results = await Promise.all(
+          chunks.map(chunk =>
+            supabase.from(table as any).select(columns).in(idField, chunk)
+          )
+        );
+        return results.flatMap(r => (r.data ?? []) as T[]);
+      };
+
+      const [findingsData, roundsData, scoresData, sessionsData] = await Promise.all([
+        fetchAll<{ review_case_id: string }>(
+          "review_findings",
+          "review_case_id",
+          "review_case_id"
+        ),
+        fetchAll<{ review_case_id: string }>(
+          "review_rounds",
+          "review_case_id",
+          "review_case_id"
+        ),
+        fetchAll<{ review_case_id: string; score_total: number | null }>(
+          "review_scores",
+          "review_case_id, score_total",
+          "review_case_id"
+        ),
+        fetchAll<{ review_case_id: string; duration_seconds: number | null; session_status: string; started_at: string; paused_at: string | null }>(
+          "review_sessions",
+          "review_case_id, duration_seconds, session_status, started_at, paused_at",
+          "review_case_id"
+        ),
       ]);
 
       const findingsMap: Record<string, number> = {};
-      for (const f of findingsRes.data ?? []) {
+      for (const f of findingsData) {
         findingsMap[f.review_case_id] = (findingsMap[f.review_case_id] ?? 0) + 1;
       }
 
       const roundsMap: Record<string, number> = {};
-      for (const r of roundsRes.data ?? []) {
+      for (const r of roundsData) {
         roundsMap[r.review_case_id] = (roundsMap[r.review_case_id] ?? 0) + 1;
       }
 
       const scoresMap: Record<string, number | null> = {};
-      for (const s of scoresRes.data ?? []) {
+      for (const s of scoresData) {
         scoresMap[s.review_case_id] = s.score_total;
       }
 
       const timeMap: Record<string, number> = {};
       const activeSessionMap: Record<string, boolean> = {};
-      for (const s of sessionsRes.data ?? []) {
+      for (const s of sessionsData) {
         let secs = s.duration_seconds ?? 0;
         if (s.session_status === "active" && s.started_at) {
           const resumedAt = s.paused_at ?? s.started_at;
