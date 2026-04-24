@@ -23,6 +23,7 @@ const Index = () => {
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [searchRef, setSearchRef] = useState("");
   const [selectedAprobadoId, setSelectedAprobadoId] = useState<string | null>(null);
 
   const { data: recentCases = [] } = useQuery({
