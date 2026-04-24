@@ -324,6 +324,19 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
       await actions.saveWithObservations.mutateAsync();
     } else if (docStatus === "PENDIENTE_SI_SE_PUEDE_GLOSAR" && openFindings.length === 0) {
       await actions.saveAsDocumentoPendiente.mutateAsync();
+    } else {
+      // No open findings, no pending doc — check if there are open comments
+      const openComments = generalCommentsList.filter(c => !c.is_closed);
+      if (openComments.length > 0) {
+        // Has comments pending resolution — set CONSULTA_PENDIENTE
+        await supabase.from("review_cases").update({
+          status: "CONSULTA_PENDIENTE" as const,
+          updated_by: user?.id,
+        }).eq("id", caseId);
+        queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
+        queryClient.invalidateQueries({ queryKey: ["review-case", caseId] });
+        queryClient.invalidateQueries({ queryKey: ["review-case-detail", caseId] });
+      }
     }
   };
 
