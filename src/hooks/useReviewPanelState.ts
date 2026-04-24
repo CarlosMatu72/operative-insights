@@ -238,12 +238,14 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Live timer
+  // Live timer — uses Date.now() diff, immune to tab throttling
   useEffect(() => {
     if (!reviewCase?.last_started_at || !["EN_REVISION", "EN_CORRECCION"].includes(status)) {
       setElapsedSeconds(0);
       return;
     }
+    let baseSeconds = 0;
+    let sessionStartMs = 0;
     const getAccumulated = async () => {
       const { data: sessions } = await supabase
         .from("review_sessions")
@@ -253,14 +255,35 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
         .filter(s => s.session_status !== "active")
         .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
       const active = (sessions ?? []).find(s => s.session_status === "active");
-      const activeSecs = active
-        ? Math.floor((Date.now() - new Date(active.paused_at ?? active.started_at).getTime()) / 1000)
-        : 0;
-      setElapsedSeconds(completed + activeSecs);
+      if (active) {
+        const resumedAt = active.paused_at ?? active.started_at;
+        const activeAlready = Math.floor(
+          (Date.now() - new Date(resumedAt).getTime()) / 1000
+        );
+        baseSeconds = completed;
+        sessionStartMs = Date.now() - activeAlready * 1000;
+        setElapsedSeconds(completed + activeAlready);
+      } else {
+        baseSeconds = completed;
+        sessionStartMs = 0;
+        setElapsedSeconds(completed);
+      }
     };
     getAccumulated();
-    const interval = setInterval(() => setElapsedSeconds(prev => prev + 1), 1000);
-    return () => clearInterval(interval);
+    // Use Date.now() diff on each tick — immune to tab throttling
+    const interval = setInterval(() => {
+      if (sessionStartMs > 0) {
+        const elapsed = Math.floor((Date.now() - sessionStartMs) / 1000);
+        setElapsedSeconds(baseSeconds + elapsed);
+      }
+    }, 1000);
+    // Recalculate on tab focus to correct any drift
+    const onFocus = () => { getAccumulated(); };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [caseId, status, reviewCase?.last_started_at]);
 
   const formatTimer = (secs: number) => {
