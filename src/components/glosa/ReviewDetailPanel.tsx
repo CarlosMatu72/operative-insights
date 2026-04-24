@@ -439,17 +439,25 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   className="gap-1.5 h-9"
                   disabled={actions.pauseSession.isPending}
                   onClick={async () => {
-                    if (state.showObsForm && (state.obsComment || state.obsErrorId || state.obsCategoryId)) {
-                      const confirm = window.confirm(
-                        "Tienes una observación en edición que no has agregado. ¿Pausar de todas formas y descartar ese borrador?"
-                      );
-                      if (!confirm) return;
+                    if (state.showObsForm && (state.obsComment || state.obsErrorId)) {
+                      if (!window.confirm("Tienes una observación sin agregar. ¿Pausar y descartar ese borrador?")) return;
                     }
                     if (state.showCommentForm && state.generalComment) {
-                      const confirm = window.confirm(
-                        "Tienes un comentario escrito que no has enviado. ¿Pausar de todas formas y descartar ese texto?"
+                      if (!window.confirm("Tienes un comentario sin enviar. ¿Pausar y descartar ese texto?")) return;
+                    }
+                    // Extra dialog when in EN_CORRECCION
+                    if (status === "EN_CORRECCION") {
+                      const hasUnevaluatedFindings = findings.some(
+                        f => f.is_open && f.current_status === "PENDING"
                       );
-                      if (!confirm) return;
+                      if (hasUnevaluatedFindings) {
+                        const choice = window.confirm(
+                          "Hay observaciones que aún no has evaluado (no marcadas como Corregido o No Corregido).\n\n" +
+                          "• Presiona ACEPTAR si pausas porque trabajarás en otro trámite y volverás después.\n" +
+                          "• Presiona CANCELAR si quieres terminar de evaluar todas las observaciones antes de pausar."
+                        );
+                        if (!choice) return;
+                      }
                     }
                     await handleSaveAll().catch(() => {});
                     await actions.pauseSession.mutateAsync().catch(() => {});
