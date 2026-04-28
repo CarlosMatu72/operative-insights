@@ -17,7 +17,7 @@ interface Props {
 
 export function ActionDialogs({ state }: Props) {
   const {
-    onClose, actions, scoreDetail,
+    onClose, actions, scoreDetail, findings,
     statusUpdateFinding, setStatusUpdateFinding,
     statusUpdateValue, setStatusUpdateValue,
     statusUpdateComment, setStatusUpdateComment,
@@ -79,51 +79,82 @@ export function ActionDialogs({ state }: Props) {
 
       {/* Score Breakdown */}
       <Dialog open={showScoreBreakdown} onOpenChange={setShowScoreBreakdown}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Cálculo de Calificación</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Desglose de Calificación</DialogTitle>
+          </DialogHeader>
           {scoreDetail ? (
-            <div className="space-y-3 text-sm">
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Penalizaciones por errores (70 pts base)</span>
-                  <span className="font-bold">{scoreDetail.score_classification}/70</span>
+            <div className="space-y-4 text-sm">
+              {/* Part 1: Errors */}
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex justify-between font-semibold">
+                  <span>Penalizaciones por error</span>
+                  <span>{scoreDetail.score_classification}/70 pts</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {scoreDetail.total_errors} observación(es) registrada(s)
+                <div className="text-xs text-muted-foreground space-y-1 border-t pt-2">
+                  {findings.filter((f) => f.observation_errors).map((f, i) => (
+                    <div key={f.id} className="flex justify-between">
+                      <span className="truncate flex-1 mr-2">
+                        {i + 1}. {f.observation_errors?.descripcion ?? "Error"}
+                        {f.observation_errors?.codigo_error && (
+                          <span className="ml-1 text-muted-foreground">
+                            [{f.observation_errors.codigo_error}]
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-destructive whitespace-nowrap">
+                        −{f.observation_errors?.descuento_puntos ?? 0} pts
+                      </span>
+                    </div>
+                  ))}
+                  {findings.filter((f) => f.observation_errors).length === 0 && (
+                    <p className="text-center text-muted-foreground">Sin errores con penalización</p>
+                  )}
+                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
+                    <span>Base 70 − penalizaciones</span>
+                    <span>70 − {70 - Number(scoreDetail.score_classification)} = {scoreDetail.score_classification} pts</span>
+                  </div>
+                </div>
+              </div>
+              {/* Part 2: Observation count */}
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="flex justify-between font-semibold">
+                  <span>Cantidad de observaciones</span>
+                  <span>{scoreDetail.score_observations}/20 pts</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Number(scoreDetail.total_errors)} observación(es) →{" "}
+                  {Number(scoreDetail.total_errors) <= 5 ? "0–5 → 20 pts" :
+                   Number(scoreDetail.total_errors) <= 10 ? "6–10 → 10 pts" : "11+ → 0 pts"}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cantidad de observaciones (20 pts)</span>
-                  <span className="font-bold">{scoreDetail.score_observations}/20</span>
+              {/* Part 3: Revision rounds */}
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="flex justify-between font-semibold">
+                  <span>Rondas de revisión</span>
+                  <span>{(scoreDetail as { score_revisions?: number }).score_revisions ?? 0}/10 pts</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {Number(scoreDetail.total_errors) <= 5 ? "0–5 obs. → 20 pts" :
-                   Number(scoreDetail.total_errors) <= 10 ? "6–10 obs. → 10 pts" :
-                   "11+ obs. → 0 pts"}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Number(scoreDetail.correction_rounds)} ronda(s) →{" "}
+                  {Number(scoreDetail.correction_rounds) <= 2 ? "1–2 → 10 pts" :
+                   Number(scoreDetail.correction_rounds) === 3 ? "3 → 5 pts" : "4+ → 0 pts"}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rondas de revisión (10 pts)</span>
-                  <span className="font-bold">{(scoreDetail as { score_revisions?: number }).score_revisions ?? "—"}/10</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {Number(scoreDetail.correction_rounds) <= 2 ? "1–2 rondas → 10 pts" :
-                   Number(scoreDetail.correction_rounds) === 3 ? "3 rondas → 5 pts" :
-                   "4+ rondas → 0 pts"}
-                </p>
-              </div>
-              <div className="border-t pt-3 flex justify-between font-bold text-base">
-                <span>Total</span>
+              {/* Total */}
+              <div className="flex justify-between items-center text-base font-bold border-t pt-3">
+                <span>Calificación final</span>
                 <span className={
                   Number(scoreDetail.score_total) >= 85 ? "text-success" :
                   Number(scoreDetail.score_total) >= 70 ? "text-warning" : "text-destructive"
-                }>{scoreDetail.score_total}/100</span>
+                }>
+                  {scoreDetail.score_classification} + {scoreDetail.score_observations} + {(scoreDetail as { score_revisions?: number }).score_revisions ?? 0} = {scoreDetail.score_total}/100
+                </span>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">Sin datos de calificación</p>
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Sin datos de calificación
+            </p>
           )}
         </DialogContent>
       </Dialog>
