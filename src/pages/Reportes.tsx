@@ -409,13 +409,13 @@ const Reportes = () => {
             <Card>
               <CardHeader className="pb-3 flex-row items-center justify-between">
                 <CardTitle className="text-sm">Ranking de ejecutivos por calificación</CardTitle>
-                <Select defaultValue="all">
+                <Select value={rankingTipo} onValueChange={setRankingTipo}>
                   <SelectTrigger className="h-8 w-40 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los tipos</SelectItem>
-                    {[...new Set(tramitesAll.map((c: any) => c.document_types?.name).filter(Boolean))].map((t) => (
+                    {[...new Set((tramitesAll as any[]).map((c: any) => c.document_types?.name).filter(Boolean))].map((t) => (
                       <SelectItem key={t as string} value={t as string}>{t as string}</SelectItem>
                     ))}
                   </SelectContent>
