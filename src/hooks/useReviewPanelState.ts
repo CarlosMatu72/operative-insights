@@ -297,7 +297,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
   const openFindings = findings.filter((f) => f.is_open);
   const hasRequiredFields = !!(branchId && clientId && executiveId);
   const canApprove = openFindings.length === 0
-    && docStatus !== "PENDIENTE_NO_SE_PUEDE_GLOSAR"
+    && docStatus === "COMPLETO"
     && status !== "DOCUMENTO_PENDIENTE"
     && hasRequiredFields;
 

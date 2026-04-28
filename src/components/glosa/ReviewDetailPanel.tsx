@@ -65,6 +65,22 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
   const handleCopyText = () => {
     if (!reviewCase) { toast.error("No hay datos para copiar"); return; }
+    // Special format for approved cases
+    if (status === "APROBADO") {
+      const ref = reviewCase.reference || reviewCase.internal_folio;
+      const docTypeName = reviewCase.document_types?.name ?? "Trámite";
+      let t = "";
+      t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
+      t += `│ Referencia:      ${ref}\n`;
+      t += `│ Cliente:         ${reviewCase.clients?.nombre || "—"}\n`;
+      t += `│ Ejecutivo:       ${reviewCase.executives?.nombre || "—"}\n`;
+      t += `│ Glosador:        ${reviewCase.glosador?.nombre || "Sin asignar"}\n`;
+      t += "└──────────────────────────────────────────────────────┘\n\n";
+      t += `[${docTypeName}] [${ref}] autorizado para pago.\n`;
+      navigator.clipboard.writeText(t);
+      toast.success("Texto copiado");
+      return;
+    }
     const dsl: Record<string, string> = {
       COMPLETO: "✓ Completo",
       PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
@@ -109,11 +125,18 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
           t += `${counter}.\t ${sub ? sub + " --> " : ""}${comentario}\n`;
           // Add NOT_CORRECTED comment from finding history if present
           const histories = (f as unknown as { finding_histories?: Array<{ new_status: string; comment: string | null; created_at: string }> }).finding_histories ?? [];
-          const notCorrectedEntry = [...histories]
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-            .find((h) => h.new_status === "NOT_CORRECTED" && h.comment);
+          const sortedHistories = [...histories]
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          const notCorrectedEntry = sortedHistories.find(
+            (h) => h.new_status === "NOT_CORRECTED" && h.comment
+          );
+          const partialEntry = sortedHistories.find(
+            (h) => h.new_status === "PARTIALLY_CORRECTED" && h.comment
+          );
           if (notCorrectedEntry) {
             t += `\t   No corregido: ${notCorrectedEntry.comment}\n`;
+          } else if (partialEntry) {
+            t += `\t   Parcialmente corregido: ${partialEntry.comment}\n`;
           }
           counter++;
         }
@@ -499,6 +522,12 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
               {!hasRequiredFields && isActiveReview && (
                 <p className="text-xs text-destructive mr-2">
                   Completa Sucursal, Cliente y Ejecutivo para aprobar
+                </p>
+              )}
+              {docStatus !== "COMPLETO" && isActiveReview && (
+                <p className="text-xs text-destructive mr-2 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  La documentación debe estar en Completo para aprobar
                 </p>
               )}
               {(isActiveReview || isReopened) && !needsCorrection && (
