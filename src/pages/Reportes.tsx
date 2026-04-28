@@ -424,7 +424,7 @@ const Reportes = () => {
               <CardContent className="p-0">
                 {(() => {
                   const execMap: Record<string, { scores: number[]; nombre: string }> = {};
-                  for (const c of tramitesAll as any[]) {
+                  for (const c of tramitesFiltrados as any[]) {
                     const score = c.review_scores?.[0]?.score_total;
                     const nombre = c.executives?.nombre;
                     if (!nombre || score == null) continue;
@@ -479,7 +479,7 @@ const Reportes = () => {
               <CardContent className="space-y-3">
                 {(() => {
                   const branchMap: Record<string, { scores: number[]; nombre: string }> = {};
-                  for (const c of tramitesAll as any[]) {
+                  for (const c of tramitesFiltrados as any[]) {
                     const score = c.review_scores?.[0]?.score_total;
                     const nombre = c.branches?.nombre;
                     if (!nombre || score == null) continue;
