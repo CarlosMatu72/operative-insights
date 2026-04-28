@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, FileSpreadsheet, BarChart3, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -122,6 +123,27 @@ const Reportes = () => {
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (findings ?? []).map(f => ({ ...f, case: caseMap[f.review_case_id] }));
+    },
+    enabled: !!dateFrom && !!dateTo,
+  });
+
+  const { data: tramitesAll = [] } = useQuery({
+    queryKey: ["reporte-ranking", dateFrom, dateTo],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("review_cases")
+        .select(`
+          id, status, approved_at,
+          branches(nombre),
+          executives(nombre),
+          document_types(name, code),
+          review_scores(score_total)
+        `)
+        .eq("status", "APROBADO")
+        .is("deleted_at", null)
+        .gte("approved_at", dateFrom)
+        .lte("approved_at", dateTo + "T23:59:59");
+      return (data ?? []) as any[];
     },
     enabled: !!dateFrom && !!dateTo,
   });
