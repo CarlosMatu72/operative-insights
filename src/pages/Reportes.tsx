@@ -267,6 +267,10 @@ const Reportes = () => {
               <BarChart3 className="h-3.5 w-3.5" />
               Análisis de observaciones
             </TabsTrigger>
+            <TabsTrigger value="ranking" className="gap-1.5 text-xs">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Ejecutivos y Sucursales
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: Trámites */}
@@ -392,6 +396,125 @@ const Reportes = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* TAB 3: Ranking ejecutivos y sucursales */}
+          <TabsContent value="ranking" className="mt-4 space-y-5">
+            {/* Executive ranking table */}
+            <Card>
+              <CardHeader className="pb-3 flex-row items-center justify-between">
+                <CardTitle className="text-sm">Ranking de ejecutivos por calificación</CardTitle>
+                <Select defaultValue="all">
+                  <SelectTrigger className="h-8 w-40 text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
+                    {[...new Set(tramitesAll.map((c: any) => c.document_types?.name).filter(Boolean))].map((t) => (
+                      <SelectItem key={t as string} value={t as string}>{t as string}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardHeader>
+              <CardContent className="p-0">
+                {(() => {
+                  const execMap: Record<string, { scores: number[]; nombre: string }> = {};
+                  for (const c of tramitesAll as any[]) {
+                    const score = c.review_scores?.[0]?.score_total;
+                    const nombre = c.executives?.nombre;
+                    if (!nombre || score == null) continue;
+                    if (!execMap[nombre]) execMap[nombre] = { scores: [], nombre };
+                    execMap[nombre].scores.push(Number(score));
+                  }
+                  const ranking = Object.values(execMap)
+                    .map((e) => ({ nombre: e.nombre, avg: Math.round(e.scores.reduce((a, b) => a + b, 0) / e.scores.length), count: e.scores.length }))
+                    .sort((a, b) => b.avg - a.avg);
+                  return (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b bg-muted/40">
+                          <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">#</th>
+                          <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">Ejecutivo</th>
+                          <th className="text-center px-4 py-2.5 font-semibold text-muted-foreground">Trámites</th>
+                          <th className="text-center px-4 py-2.5 font-semibold text-muted-foreground">Prom. Calif.</th>
+                          <th className="px-4 py-2.5 w-32"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ranking.map((e, i) => (
+                          <tr key={e.nombre} className="border-b hover:bg-muted/20">
+                            <td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
+                            <td className="px-4 py-2 font-medium">{e.nombre}</td>
+                            <td className="px-4 py-2 text-center">{e.count}</td>
+                            <td className="px-4 py-2 text-center">
+                              <span className={`font-bold ${e.avg >= 85 ? "text-success" : e.avg >= 70 ? "text-warning" : "text-destructive"}`}>
+                                {e.avg}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-primary transition-all"
+                                  style={{ width: `${e.avg}%` }} />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Branch bar chart */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Calificación promedio y trámites por sucursal</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const branchMap: Record<string, { scores: number[]; nombre: string }> = {};
+                  for (const c of tramitesAll as any[]) {
+                    const score = c.review_scores?.[0]?.score_total;
+                    const nombre = c.branches?.nombre;
+                    if (!nombre || score == null) continue;
+                    if (!branchMap[nombre]) branchMap[nombre] = { scores: [], nombre };
+                    branchMap[nombre].scores.push(Number(score));
+                  }
+                  const branches = Object.values(branchMap)
+                    .map((b) => ({ nombre: b.nombre, avg: Math.round(b.scores.reduce((a, v) => a + v, 0) / b.scores.length), count: b.scores.length }))
+                    .sort((a, b) => b.avg - a.avg);
+                  const maxCount = Math.max(...branches.map((b) => b.count), 1);
+                  return branches.map((b) => (
+                    <div key={b.nombre} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">{b.nombre}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {b.count} trámite{b.count !== 1 ? "s" : ""} ·
+                          <span className={`ml-1 font-bold ${b.avg >= 85 ? "text-success" : b.avg >= 70 ? "text-warning" : "text-destructive"}`}>
+                            {b.avg} pts
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1 h-5 rounded bg-muted overflow-hidden relative">
+                          <div className="h-full rounded bg-primary/80 transition-all"
+                            style={{ width: `${b.avg}%` }} />
+                          <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-primary-foreground mix-blend-difference">
+                            {b.avg}/100
+                          </span>
+                        </div>
+                        <div className="w-16 h-5 rounded bg-secondary/40 overflow-hidden">
+                          <div className="h-full rounded bg-secondary transition-all"
+                            style={{ width: `${(b.count / maxCount) * 100}%` }} />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-6 text-right">{b.count}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
