@@ -149,6 +149,10 @@ const Reportes = () => {
     enabled: !!dateFrom && !!dateTo,
   });
 
+  const tramitesFiltrados = rankingTipo === "all"
+    ? tramitesAll
+    : (tramitesAll as any[]).filter((c: any) => c.document_types?.name === rankingTipo);
+
   const catStats = (observaciones as any[]).reduce((acc: Record<string, number>, f: any) => {
     const cat = f.observation_categories?.nombre || "Sin categoría";
     acc[cat] = (acc[cat] ?? 0) + 1;
