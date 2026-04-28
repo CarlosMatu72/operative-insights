@@ -53,6 +53,7 @@ const Reportes = () => {
   const [dateFrom, setDateFrom] = useState(firstOfMonth);
   const [dateTo, setDateTo] = useState(today);
   const [isExporting, setIsExporting] = useState(false);
+  const [rankingTipo, setRankingTipo] = useState("all");
 
   const { data: tramites = [], isLoading: loadingTramites } = useQuery({
     queryKey: ["reporte-tramites", dateFrom, dateTo],
