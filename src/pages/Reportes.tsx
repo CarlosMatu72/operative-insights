@@ -53,6 +53,7 @@ const Reportes = () => {
   const [dateFrom, setDateFrom] = useState(firstOfMonth);
   const [dateTo, setDateTo] = useState(today);
   const [isExporting, setIsExporting] = useState(false);
+  const [rankingTipo, setRankingTipo] = useState("all");
 
   const { data: tramites = [], isLoading: loadingTramites } = useQuery({
     queryKey: ["reporte-tramites", dateFrom, dateTo],
@@ -147,6 +148,10 @@ const Reportes = () => {
     },
     enabled: !!dateFrom && !!dateTo,
   });
+
+  const tramitesFiltrados = rankingTipo === "all"
+    ? tramitesAll
+    : (tramitesAll as any[]).filter((c: any) => c.document_types?.name === rankingTipo);
 
   const catStats = (observaciones as any[]).reduce((acc: Record<string, number>, f: any) => {
     const cat = f.observation_categories?.nombre || "Sin categoría";
@@ -404,13 +409,13 @@ const Reportes = () => {
             <Card>
               <CardHeader className="pb-3 flex-row items-center justify-between">
                 <CardTitle className="text-sm">Ranking de ejecutivos por calificación</CardTitle>
-                <Select defaultValue="all">
+                <Select value={rankingTipo} onValueChange={setRankingTipo}>
                   <SelectTrigger className="h-8 w-40 text-xs">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los tipos</SelectItem>
-                    {[...new Set(tramitesAll.map((c: any) => c.document_types?.name).filter(Boolean))].map((t) => (
+                    {[...new Set((tramitesAll as any[]).map((c: any) => c.document_types?.name).filter(Boolean))].map((t) => (
                       <SelectItem key={t as string} value={t as string}>{t as string}</SelectItem>
                     ))}
                   </SelectContent>
@@ -419,7 +424,7 @@ const Reportes = () => {
               <CardContent className="p-0">
                 {(() => {
                   const execMap: Record<string, { scores: number[]; nombre: string }> = {};
-                  for (const c of tramitesAll as any[]) {
+                  for (const c of tramitesFiltrados as any[]) {
                     const score = c.review_scores?.[0]?.score_total;
                     const nombre = c.executives?.nombre;
                     if (!nombre || score == null) continue;
@@ -474,7 +479,7 @@ const Reportes = () => {
               <CardContent className="space-y-3">
                 {(() => {
                   const branchMap: Record<string, { scores: number[]; nombre: string }> = {};
-                  for (const c of tramitesAll as any[]) {
+                  for (const c of tramitesFiltrados as any[]) {
                     const score = c.review_scores?.[0]?.score_total;
                     const nombre = c.branches?.nombre;
                     if (!nombre || score == null) continue;
