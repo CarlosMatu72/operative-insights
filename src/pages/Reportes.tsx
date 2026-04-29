@@ -69,7 +69,7 @@ const Reportes = () => {
         .from("review_cases")
         .select(`
           id, reference, internal_folio, registered_at, assigned_at, approved_at,
-          status, document_types(name, code),
+          status, remesas_count, document_types(name, code),
           branches(nombre), clients(nombre), executives(nombre),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre),
           review_scores(score_total, correction_rounds, total_errors),
@@ -79,7 +79,7 @@ const Reportes = () => {
         .is("deleted_at", null)
         .gte("approved_at", dateFrom + "T00:00:00-06:00")
         .lte("approved_at", dateTo + "T23:59:59-06:00")
-        .limit(500)
+        .limit(200)
         .order("approved_at", { ascending: false });
       if (error) throw error;
 
@@ -191,9 +191,54 @@ const Reportes = () => {
   const exportTramites = useCallback(async () => {
     setIsExporting(true);
     try {
-      const rows = tramites.map((c: any) => ({
+      // Fetch ALL records for export (no limit)
+      let allData: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: batch } = await supabase
+          .from("review_cases")
+          .select(`
+            id, reference, internal_folio, registered_at, assigned_at, approved_at,
+            status, remesas_count, document_types(name, code),
+            branches(nombre), clients(nombre), executives(nombre),
+            glosador:profiles!review_cases_glosador_profile_fkey(nombre),
+            review_scores(score_total, correction_rounds, total_errors),
+            review_case_details(customs_key_id, customs_keys(clave))
+          `)
+          .eq("status", "APROBADO")
+          .is("deleted_at", null)
+          .gte("approved_at", dateFrom + "T00:00:00-06:00")
+          .lte("approved_at", dateTo + "T23:59:59-06:00")
+          .order("approved_at", { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (!batch || batch.length === 0) break;
+        allData = [...allData, ...batch];
+        if (batch.length < pageSize) break;
+        page++;
+      }
+
+      // Fetch findings and rounds for all IDs using chunking
+      const allIds = allData.map(c => c.id);
+      const chunkSize = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < allIds.length; i += chunkSize) {
+        chunks.push(allIds.slice(i, i + chunkSize));
+      }
+      const [findingsRaw, roundsRaw] = await Promise.all([
+        Promise.all(chunks.map(ch => supabase.from("review_findings").select("review_case_id").in("review_case_id", ch))).then(r => r.flatMap(x => x.data ?? [])),
+        Promise.all(chunks.map(ch => supabase.from("review_rounds").select("review_case_id").in("review_case_id", ch))).then(r => r.flatMap(x => x.data ?? [])),
+      ]);
+      const fMap: Record<string, number> = {};
+      for (const f of findingsRaw) fMap[f.review_case_id] = (fMap[f.review_case_id] ?? 0) + 1;
+      const rMap: Record<string, number> = {};
+      for (const r of roundsRaw) rMap[r.review_case_id] = (rMap[r.review_case_id] ?? 0) + 1;
+
+      const rows = allData.map((c: any) => ({
         "Referencia": c.reference ?? c.internal_folio,
         "Tipo": c.document_types?.name ?? "",
+        "Remesas en lote": c.remesas_count ?? 1,
         "Ejecutivo": c.executives?.nombre ?? "",
         "Sucursal": c.branches?.nombre ?? "",
         "Cliente": c.clients?.nombre ?? "",
@@ -204,19 +249,19 @@ const Reportes = () => {
         "Hora asignación": fmt(c.assigned_at, "time"),
         "Fecha aprobación": fmt(c.approved_at, "date"),
         "Hora aprobación": fmt(c.approved_at, "time"),
-        "Núm. revisiones": c.roundsCount ?? c.review_scores?.[0]?.correction_rounds ?? 0,
-        "Núm. observaciones": c.findingsCount ?? c.review_scores?.[0]?.total_errors ?? 0,
+        "Núm. revisiones": rMap[c.id] ?? c.review_scores?.[0]?.correction_rounds ?? 0,
+        "Núm. observaciones": fMap[c.id] ?? c.review_scores?.[0]?.total_errors ?? 0,
         "Calificación": c.review_scores?.[0]?.score_total ?? "",
         "Glosador": c.glosador?.nombre ?? "",
       }));
       downloadCSV(toCSV(rows), `tramites_evaluados_${dateFrom}_${dateTo}.csv`);
       toast.success(`${rows.length} registros exportados`);
-    } catch {
+    } catch (e) {
       toast.error("Error al exportar");
     } finally {
       setIsExporting(false);
     }
-  }, [tramites, dateFrom, dateTo]);
+  }, [dateFrom, dateTo]);
 
   const exportObservaciones = useCallback(async () => {
     setIsExporting(true);
@@ -312,11 +357,11 @@ const Reportes = () => {
             </div>
 
             <Card>
-              {tramites.length >= 500 && (
+              {tramites.length >= 200 && (
                 <CardHeader className="pb-3">
                   <p className="text-xs text-warning flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
-                    Se muestran los 500 trámites más recientes. Reduce el rango de fechas para ver todos los datos.
+                    Vista previa limitada a 200 registros. El CSV descarga todos los trámites del período.
                   </p>
                 </CardHeader>
               )}

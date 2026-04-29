@@ -49,6 +49,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const [remesaBaseId, setRemesaBaseId] = useState("");
   const [glosadorId, setGlosadorId] = useState("");
   const [rangeInput, setRangeInput] = useState("");
+  const [remesasCountOverride, setRemesasCountOverride] = useState<number | null>(null);
 
   const selectedRemesa = activeRemesas.find(r => r.id === remesaBaseId);
 
@@ -58,6 +59,8 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
   }, [rangeInput]);
 
   const isValidInput = parsedNumbers.length > 0 && parsedNumbers.length <= 100;
+  const calculatedCount = parsedNumbers.length;
+  const effectiveCount = remesasCountOverride ?? calculatedCount;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -99,6 +102,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         remesa_revision_number: parsedNumbers[0],
         remesa_lote_descripcion: loteDescripcion,
         is_active_remesa: false,
+        remesas_count: effectiveCount,
         created_by: user?.id,
         updated_by: user?.id,
       });
@@ -109,6 +113,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
     onSuccess: (result) => {
       toast.success(`Remesa registrada: ${result.referencia}`);
       setRemesaBaseId(""); setGlosadorId(""); setRangeInput("");
+      setRemesasCountOverride(null);
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       queryClient.invalidateQueries({ queryKey: ["pendientes"] });
@@ -182,6 +187,37 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
           <p className="text-xs text-muted-foreground">
             Referencia: <span className="font-mono">{selectedRemesa?.remesa_base_reference} - {buildLoteDescription(parsedNumbers)}</span>
           </p>
+          {parsedNumbers.length > 0 && (
+            <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2">
+              <div className="flex-1 text-xs text-muted-foreground">
+                Remesas en este lote:
+                <span className="ml-1 font-bold text-foreground text-sm">
+                  {calculatedCount} calculadas
+                </span>
+                {remesasCountOverride !== null && remesasCountOverride !== calculatedCount && (
+                  <span className="ml-1 text-warning">
+                    (ajustado a {remesasCountOverride})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-muted-foreground">Ajustar:</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={remesasCountOverride ?? calculatedCount}
+                  onChange={e => {
+                    const v = parseInt(e.target.value);
+                    if (!isNaN(v) && v > 0) {
+                      setRemesasCountOverride(v === calculatedCount ? null : v);
+                    }
+                  }}
+                  className="h-7 w-20 text-xs text-center"
+                />
+              </div>
+            </div>
+          )}
           {parsedNumbers.length > 100 && (
             <p className="text-xs text-destructive">Máximo 100 remesas por registro. Divide en lotes.</p>
           )}

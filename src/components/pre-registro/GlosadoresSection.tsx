@@ -67,11 +67,15 @@ export function GlosadoresSection() {
 
                   <div className="w-full space-y-2 text-xs">
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Ped/Con mes:</span>
-                      <span className="font-medium text-foreground">{g.pedConsolidados}</span>
+                      <span>Pedimentos:</span>
+                      <span className="font-medium text-foreground">{(g as any).pedimentos ?? 0}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Remesas mes:</span>
+                      <span>Consolidados:</span>
+                      <span className="font-medium text-foreground">{(g as any).consolidados ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Remesas:</span>
                       <span className="font-medium text-foreground">{g.remesas}</span>
                     </div>
                     <div className="space-y-1">
