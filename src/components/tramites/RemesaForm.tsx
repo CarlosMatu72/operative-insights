@@ -59,6 +59,8 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
   }, [rangeInput]);
 
   const isValidInput = parsedNumbers.length > 0 && parsedNumbers.length <= 100;
+  const calculatedCount = parsedNumbers.length;
+  const effectiveCount = remesasCountOverride ?? calculatedCount;
 
   const mutation = useMutation({
     mutationFn: async () => {
