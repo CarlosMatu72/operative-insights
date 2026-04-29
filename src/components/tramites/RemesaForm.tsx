@@ -102,6 +102,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         remesa_revision_number: parsedNumbers[0],
         remesa_lote_descripcion: loteDescripcion,
         is_active_remesa: false,
+        remesas_count: effectiveCount,
         created_by: user?.id,
         updated_by: user?.id,
       });
