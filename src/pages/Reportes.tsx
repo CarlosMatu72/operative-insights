@@ -312,6 +312,14 @@ const Reportes = () => {
             </div>
 
             <Card>
+              {tramites.length >= 500 && (
+                <CardHeader className="pb-3">
+                  <p className="text-xs text-warning flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Se muestran los 500 trámites más recientes. Reduce el rango de fechas para ver todos los datos.
+                  </p>
+                </CardHeader>
+              )}
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
