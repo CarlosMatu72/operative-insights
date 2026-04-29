@@ -69,7 +69,7 @@ const Reportes = () => {
         .from("review_cases")
         .select(`
           id, reference, internal_folio, registered_at, assigned_at, approved_at,
-          status, document_types(name, code),
+          status, remesas_count, document_types(name, code),
           branches(nombre), clients(nombre), executives(nombre),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre),
           review_scores(score_total, correction_rounds, total_errors),
@@ -79,7 +79,7 @@ const Reportes = () => {
         .is("deleted_at", null)
         .gte("approved_at", dateFrom + "T00:00:00-06:00")
         .lte("approved_at", dateTo + "T23:59:59-06:00")
-        .limit(500)
+        .limit(200)
         .order("approved_at", { ascending: false });
       if (error) throw error;
 
