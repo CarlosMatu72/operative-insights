@@ -31,7 +31,7 @@ export function useGlosadores() {
 
       const { data: monthCases } = await supabase
         .from("review_cases")
-        .select("assigned_glosador_user_id, document_type_id, status")
+        .select("assigned_glosador_user_id, document_type_id, status, remesas_count")
         .in("assigned_glosador_user_id", glosadorIds)
         .gte("approved_at", startOfMonth.toISOString());
 
@@ -46,31 +46,47 @@ export function useGlosadores() {
         .in("status", ["APROBADO", "EN_REVISION", "ASIGNADO", "REGISTRADO", "PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]);
 
       // Build stats per glosador
-      const statsMap: Record<string, { pedConsolidados: number; remesas: number }> = {};
+      const statsMap: Record<string, {
+        pedimentos: number;
+        consolidados: number;
+        remesas: number;
+      }> = {};
       for (const c of monthCases ?? []) {
         const uid = c.assigned_glosador_user_id!;
-        if (!statsMap[uid]) statsMap[uid] = { pedConsolidados: 0, remesas: 0 };
+        if (!statsMap[uid]) statsMap[uid] = { pedimentos: 0, consolidados: 0, remesas: 0 };
         const code = docTypeMap[c.document_type_id!];
         if (code === "REMESA") {
-          statsMap[uid].remesas++;
+          statsMap[uid].remesas += (c as any).remesas_count ?? 1;
+        } else if (code === "CONSOLIDADO") {
+          statsMap[uid].consolidados++;
         } else {
-          statsMap[uid].pedConsolidados++;
+          statsMap[uid].pedimentos++;
         }
       }
 
       // Total across ALL glosadores = denominator for true proportion
       const totalWorkload = Math.max(
         1,
-        Object.values(statsMap).reduce((sum, s) => sum + s.pedConsolidados + s.remesas, 0)
+        Object.values(statsMap).reduce(
+          (sum, s) => sum + s.pedimentos + s.consolidados + s.remesas, 0
+        )
       );
 
-      return (profiles ?? []).filter(p => p.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)).map((p) => ({
-        ...p,
-        isActive: activeUserIds.has(p.id),
-        pedConsolidados: statsMap[p.id]?.pedConsolidados ?? 0,
-        remesas: statsMap[p.id]?.remesas ?? 0,
-        cargaPct: Math.round(((statsMap[p.id]?.pedConsolidados ?? 0) + (statsMap[p.id]?.remesas ?? 0)) / totalWorkload * 100),
-      }));
+      return (profiles ?? []).filter(p => p.activo)
+        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+        .map((p) => ({
+          ...p,
+          isActive: activeUserIds.has(p.id),
+          pedimentos: statsMap[p.id]?.pedimentos ?? 0,
+          consolidados: statsMap[p.id]?.consolidados ?? 0,
+          remesas: statsMap[p.id]?.remesas ?? 0,
+          pedConsolidados: (statsMap[p.id]?.pedimentos ?? 0) + (statsMap[p.id]?.consolidados ?? 0),
+          cargaPct: Math.round(
+            ((statsMap[p.id]?.pedimentos ?? 0) +
+             (statsMap[p.id]?.consolidados ?? 0) +
+             (statsMap[p.id]?.remesas ?? 0)) / totalWorkload * 100
+          ),
+        }));
     },
     refetchInterval: 30000,
     staleTime: 20000,
