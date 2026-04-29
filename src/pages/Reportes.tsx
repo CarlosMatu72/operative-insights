@@ -92,7 +92,7 @@ const Reportes = () => {
             supabase.from(table as any).select("review_case_id").in("review_case_id", chunk)
           )
         );
-        return results.flatMap(r => (r.data ?? []) as { review_case_id: string }[]);
+        return results.flatMap(r => ((r.data ?? []) as unknown as { review_case_id: string }[]));
       };
 
       const [findingsRaw, roundsRaw] = await Promise.all([
