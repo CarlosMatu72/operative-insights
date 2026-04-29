@@ -49,6 +49,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const [remesaBaseId, setRemesaBaseId] = useState("");
   const [glosadorId, setGlosadorId] = useState("");
   const [rangeInput, setRangeInput] = useState("");
+  const [remesasCountOverride, setRemesasCountOverride] = useState<number | null>(null);
 
   const selectedRemesa = activeRemesas.find(r => r.id === remesaBaseId);
 
