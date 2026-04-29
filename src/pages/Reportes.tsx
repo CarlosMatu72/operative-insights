@@ -169,6 +169,8 @@ const Reportes = () => {
     },
     enabled: !!dateFrom && !!dateTo,
   });
+
+  const tramitesFiltrados = rankingTipo === "all"
     ? tramitesAll
     : (tramitesAll as any[]).filter((c: any) => c.document_types?.name === rankingTipo);
 
