@@ -113,6 +113,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
     onSuccess: (result) => {
       toast.success(`Remesa registrada: ${result.referencia}`);
       setRemesaBaseId(""); setGlosadorId(""); setRangeInput("");
+      setRemesasCountOverride(null);
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
       queryClient.invalidateQueries({ queryKey: ["pendientes"] });
