@@ -792,6 +792,7 @@ export type Database = {
           remesa_base_reference: string | null
           remesa_lote_descripcion: string | null
           remesa_revision_number: number | null
+          remesas_count: number | null
           remesas_faltantes_comentario: string | null
           status: Database["public"]["Enums"]["review_status"]
           total_remesas_esperadas: number | null
@@ -824,6 +825,7 @@ export type Database = {
           remesa_base_reference?: string | null
           remesa_lote_descripcion?: string | null
           remesa_revision_number?: number | null
+          remesas_count?: number | null
           remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
           total_remesas_esperadas?: number | null
@@ -856,6 +858,7 @@ export type Database = {
           remesa_base_reference?: string | null
           remesa_lote_descripcion?: string | null
           remesa_revision_number?: number | null
+          remesas_count?: number | null
           remesas_faltantes_comentario?: string | null
           status?: Database["public"]["Enums"]["review_status"]
           total_remesas_esperadas?: number | null
