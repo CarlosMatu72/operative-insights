@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileSpreadsheet, BarChart3, AlertCircle } from "lucide-react";
+import { Download, FileSpreadsheet, BarChart3, AlertCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -55,8 +55,15 @@ const Reportes = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [rankingTipo, setRankingTipo] = useState("all");
 
+  const chunkIds = <T,>(arr: T[], size = 100): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  };
+
   const { data: tramites = [], isLoading: loadingTramites } = useQuery({
     queryKey: ["reporte-tramites", dateFrom, dateTo],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("review_cases")
@@ -70,23 +77,33 @@ const Reportes = () => {
         `)
         .eq("status", "APROBADO")
         .is("deleted_at", null)
-        .gte("approved_at", dateFrom)
-        .lte("approved_at", dateTo + "T23:59:59")
+        .gte("approved_at", dateFrom + "T00:00:00-06:00")
+        .lte("approved_at", dateTo + "T23:59:59-06:00")
+        .limit(500)
         .order("approved_at", { ascending: false });
       if (error) throw error;
 
       const ids = (data ?? []).map(c => c.id);
-      const { data: findings } = ids.length > 0
-        ? await supabase.from("review_findings").select("review_case_id").in("review_case_id", ids)
-        : { data: [] as { review_case_id: string }[] };
-      const { data: rounds } = ids.length > 0
-        ? await supabase.from("review_rounds").select("review_case_id").in("review_case_id", ids)
-        : { data: [] as { review_case_id: string }[] };
+
+      const fetchCounted = async (table: string, ids: string[]) => {
+        if (ids.length === 0) return [] as { review_case_id: string }[];
+        const results = await Promise.all(
+          chunkIds(ids).map(chunk =>
+            supabase.from(table as any).select("review_case_id").in("review_case_id", chunk)
+          )
+        );
+        return results.flatMap(r => ((r.data ?? []) as unknown as { review_case_id: string }[]));
+      };
+
+      const [findingsRaw, roundsRaw] = await Promise.all([
+        fetchCounted("review_findings", ids),
+        fetchCounted("review_rounds", ids),
+      ]);
 
       const findingsMap: Record<string, number> = {};
-      for (const f of findings ?? []) findingsMap[f.review_case_id] = (findingsMap[f.review_case_id] ?? 0) + 1;
+      for (const f of findingsRaw) findingsMap[f.review_case_id] = (findingsMap[f.review_case_id] ?? 0) + 1;
       const roundsMap: Record<string, number> = {};
-      for (const r of rounds ?? []) roundsMap[r.review_case_id] = (roundsMap[r.review_case_id] ?? 0) + 1;
+      for (const r of roundsRaw) roundsMap[r.review_case_id] = (roundsMap[r.review_case_id] ?? 0) + 1;
 
       return (data ?? []).map(c => ({
         ...c,
@@ -99,37 +116,39 @@ const Reportes = () => {
 
   const { data: observaciones = [], isLoading: loadingObs } = useQuery({
     queryKey: ["reporte-observaciones", dateFrom, dateTo],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data: cases } = await supabase
         .from("review_cases")
         .select("id, reference, approved_at, document_types(name), branches(nombre), clients(nombre)")
         .eq("status", "APROBADO")
         .is("deleted_at", null)
-        .gte("approved_at", dateFrom)
-        .lte("approved_at", dateTo + "T23:59:59");
+        .gte("approved_at", dateFrom + "T00:00:00-06:00")
+        .lte("approved_at", dateTo + "T23:59:59-06:00");
 
       if (!cases || cases.length === 0) return [];
       const caseIds = cases.map(c => c.id);
       const caseMap = Object.fromEntries(cases.map(c => [c.id, c]));
 
-      const { data: findings, error } = await supabase
-        .from("review_findings")
-        .select(`
-          id, review_case_id, current_status, comentario_inicial,
-          observation_categories(nombre),
-          observation_subcategories(nombre),
-          observation_errors(descripcion, codigo_error, descuento_puntos)
-        `)
-        .in("review_case_id", caseIds)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (findings ?? []).map(f => ({ ...f, case: caseMap[f.review_case_id] }));
+      const findingChunks = await Promise.all(
+        chunkIds(caseIds).map(chunk =>
+          supabase.from("review_findings").select(`
+            id, review_case_id, current_status, comentario_inicial,
+            observation_categories(nombre),
+            observation_subcategories(nombre),
+            observation_errors(descripcion, codigo_error, descuento_puntos)
+          `).in("review_case_id", chunk).order("created_at", { ascending: true })
+        )
+      );
+      const allFindings = findingChunks.flatMap(r => r.data ?? []);
+      return allFindings.map((f: any) => ({ ...f, case: caseMap[f.review_case_id] }));
     },
     enabled: !!dateFrom && !!dateTo,
   });
 
   const { data: tramitesAll = [] } = useQuery({
     queryKey: ["reporte-ranking", dateFrom, dateTo],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data } = await supabase
         .from("review_cases")
@@ -142,8 +161,10 @@ const Reportes = () => {
         `)
         .eq("status", "APROBADO")
         .is("deleted_at", null)
-        .gte("approved_at", dateFrom)
-        .lte("approved_at", dateTo + "T23:59:59");
+        .gte("approved_at", dateFrom + "T00:00:00-06:00")
+        .lte("approved_at", dateTo + "T23:59:59-06:00")
+        .limit(500)
+        .order("approved_at", { ascending: false });
       return (data ?? []) as any[];
     },
     enabled: !!dateFrom && !!dateTo,
@@ -291,6 +312,14 @@ const Reportes = () => {
             </div>
 
             <Card>
+              {tramites.length >= 500 && (
+                <CardHeader className="pb-3">
+                  <p className="text-xs text-warning flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Se muestran los 500 trámites más recientes. Reduce el rango de fechas para ver todos los datos.
+                  </p>
+                </CardHeader>
+              )}
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
