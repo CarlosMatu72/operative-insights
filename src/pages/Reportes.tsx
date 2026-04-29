@@ -357,11 +357,11 @@ const Reportes = () => {
             </div>
 
             <Card>
-              {tramites.length >= 500 && (
+              {tramites.length >= 200 && (
                 <CardHeader className="pb-3">
                   <p className="text-xs text-warning flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
-                    Se muestran los 500 trámites más recientes. Reduce el rango de fechas para ver todos los datos.
+                    Vista previa limitada a 200 registros. El CSV descarga todos los trámites del período.
                   </p>
                 </CardHeader>
               )}
