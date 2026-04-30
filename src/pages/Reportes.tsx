@@ -408,7 +408,9 @@ const Reportes = () => {
         "referencia": c.reference ?? c.internal_folio,
         "tipo_tramite": c.document_types?.name ?? "",
         "remesas_en_lote": c.remesas_count ?? 1,
-        "descripcion_lote": c.remesa_lote_descripcion ?? "",
+        "descripcion_lote": c.remesa_lote_descripcion
+          ? `="${c.remesa_lote_descripcion}"`
+          : "",
         "sucursal": c.branches?.nombre ?? "",
         "cliente": c.clients?.nombre ?? "",
         "ejecutivo": c.executives?.nombre ?? "",
