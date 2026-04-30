@@ -325,6 +325,268 @@ const Reportes = () => {
     }
   }, [observaciones, dateFrom, dateTo]);
 
+  const exportPowerBI = useCallback(async () => {
+    setIsExportingBI(true);
+    setBiProgress("Cargando compresor...");
+    try {
+      const JSZip = await loadJSZip();
+      const zip = new JSZip();
+      const BOM = "\uFEFF";
+      const tz = "T00:00:00-06:00";
+      const tzEnd = "T23:59:59-06:00";
+
+      // ── HOJA 1: TRÁMITES ──────────────────────────────────────────────
+      setBiProgress("Descargando trámites (1/4)...");
+      const casesData = await fetchAllPages((from, to) =>
+        supabase.from("review_cases")
+          .select(`
+            id, reference, internal_folio, status,
+            registered_at, assigned_at, approved_at, rejected_at,
+            first_started_at, remesas_count, remesa_lote_descripcion,
+            document_types(name),
+            branches(nombre), clients(nombre), executives(nombre),
+            glosador:profiles!review_cases_glosador_profile_fkey(nombre),
+            review_scores(score_total, score_classification, score_observations,
+              score_revisions, correction_rounds, total_errors),
+            review_case_details(partidas, customs_keys(clave), comments_generales)
+          `)
+          .in("status", ["APROBADO", "RECHAZADO"])
+          .is("deleted_at", null)
+          .gte("registered_at", dateFrom + tz)
+          .lte("registered_at", dateTo + tzEnd)
+          .order("registered_at", { ascending: false })
+          .range(from, to)
+      );
+
+      const rejectedIds = casesData.filter((c: any) => c.status === "RECHAZADO").map((c: any) => c.id);
+      const rejections: any[] = rejectedIds.length > 0
+        ? (await Promise.all(
+            chunk(rejectedIds).map(ch =>
+              supabase.from("rejection_histories")
+                .select("review_case_id, motivo, comentario, rejected_at")
+                .in("review_case_id", ch)
+                .order("rejected_at", { ascending: false })
+            )
+          )).flatMap(r => r.data ?? [])
+        : [];
+      const rejMap: Record<string, any> = {};
+      for (const r of rejections) {
+        if (!rejMap[r.review_case_id]) rejMap[r.review_case_id] = r;
+      }
+
+      const allIds = casesData.map((c: any) => c.id);
+      const [sessionsRaw, commentsRaw, roundsRaw] = await Promise.all([
+        Promise.all(chunk(allIds).map(ch =>
+          supabase.from("review_sessions")
+            .select("review_case_id, duration_seconds")
+            .in("review_case_id", ch)
+        )).then(r => r.flatMap(x => x.data ?? [])),
+        Promise.all(chunk(allIds).map(ch =>
+          supabase.from("review_comments")
+            .select("review_case_id")
+            .in("review_case_id", ch)
+        )).then(r => r.flatMap(x => x.data ?? [])),
+        Promise.all(chunk(allIds).map(ch =>
+          supabase.from("review_rounds")
+            .select("review_case_id")
+            .in("review_case_id", ch)
+        )).then(r => r.flatMap(x => x.data ?? [])),
+      ]);
+      const sesMap: Record<string, number> = {};
+      for (const s of sessionsRaw)
+        sesMap[s.review_case_id] = (sesMap[s.review_case_id] ?? 0) + (s.duration_seconds ?? 0);
+      const comMap: Record<string, number> = {};
+      for (const c of commentsRaw)
+        comMap[c.review_case_id] = (comMap[c.review_case_id] ?? 0) + 1;
+      const rndMap: Record<string, number> = {};
+      for (const r of roundsRaw)
+        rndMap[r.review_case_id] = (rndMap[r.review_case_id] ?? 0) + 1;
+
+      const tramitesRows = casesData.map((c: any) => ({
+        "tramite_id": c.id,
+        "folio_interno": c.internal_folio,
+        "referencia": c.reference ?? c.internal_folio,
+        "tipo_tramite": c.document_types?.name ?? "",
+        "remesas_en_lote": c.remesas_count ?? 1,
+        "descripcion_lote": c.remesa_lote_descripcion ?? "",
+        "sucursal": c.branches?.nombre ?? "",
+        "cliente": c.clients?.nombre ?? "",
+        "ejecutivo": c.executives?.nombre ?? "",
+        "glosador": c.glosador?.nombre ?? "",
+        "clave_aduanera": c.review_case_details?.[0]?.customs_keys?.clave ?? "",
+        "partidas": c.review_case_details?.[0]?.partidas ?? "",
+        "comentarios_generales": c.review_case_details?.[0]?.comments_generales ?? "",
+        "estatus_final": c.status,
+        "motivo_rechazo": rejMap[c.id]?.motivo ?? "",
+        "comentario_rechazo": rejMap[c.id]?.comentario ?? "",
+        "fecha_registro": fmt(c.registered_at, "date"),
+        "hora_registro": fmt(c.registered_at, "time"),
+        "fecha_asignacion": fmt(c.assigned_at, "date"),
+        "hora_asignacion": fmt(c.assigned_at, "time"),
+        "fecha_inicio_glosa": fmt(c.first_started_at, "date"),
+        "hora_inicio_glosa": fmt(c.first_started_at, "time"),
+        "fecha_aprobacion": fmt(c.approved_at, "date"),
+        "hora_aprobacion": fmt(c.approved_at, "time"),
+        "fecha_rechazo": fmt(c.rejected_at, "date"),
+        "hora_rechazo": fmt(c.rejected_at, "time"),
+        "dias_ciclo": c.registered_at && (c.approved_at || c.rejected_at)
+          ? Math.round((new Date(c.approved_at ?? c.rejected_at).getTime() -
+              new Date(c.registered_at).getTime()) / 86400000)
+          : "",
+        "tiempo_total_minutos": sesMap[c.id]
+          ? Math.round(sesMap[c.id] / 60)
+          : "",
+        "num_revisiones": rndMap[c.id] ?? c.review_scores?.[0]?.correction_rounds ?? 0,
+        "num_observaciones": c.review_scores?.[0]?.total_errors ?? 0,
+        "num_comentarios": comMap[c.id] ?? 0,
+        "calificacion_total": c.review_scores?.[0]?.score_total ?? "",
+        "pts_errores": c.review_scores?.[0]?.score_classification ?? "",
+        "pts_observaciones": c.review_scores?.[0]?.score_observations ?? "",
+        "pts_revisiones": c.review_scores?.[0]?.score_revisions ?? "",
+      }));
+      zip.file("1_tramites.csv", BOM + toCSV(tramitesRows));
+
+      // ── HOJA 2: OBSERVACIONES ─────────────────────────────────────────
+      setBiProgress("Descargando observaciones (2/4)...");
+      const findingsData = allIds.length > 0 ? (await Promise.all(
+        chunk(allIds).map(ch =>
+          supabase.from("review_findings")
+            .select(`
+              id, review_case_id, created_at, current_status,
+              comentario_inicial, review_round_id,
+              observation_categories(nombre),
+              observation_subcategories(nombre),
+              observation_errors(descripcion, codigo_error, descuento_puntos),
+              finding_histories(new_status, comment, created_at),
+              created_by_profile:profiles!review_findings_created_by_fkey(nombre)
+            `)
+            .in("review_case_id", ch)
+            .order("created_at", { ascending: true })
+        )
+      )).flatMap(r => r.data ?? []) : [];
+
+      const caseCtx: Record<string, any> = {};
+      for (const c of casesData)
+        caseCtx[c.id] = {
+          ref: c.reference ?? c.internal_folio,
+          sucursal: c.branches?.nombre ?? "",
+          glosador: c.glosador?.nombre ?? "",
+        };
+
+      const obsRows = findingsData.map((f: any) => {
+        const histories = [...(f.finding_histories ?? [])]
+          .sort((a: any, b: any) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const latestEval = histories.find((h: any) =>
+          ["CORRECTED","NOT_CORRECTED","PARTIALLY_CORRECTED"].includes(h.new_status));
+        return {
+          "observacion_id": f.id,
+          "tramite_id": f.review_case_id,
+          "referencia": caseCtx[f.review_case_id]?.ref ?? "",
+          "sucursal": caseCtx[f.review_case_id]?.sucursal ?? "",
+          "glosador": caseCtx[f.review_case_id]?.glosador ?? "",
+          "fecha_registro_obs": fmt(f.created_at, "date"),
+          "hora_registro_obs": fmt(f.created_at, "time"),
+          "categoria": f.observation_categories?.nombre ?? "",
+          "subcategoria": f.observation_subcategories?.nombre ?? "",
+          "error": f.observation_errors?.descripcion ?? "",
+          "codigo_error": f.observation_errors?.codigo_error ?? "",
+          "puntos_descontados": f.observation_errors?.descuento_puntos ?? "",
+          "comentario_glosador": f.comentario_inicial ?? "",
+          "estatus_obs": f.current_status,
+          "comentario_evaluacion": latestEval?.comment ?? "",
+          "resultado_evaluacion": latestEval?.new_status ?? "",
+        };
+      });
+      zip.file("2_observaciones.csv", BOM + toCSV(obsRows));
+
+      // ── HOJA 3: COMENTARIOS ───────────────────────────────────────────
+      setBiProgress("Descargando comentarios (3/4)...");
+      const commentsData = allIds.length > 0 ? (await Promise.all(
+        chunk(allIds).map(ch =>
+          supabase.from("review_comments")
+            .select(`
+              id, review_case_id, comment_text, created_at, is_closed, closed_at,
+              observation_categories(nombre),
+              observation_subcategories(nombre),
+              author:profiles!review_comments_created_by_fkey(nombre)
+            `)
+            .in("review_case_id", ch)
+            .order("created_at", { ascending: true })
+        )
+      )).flatMap(r => r.data ?? []) : [];
+
+      const comRows = commentsData.map((c: any) => ({
+        "comentario_id": c.id,
+        "tramite_id": c.review_case_id,
+        "referencia": caseCtx[c.review_case_id]?.ref ?? "",
+        "sucursal": caseCtx[c.review_case_id]?.sucursal ?? "",
+        "categoria": c.observation_categories?.nombre ?? "",
+        "subcategoria": c.observation_subcategories?.nombre ?? "",
+        "texto": c.comment_text,
+        "autor": c.author?.nombre ?? "",
+        "fecha_creacion": fmt(c.created_at, "date"),
+        "hora_creacion": fmt(c.created_at, "time"),
+        "cerrado": c.is_closed ? "Sí" : "No",
+        "fecha_cierre": fmt(c.closed_at, "date"),
+      }));
+      zip.file("3_comentarios.csv", BOM + toCSV(comRows));
+
+      // ── HOJA 4: SESIONES ──────────────────────────────────────────────
+      setBiProgress("Descargando sesiones (4/4)...");
+      const sessionsData = allIds.length > 0 ? (await Promise.all(
+        chunk(allIds).map(ch =>
+          supabase.from("review_sessions")
+            .select(`
+              id, review_case_id, started_at, paused_at, ended_at,
+              duration_seconds, session_status,
+              user_profile:profiles!review_sessions_user_id_fkey(nombre)
+            `)
+            .in("review_case_id", ch)
+            .order("started_at", { ascending: true })
+        )
+      )).flatMap(r => r.data ?? []) : [];
+
+      const sesCountMap: Record<string, number> = {};
+      const sesRows = sessionsData.map((s: any) => {
+        sesCountMap[s.review_case_id] = (sesCountMap[s.review_case_id] ?? 0) + 1;
+        return {
+          "sesion_id": s.id,
+          "tramite_id": s.review_case_id,
+          "referencia": caseCtx[s.review_case_id]?.ref ?? "",
+          "glosador": s.user_profile?.nombre ?? "",
+          "numero_sesion": sesCountMap[s.review_case_id],
+          "fecha_inicio": fmt(s.started_at, "date"),
+          "hora_inicio": fmt(s.started_at, "time"),
+          "duracion_minutos": s.duration_seconds
+            ? Math.round(s.duration_seconds / 60)
+            : "",
+          "estatus_sesion": s.session_status,
+        };
+      });
+      zip.file("4_sesiones.csv", BOM + toCSV(sesRows));
+
+      setBiProgress("Comprimiendo archivos...");
+      const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reporte_powerbi_${dateFrom}_${dateTo}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success(
+        `ZIP generado: ${tramitesRows.length} trámites · ${obsRows.length} obs · ${comRows.length} comentarios · ${sesRows.length} sesiones`
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al generar el reporte");
+    } finally {
+      setIsExportingBI(false);
+      setBiProgress("");
+    }
+  }, [dateFrom, dateTo]);
+
   return (
     <AppLayout>
       <div className="space-y-6">
