@@ -88,6 +88,8 @@ const Reportes = () => {
   const [dateTo, setDateTo] = useState(today);
   const [isExporting, setIsExporting] = useState(false);
   const [rankingTipo, setRankingTipo] = useState("all");
+  const [isExportingBI, setIsExportingBI] = useState(false);
+  const [biProgress, setBiProgress] = useState("");
 
   const chunkIds = <T,>(arr: T[], size = 100): T[][] => {
     const out: T[][] = [];
