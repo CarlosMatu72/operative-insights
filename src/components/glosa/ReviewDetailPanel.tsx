@@ -519,17 +519,27 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
 
             {/* RIGHT: Aprobar / Rechazar */}
             <div className="flex items-center gap-2">
-              {!hasRequiredFields && isActiveReview && (
-                <p className="text-xs text-destructive mr-2">
-                  Completa Sucursal, Cliente y Ejecutivo para aprobar
-                </p>
-              )}
-              {docStatus !== "COMPLETO" && isActiveReview && (
-                <p className="text-xs text-destructive mr-2 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  La documentación debe estar en Completo para aprobar
-                </p>
-              )}
+              {(!canApprove && (isActiveReview || isReopened)) && (() => {
+                const missing: string[] = [];
+                if (!state.branchId) missing.push("Sucursal");
+                if (!state.clientId) missing.push("Cliente");
+                if (!state.executiveId) missing.push("Ejecutivo");
+                if (!state.customsKeyId) missing.push("Clave Aduanera");
+                const p = parseInt(state.partidas);
+                if (isNaN(p) || p <= 0) missing.push("Partidas");
+                if (state.docStatus !== "COMPLETO") missing.push("Documentación = Completo");
+                if (state.openFindings.length > 0) missing.push(`${state.openFindings.length} obs. sin cerrar`);
+                if (missing.length === 0) return null;
+                return (
+                  <div className="flex items-start gap-1.5 text-xs text-destructive max-w-xs">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span>
+                      Falta para aprobar:{" "}
+                      <strong>{missing.join(" · ")}</strong>
+                    </span>
+                  </div>
+                );
+              })()}
               {(isActiveReview || isReopened) && !needsCorrection && (
                 <Button
                   variant="default"
