@@ -623,6 +623,38 @@ const Reportes = () => {
                 )}
               </div>
             </div>
+
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-sm font-medium">Reporte Power BI</p>
+                  <p className="text-xs text-muted-foreground">
+                    ZIP con 4 hojas: trámites, observaciones, comentarios y sesiones
+                    — aprobados y rechazados del período seleccionado
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {biProgress && (
+                    <span className="text-xs text-muted-foreground animate-pulse">
+                      {biProgress}
+                    </span>
+                  )}
+                  <Button
+                    onClick={exportPowerBI}
+                    disabled={isExportingBI}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    {isExportingBI ? (
+                      <><div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Generando...</>
+                    ) : (
+                      <><Download className="h-4 w-4" /> Descargar ZIP (Power BI)</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
