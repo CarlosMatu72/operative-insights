@@ -455,17 +455,17 @@ const Reportes = () => {
           supabase.from("review_findings")
             .select(`
               id, review_case_id, created_at, current_status,
-              comentario_inicial, review_round_id,
+              comentario_inicial,
               observation_categories(nombre),
               observation_subcategories(nombre),
               observation_errors(descripcion, codigo_error, descuento_puntos),
-              finding_histories(new_status, comment, created_at),
-              created_by_profile:profiles!review_findings_created_by_fkey(nombre)
+              finding_histories(new_status, comment, created_at)
             `)
             .in("review_case_id", ch)
             .order("created_at", { ascending: true })
         )
       )).flatMap(r => r.data ?? []) : [];
+      console.log(`[PowerBI] findings: ${findingsData.length}, sessions: 0, comments: 0`);
 
       const caseCtx: Record<string, any> = {};
       for (const c of casesData)
@@ -540,14 +540,14 @@ const Reportes = () => {
         chunk(allIds).map(ch =>
           supabase.from("review_sessions")
             .select(`
-              id, review_case_id, started_at, paused_at, ended_at,
-              duration_seconds, session_status,
-              user_profile:profiles!review_sessions_user_id_fkey(nombre)
+              id, review_case_id, started_at, paused_at,
+              duration_seconds, session_status
             `)
             .in("review_case_id", ch)
             .order("started_at", { ascending: true })
         )
       )).flatMap(r => r.data ?? []) : [];
+      console.log(`[PowerBI] tramites: ${casesData.length}, findings: ${findingsData.length}, sessions: ${sessionsData.length}, comments: ${commentsData.length}`);
 
       const sesCountMap: Record<string, number> = {};
       const sesRows = sessionsData.map((s: any) => {
@@ -556,7 +556,7 @@ const Reportes = () => {
           "sesion_id": s.id,
           "tramite_id": s.review_case_id,
           "referencia": caseCtx[s.review_case_id]?.ref ?? "",
-          "glosador": s.user_profile?.nombre ?? "",
+          "glosador": caseCtx[s.review_case_id]?.glosador ?? "",
           "numero_sesion": sesCountMap[s.review_case_id],
           "fecha_inicio": fmt(s.started_at, "date"),
           "hora_inicio": fmt(s.started_at, "time"),
