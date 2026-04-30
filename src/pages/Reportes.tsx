@@ -46,6 +46,40 @@ function downloadCSV(csv: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+async function loadJSZip(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).JSZip) { resolve((window as any).JSZip); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload = () => resolve((window as any).JSZip);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function chunk<T>(arr: T[], n = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
+
+async function fetchAllPages(
+  buildQuery: (from: number, to: number) => any,
+  pageSize = 500
+): Promise<any[]> {
+  const all: any[] = [];
+  let page = 0;
+  while (true) {
+    const from = page * pageSize;
+    const { data, error } = await buildQuery(from, from + pageSize - 1);
+    if (error || !data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+    page++;
+  }
+  return all;
+}
+
 const Reportes = () => {
   const today = format(new Date(), "yyyy-MM-dd");
   const firstOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
