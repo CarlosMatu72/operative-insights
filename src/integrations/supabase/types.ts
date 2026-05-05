@@ -1278,6 +1278,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_remesas_from_lote: { Args: { lote: string }; Returns: number }
       decrypt_gafete_password: {
         Args: { encrypted_text: string }
         Returns: string
