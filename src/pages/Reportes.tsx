@@ -350,10 +350,11 @@ const Reportes = () => {
               score_revisions, correction_rounds, total_errors),
             review_case_details(partidas, customs_keys(clave), comments_generales)
           `)
-          .in("status", ["APROBADO", "RECHAZADO"])
           .is("deleted_at", null)
-          .gte("registered_at", dateFrom + tz)
-          .lte("registered_at", dateTo + tzEnd)
+          .or(
+            `and(status.eq.APROBADO,approved_at.gte.${dateFrom + tz},approved_at.lte.${dateTo + tzEnd}),` +
+            `and(status.eq.RECHAZADO,rejected_at.gte.${dateFrom + tz},rejected_at.lte.${dateTo + tzEnd})`
+          )
           .order("registered_at", { ascending: false })
           .range(from, to)
       );
