@@ -26,41 +26,58 @@ const Index = () => {
   const [searchRef, setSearchRef] = useState("");
   const [selectedAprobadoId, setSelectedAprobadoId] = useState<string | null>(null);
 
-  const { data: recentCases = [] } = useQuery({
-    queryKey: ["recent-cases-dashboard", dateFrom, dateTo],
+  const { data: recentCases = [], isLoading: loadingCases } = useQuery({
+    queryKey: ["recent-cases-dashboard", dateFrom, dateTo, searchRef],
     queryFn: async () => {
       let query = supabase
         .from("review_cases")
         .select(`
-          *, 
-          document_types(name, code), 
+          id, reference, internal_folio, status, approved_at,
+          document_types(name, code),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre),
-          review_scores(score_total),
-          review_findings(id)
+          review_scores(score_total)
         `)
         .eq("status", "APROBADO")
-        .order("approved_at", { ascending: false })
-        .limit(50);
+        .is("deleted_at", null)
+        .order("approved_at", { ascending: false });
 
-      if (dateFrom) query = query.gte("approved_at", dateFrom);
-      if (dateTo) query = query.lte("approved_at", dateTo + "T23:59:59");
+      if (dateFrom) query = query.gte("approved_at", dateFrom + "T00:00:00-06:00");
+      if (dateTo)   query = query.lte("approved_at", dateTo   + "T23:59:59-06:00");
+
+      if (searchRef && searchRef.trim().length >= 2) {
+        query = query.ilike("reference", `%${searchRef.trim()}%`);
+      } else {
+        query = query.limit(200);
+      }
 
       const { data } = await query;
       return (data ?? []).map(c => ({
         ...c,
         score_total: c.review_scores?.[0]?.score_total ?? null,
-        findings_count: c.review_findings?.length ?? 0,
       }));
     },
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 
-  const filteredCases = recentCases.filter(c => {
-    if (searchRef) {
-      const ref = (c.reference ?? c.internal_folio ?? "").toLowerCase();
-      if (!ref.includes(searchRef.toLowerCase())) return false;
-    }
-    return true;
+  const { data: findingsCounts = {} } = useQuery({
+    queryKey: ["dashboard-findings-counts", recentCases.map(c => c.id).join(",")],
+    queryFn: async () => {
+      const ids = recentCases.map(c => c.id);
+      if (ids.length === 0) return {} as Record<string, number>;
+      const chunks: string[][] = [];
+      for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+      const all = (await Promise.all(
+        chunks.map(ch =>
+          supabase.from("review_findings").select("review_case_id").in("review_case_id", ch)
+        )
+      )).flatMap(r => r.data ?? []);
+      const map: Record<string, number> = {};
+      for (const f of all) map[f.review_case_id] = (map[f.review_case_id] ?? 0) + 1;
+      return map;
+    },
+    enabled: recentCases.length > 0,
+    staleTime: 60000,
   });
   const stats = [
     { label: "Total trámites", value: kpis?.total ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
