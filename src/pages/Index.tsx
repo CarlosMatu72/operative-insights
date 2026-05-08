@@ -117,7 +117,14 @@ const Index = () => {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <CardTitle className="text-base">Trámites Revisados</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-base">Trámites Revisados</CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {loadingCases
+                    ? "Cargando..."
+                    : `${recentCases.length}${!searchRef && !dateFrom && !dateTo && recentCases.length === 200 ? "+" : ""} registros`}
+                </span>
+              </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
