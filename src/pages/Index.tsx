@@ -187,7 +187,7 @@ const Index = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCases.map(c => (
+                  {recentCases.map(c => (
                     <TableRow 
                       key={c.id} 
                       className="cursor-pointer hover:bg-muted/40 transition-colors"
@@ -203,7 +203,7 @@ const Index = () => {
                         {c.glosador?.nombre ?? "—"}
                       </TableCell>
                       <TableCell className="text-xs text-center text-muted-foreground">
-                        {c.findings_count ?? "—"}
+                        {findingsCounts[c.id] ?? 0}
                       </TableCell>
                       <TableCell className="text-xs text-center">
                         {c.score_total != null ? (
@@ -222,10 +222,14 @@ const Index = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredCases.length === 0 && (
+                  {recentCases.length === 0 && !loadingCases && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">
-                        {dateFrom || dateTo ? "Sin trámites en el rango seleccionado" : "Sin trámites aprobados"}
+                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                        {searchRef
+                          ? `Sin trámites aprobados con referencia "${searchRef}"`
+                          : dateFrom || dateTo
+                          ? "Sin trámites aprobados en el período seleccionado"
+                          : "Sin trámites aprobados"}
                       </TableCell>
                     </TableRow>
                   )}
