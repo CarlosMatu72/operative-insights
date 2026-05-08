@@ -147,10 +147,16 @@ export function useKPIs() {
         pendQuery,
         supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "EN_REVISION").is("deleted_at", null),
         supabase.from("review_cases").select("id, document_type_id", { count: "exact" }).eq("status", "APROBADO").is("deleted_at", null).gte("approved_at", startOfMonth.toISOString()),
-        supabase.from("review_cases").select("document_type_id").eq("status", "APROBADO").is("deleted_at", null).gte("approved_at", startOfMonth.toISOString()),
+        supabase.from("review_cases").select("document_type_id, remesas_count").eq("status", "APROBADO").is("deleted_at", null).gte("approved_at", startOfMonth.toISOString()),
         supabase.from("review_cases").select("id", { count: "exact", head: true }).in("status", ["PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]).is("deleted_at", null),
         supabase.from("review_cases").select("id", { count: "exact", head: true }).eq("status", "RECHAZADO").is("deleted_at", null),
-        supabase.from("review_cases").select("id", { count: "exact", head: true }).is("deleted_at", null),
+        (() => {
+          let q = supabase.from("review_cases")
+            .select("id", { count: "exact", head: true })
+            .is("deleted_at", null);
+          if (altaRemesaId) q = q.neq("document_type_id", altaRemesaId);
+          return q;
+        })(),
       ]);
 
       const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
@@ -158,14 +164,18 @@ export function useKPIs() {
       let remesasMes = 0;
       let pedConMes = 0;
       for (const c of allApproved.data ?? []) {
-        if (docTypeMap[c.document_type_id!] === "REMESA") remesasMes++;
-        else pedConMes++;
+        if (docTypeMap[c.document_type_id!] === "REMESA") {
+          remesasMes += (c as any).remesas_count ?? 1;
+        } else {
+          pedConMes++;
+        }
       }
+      const aprobadosMesReal = pedConMes + remesasMes;
 
       return {
         pendientes: pendRes.count ?? 0,
         enRevision: revRes.count ?? 0,
-        aprobadosMes: aprobRes.count ?? 0,
+        aprobadosMes: aprobadosMesReal,
         remesasMes,
         pedConMes,
         pausados: pausRes.count ?? 0,
