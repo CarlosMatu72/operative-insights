@@ -26,41 +26,58 @@ const Index = () => {
   const [searchRef, setSearchRef] = useState("");
   const [selectedAprobadoId, setSelectedAprobadoId] = useState<string | null>(null);
 
-  const { data: recentCases = [] } = useQuery({
-    queryKey: ["recent-cases-dashboard", dateFrom, dateTo],
+  const { data: recentCases = [], isLoading: loadingCases } = useQuery({
+    queryKey: ["recent-cases-dashboard", dateFrom, dateTo, searchRef],
     queryFn: async () => {
       let query = supabase
         .from("review_cases")
         .select(`
-          *, 
-          document_types(name, code), 
+          id, reference, internal_folio, status, approved_at,
+          document_types(name, code),
           glosador:profiles!review_cases_glosador_profile_fkey(nombre),
-          review_scores(score_total),
-          review_findings(id)
+          review_scores(score_total)
         `)
         .eq("status", "APROBADO")
-        .order("approved_at", { ascending: false })
-        .limit(50);
+        .is("deleted_at", null)
+        .order("approved_at", { ascending: false });
 
-      if (dateFrom) query = query.gte("approved_at", dateFrom);
-      if (dateTo) query = query.lte("approved_at", dateTo + "T23:59:59");
+      if (dateFrom) query = query.gte("approved_at", dateFrom + "T00:00:00-06:00");
+      if (dateTo)   query = query.lte("approved_at", dateTo   + "T23:59:59-06:00");
+
+      if (searchRef && searchRef.trim().length >= 2) {
+        query = query.ilike("reference", `%${searchRef.trim()}%`);
+      } else {
+        query = query.limit(200);
+      }
 
       const { data } = await query;
       return (data ?? []).map(c => ({
         ...c,
         score_total: c.review_scores?.[0]?.score_total ?? null,
-        findings_count: c.review_findings?.length ?? 0,
       }));
     },
     refetchInterval: 30000,
+    staleTime: 20000,
   });
 
-  const filteredCases = recentCases.filter(c => {
-    if (searchRef) {
-      const ref = (c.reference ?? c.internal_folio ?? "").toLowerCase();
-      if (!ref.includes(searchRef.toLowerCase())) return false;
-    }
-    return true;
+  const { data: findingsCounts = {} } = useQuery({
+    queryKey: ["dashboard-findings-counts", recentCases.map(c => c.id).join(",")],
+    queryFn: async () => {
+      const ids = recentCases.map(c => c.id);
+      if (ids.length === 0) return {} as Record<string, number>;
+      const chunks: string[][] = [];
+      for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+      const all = (await Promise.all(
+        chunks.map(ch =>
+          supabase.from("review_findings").select("review_case_id").in("review_case_id", ch)
+        )
+      )).flatMap(r => r.data ?? []);
+      const map: Record<string, number> = {};
+      for (const f of all) map[f.review_case_id] = (map[f.review_case_id] ?? 0) + 1;
+      return map;
+    },
+    enabled: recentCases.length > 0,
+    staleTime: 60000,
   });
   const stats = [
     { label: "Total trámites", value: kpis?.total ?? "—", icon: FileText, color: "bg-primary/10 text-primary" },
@@ -100,7 +117,14 @@ const Index = () => {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <CardTitle className="text-base">Trámites Revisados</CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-base">Trámites Revisados</CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {loadingCases
+                    ? "Cargando..."
+                    : `${recentCases.length}${!searchRef && !dateFrom && !dateTo && recentCases.length === 200 ? "+" : ""} registros`}
+                </span>
+              </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -163,7 +187,7 @@ const Index = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCases.map(c => (
+                  {recentCases.map(c => (
                     <TableRow 
                       key={c.id} 
                       className="cursor-pointer hover:bg-muted/40 transition-colors"
@@ -179,7 +203,7 @@ const Index = () => {
                         {c.glosador?.nombre ?? "—"}
                       </TableCell>
                       <TableCell className="text-xs text-center text-muted-foreground">
-                        {c.findings_count ?? "—"}
+                        {findingsCounts[c.id] ?? 0}
                       </TableCell>
                       <TableCell className="text-xs text-center">
                         {c.score_total != null ? (
@@ -198,10 +222,14 @@ const Index = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredCases.length === 0 && (
+                  {recentCases.length === 0 && !loadingCases && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-8">
-                        {dateFrom || dateTo ? "Sin trámites en el rango seleccionado" : "Sin trámites aprobados"}
+                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                        {searchRef
+                          ? `Sin trámites aprobados con referencia "${searchRef}"`
+                          : dateFrom || dateTo
+                          ? "Sin trámites aprobados en el período seleccionado"
+                          : "Sin trámites aprobados"}
                       </TableCell>
                     </TableRow>
                   )}
