@@ -167,7 +167,7 @@ const Glosa = () => {
             <TableHead className="text-xs font-semibold text-center">Obs.</TableHead>
             <TableHead className="text-xs font-semibold text-center">Rev.</TableHead>
             <TableHead className="text-xs font-semibold text-center">Calif.</TableHead>
-            <TableHead className="text-xs font-semibold">Tiempo</TableHead>
+            
             <TableHead className="text-xs font-semibold">Asignado</TableHead>
             <TableHead className="text-xs font-semibold">Glosador</TableHead>
             <TableHead className="text-xs font-semibold text-right">Acciones</TableHead>
