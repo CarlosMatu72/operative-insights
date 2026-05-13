@@ -17,17 +17,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2 } from "lucide-react";
+import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2, Copy } from "lucide-react";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
 import { toast } from "sonner";
-
-function formatTime(seconds: number): string {
-  if (seconds === 0) return "—";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
 
 const Glosa = () => {
   const { isAdmin, user } = useAuth();
