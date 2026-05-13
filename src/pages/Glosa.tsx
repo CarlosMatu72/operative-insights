@@ -334,12 +334,13 @@ const Glosa = () => {
                         const ref = c.reference ?? c.internal_folio;
                         const tipo = c.document_types?.name ?? "Trámite";
                         const docCode = c.document_types?.code ?? "";
-                        let texto = "";
+
+                        // APROBADO — same format as before (no extra fetch needed)
                         if (c.status === "APROBADO") {
                           const actionText = docCode === "REMESA"
                             ? "Remesas autorizadas"
                             : "autorizado para pago";
-                          texto =
+                          const texto =
                             `┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n` +
                             `│ Referencia:      ${ref}\n` +
                             `│ Cliente:         ${c.clients?.nombre || "—"}\n` +
@@ -347,15 +348,130 @@ const Glosa = () => {
                             `│ Glosador:        ${c.glosador?.nombre || "—"}\n` +
                             `└──────────────────────────────────────────────────────┘\n\n` +
                             `[${tipo}] [${ref}] ${actionText}.\n`;
-                        } else {
-                          texto =
-                            `[${tipo}] ${ref}\n` +
-                            `Estatus: ${c.status}\n` +
-                            `Ejecutivo: ${c.executives?.nombre || "—"}\n` +
-                            `Cliente: ${c.clients?.nombre || "—"}\n`;
+                          await navigator.clipboard.writeText(texto).catch(() => {});
+                          toast.success("Texto copiado", { duration: 1500 });
+                          return;
                         }
-                        await navigator.clipboard.writeText(texto).catch(() => {});
-                        toast.success("Texto copiado", { duration: 1500 });
+
+                        // ACTIVE cases — fetch full data to match panel copy format
+                        toast.loading("Generando texto...", { id: "copy-row" });
+                        try {
+                          const [findingsRes, commentsRes, docRes] = await Promise.all([
+                            supabase
+                              .from("review_findings")
+                              .select(`
+                                id, current_status, comentario_inicial,
+                                observation_categories(nombre),
+                                observation_subcategories(nombre),
+                                finding_histories(new_status, comment, created_at)
+                              `)
+                              .eq("review_case_id", c.id)
+                              .order("created_at", { ascending: true }),
+                            supabase
+                              .from("review_comments")
+                              .select(`
+                                id, comment_text, is_closed,
+                                observation_categories(nombre),
+                                observation_subcategories(nombre)
+                              `)
+                              .eq("review_case_id", c.id),
+                            supabase
+                              .from("review_case_documentation")
+                              .select("documentation_status, documentation_comment")
+                              .eq("review_case_id", c.id)
+                              .maybeSingle(),
+                          ]);
+
+                          const findings = findingsRes.data ?? [];
+                          const comments = commentsRes.data ?? [];
+                          const documentation = docRes.data;
+
+                          const dsl: Record<string, string> = {
+                            COMPLETO: "✓ Completo",
+                            PENDIENTE_SI_SE_PUEDE_GLOSAR: "⚠ Pendiente — se puede glosar",
+                            PENDIENTE_NO_SE_PUEDE_GLOSAR: "✗ Pendiente — NO se puede glosar",
+                          };
+
+                          let t = "";
+                          t += "┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n";
+                          t += `│ Referencia:      ${ref}\n`;
+                          t += `│ Cliente:         ${c.clients?.nombre || "—"}\n`;
+                          t += `│ Ejecutivo:       ${c.executives?.nombre || "—"}\n`;
+                          t += `│ Glosador:        ${c.glosador?.nombre || "—"}\n`;
+                          t += "└──────────────────────────────────────────────────────┘\n\n";
+
+                          if (documentation &&
+                            (documentation.documentation_status !== "COMPLETO" ||
+                             documentation.documentation_comment)) {
+                            t += "┌─ DOCUMENTACIÓN ────────────────────────────────────┐\n";
+                            t += `│ Estado: ${dsl[documentation.documentation_status ?? ""] || documentation.documentation_status}\n`;
+                            if (documentation.documentation_comment) {
+                              t += `│ Comentario: ${documentation.documentation_comment}\n`;
+                            }
+                            t += "└──────────────────────────────────────────────────────┘\n\n";
+                          }
+
+                          // Observations grouped by category (exclude CORRECTED)
+                          t += ">> Observaciones <<\n";
+                          const copyFindings = findings.filter((f: any) => f.current_status !== "CORRECTED");
+                          if (copyFindings.length === 0) {
+                            t += "  Sin observaciones pendientes.\n";
+                          } else {
+                            const byCategory: Record<string, any[]> = {};
+                            const catOrder: string[] = [];
+                            for (const f of copyFindings) {
+                              const catName = (f as any).observation_categories?.nombre || "Sin categoría";
+                              if (!byCategory[catName]) { byCategory[catName] = []; catOrder.push(catName); }
+                              byCategory[catName].push(f);
+                            }
+                            let counter = 1;
+                            for (const catName of catOrder) {
+                              t += `\n  Categoría = ${catName}\n`;
+                              for (const f of byCategory[catName]) {
+                                const sub = (f as any).observation_subcategories?.nombre || "";
+                                const comentario = f.comentario_inicial ? ` — ${f.comentario_inicial}` : "";
+                                t += `${counter}.\t ${sub ? sub + " --> " : ""}${comentario}\n`;
+                                const histories = ((f as any).finding_histories ?? [])
+                                  .sort((a: any, b: any) =>
+                                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                                const notCorr = histories.find((h: any) => h.new_status === "NOT_CORRECTED" && h.comment);
+                                const partial = histories.find((h: any) => h.new_status === "PARTIALLY_CORRECTED" && h.comment);
+                                if (notCorr) t += `\t   No corregido: ${notCorr.comment}\n`;
+                                else if (partial) t += `\t   Parcialmente corregido: ${partial.comment}\n`;
+                                counter++;
+                              }
+                            }
+                          }
+
+                          // Comments grouped by category (exclude closed)
+                          const openComments = comments.filter((cm: any) => !cm.is_closed);
+                          if (openComments.length > 0) {
+                            const byCat: Record<string, any[]> = {};
+                            const catOrderC: string[] = [];
+                            for (const cm of openComments) {
+                              const catName = (cm as any).observation_categories?.nombre || "";
+                              const key = catName || "__none__";
+                              if (!byCat[key]) { byCat[key] = []; catOrderC.push(key); }
+                              byCat[key].push(cm);
+                            }
+                            t += "\n     >>Comentarios<<\n";
+                            let commentCounter = 1;
+                            for (const key of catOrderC) {
+                              if (key !== "__none__") t += `\n  Categoría = ${byCat[key][0].observation_categories?.nombre}\n`;
+                              for (const cm of byCat[key]) {
+                                const sub = (cm as any).observation_subcategories?.nombre;
+                                const prefix = sub ? `${sub} --> ` : "";
+                                t += `        ${commentCounter}. ${prefix}${cm.comment_text}\n`;
+                                commentCounter++;
+                              }
+                            }
+                          }
+
+                          await navigator.clipboard.writeText(t).catch(() => {});
+                          toast.success("Texto copiado", { id: "copy-row", duration: 1500 });
+                        } catch {
+                          toast.error("Error al generar texto", { id: "copy-row" });
+                        }
                       }}
                     >
                       <Copy className="h-3 w-3" />
