@@ -61,12 +61,11 @@ export function useGlosaCases(filters: {
           .not("status", "eq", "APROBADO")
           .not("status", "eq", "RECHAZADO");
       } else {
-        // Admins see: all active cases + today's approved/rejected
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        query = query.or(
-          `status.not.in.(APROBADO,RECHAZADO),and(status.in.(APROBADO,RECHAZADO),updated_at.gte.${todayStart.toISOString()})`
-        );
+        // Admins see: all active cases (never APROBADO/RECHAZADO)
+        // Approved/rejected cases live in Dashboard "Trámites Revisados"
+        query = query
+          .not("status", "eq", "APROBADO")
+          .not("status", "eq", "RECHAZADO");
       }
 
       const { data, error } = await query;
