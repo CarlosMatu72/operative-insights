@@ -360,6 +360,9 @@ const Catalogos = () => {
           <TabsContent value="classification">
             <ClassificationFeaturesConfig />
           </TabsContent>
+          <TabsContent value="prefixes">
+            <ReferencePrefixesConfig />
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
