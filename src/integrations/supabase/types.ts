@@ -1034,6 +1034,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "review_findings_created_by_fkey2"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "review_findings_observation_error_id_fkey"
             columns: ["observation_error_id"]
             isOneToOne: false
@@ -1188,6 +1195,13 @@ export type Database = {
             columns: ["review_case_id"]
             isOneToOne: false
             referencedRelation: "review_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_sessions_user_id_fkey2"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
