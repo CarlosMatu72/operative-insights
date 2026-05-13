@@ -91,28 +91,31 @@ export function ActionDialogs({ state }: Props) {
                   <span>Penalizaciones por error</span>
                   <span>{scoreDetail.score_classification}/70 pts</span>
                 </div>
-                <div className="text-xs text-muted-foreground space-y-1 border-t pt-2">
-                  {findings.filter((f) => f.observation_errors).map((f, i) => (
-                    <div key={f.id} className="flex justify-between">
-                      <span className="truncate flex-1 mr-2">
-                        {i + 1}. {f.observation_errors?.descripcion ?? "Error"}
-                        {f.observation_errors?.codigo_error && (
-                          <span className="ml-1 text-muted-foreground">
-                            [{f.observation_errors.codigo_error}]
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-destructive whitespace-nowrap">
-                        −{f.observation_errors?.descuento_puntos ?? 0} pts
-                      </span>
-                    </div>
-                  ))}
-                  {findings.filter((f) => f.observation_errors).length === 0 && (
-                    <p className="text-center text-muted-foreground">Sin errores con penalización</p>
+                <div className="text-xs text-muted-foreground space-y-1.5 border-t pt-2 mt-1">
+                  {findings
+                    .filter((f) => f.observation_errors?.descuento_puntos)
+                    .map((f, i) => (
+                      <div key={f.id} className="flex justify-between items-start gap-2">
+                        <span className="flex-1 leading-tight">
+                          {i + 1}.{" "}
+                          {f.observation_errors?.codigo_error && (
+                            <span className="text-muted-foreground mr-1">
+                              [{f.observation_errors.codigo_error}]
+                            </span>
+                          )}
+                          {f.observation_errors?.descripcion ?? "Error"}
+                        </span>
+                        <span className="text-destructive whitespace-nowrap font-medium">
+                          −{f.observation_errors?.descuento_puntos} pts
+                        </span>
+                      </div>
+                    ))}
+                  {findings.filter((f) => f.observation_errors?.descuento_puntos).length === 0 && (
+                    <p className="text-center py-1">Sin errores con penalización registrados</p>
                   )}
-                  <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                    <span>Base 70 − penalizaciones</span>
-                    <span>70 − {70 - Number(scoreDetail.score_classification)} = {scoreDetail.score_classification} pts</span>
+                  <div className="flex justify-between font-medium border-t pt-1.5 mt-1">
+                    <span>Base 70 − {70 - Number(scoreDetail.score_classification)} pts penalización</span>
+                    <span className="text-foreground">{scoreDetail.score_classification} pts</span>
                   </div>
                 </div>
               </div>
