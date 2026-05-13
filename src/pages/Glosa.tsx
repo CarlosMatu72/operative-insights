@@ -324,6 +324,42 @@ const Glosa = () => {
                         <ClipboardCheck className="h-3 w-3" /> Correcciones
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      title="Copiar texto del trámite"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const ref = c.reference ?? c.internal_folio;
+                        const tipo = c.document_types?.name ?? "Trámite";
+                        const docCode = c.document_types?.code ?? "";
+                        let texto = "";
+                        if (c.status === "APROBADO") {
+                          const actionText = docCode === "REMESA"
+                            ? "Remesas autorizadas"
+                            : "autorizado para pago";
+                          texto =
+                            `┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n` +
+                            `│ Referencia:      ${ref}\n` +
+                            `│ Cliente:         ${c.clients?.nombre || "—"}\n` +
+                            `│ Ejecutivo:       ${c.executives?.nombre || "—"}\n` +
+                            `│ Glosador:        ${c.glosador?.nombre || "—"}\n` +
+                            `└──────────────────────────────────────────────────────┘\n\n` +
+                            `[${tipo}] [${ref}] ${actionText}.\n`;
+                        } else {
+                          texto =
+                            `[${tipo}] ${ref}\n` +
+                            `Estatus: ${c.status}\n` +
+                            `Ejecutivo: ${c.executives?.nombre || "—"}\n` +
+                            `Cliente: ${c.clients?.nombre || "—"}\n`;
+                        }
+                        await navigator.clipboard.writeText(texto).catch(() => {});
+                        toast.success("Texto copiado", { duration: 1500 });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
                     {isAdmin && !["APROBADO", "RECHAZADO"].includes(c.status) && (
                       <Button
                         size="sm"
