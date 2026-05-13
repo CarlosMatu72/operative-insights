@@ -4,41 +4,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { PrefixReferenceInput } from "./PrefixReferenceInput";
 
 export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
   const { user } = useAuth();
   const { branches, executives, glosadores, documentTypes } = useCatalogs();
   const queryClient = useQueryClient();
 
-  const [referencia, setReferencia] = useState("");
+  const [selectedPrefix, setSelectedPrefix] = useState("");
+  const [referenceSuffix, setReferenceSuffix] = useState("");
   const [sucursalId, setSucursalId] = useState("");
   const [ejecutivoId, setEjecutivoId] = useState("");
   const [glosadorId, setGlosadorId] = useState("");
+
+  const fullReference = selectedPrefix ? `${selectedPrefix}${referenceSuffix}` : "";
 
   const mutation = useMutation({
     mutationFn: async () => {
       const docType = (documentTypes.data ?? []).find(d => d.code === "PEDIMENTO");
       if (!docType) throw new Error("Tipo de documento PEDIMENTO no encontrado");
 
-      // Minimum length validation
-      if (referencia.trim().length < 11) {
-        throw new Error("La referencia debe tener al menos 11 caracteres");
-      }
+      if (!selectedPrefix) throw new Error("Debes seleccionar un prefijo de referencia");
+      if (referenceSuffix.trim().length !== 7) throw new Error("El código debe tener exactamente 7 caracteres");
 
-      // Check for duplicate reference (same doc type, excluding soft-deleted)
-      if (referencia.trim()) {
-        const { count } = await supabase
-          .from("review_cases")
-          .select("id", { count: "exact", head: true })
-          .eq("reference", referencia.trim())
-          .eq("document_type_id", docType.id)
-          .is("deleted_at", null);
-        if (count && count > 0) throw new Error(`La referencia "${referencia.trim()}" ya existe en el sistema`);
-      }
+      const { count } = await supabase
+        .from("review_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("reference", fullReference)
+        .eq("document_type_id", docType.id)
+        .is("deleted_at", null);
+      if (count && count > 0) throw new Error(`La referencia "${fullReference}" ya existe en el sistema`);
 
       const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "PEDIMENTO" });
       if (!folio) throw new Error("Error generando folio");
@@ -46,7 +44,7 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
       const hasGlosador = glosadorId && glosadorId !== "_none";
       const { error } = await supabase.from("review_cases").insert({
         internal_folio: folio,
-        reference: referencia,
+        reference: fullReference,
         document_type_id: docType.id,
         branch_id: sucursalId || null,
         executive_id: ejecutivoId || null,
@@ -60,7 +58,8 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
     },
     onSuccess: () => {
       toast.success("Pedimento registrado exitosamente");
-      setReferencia("");
+      setSelectedPrefix("");
+      setReferenceSuffix("");
       setSucursalId("");
       setEjecutivoId("");
       setGlosadorId("");
@@ -77,14 +76,20 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Referencia *</Label>
-          <Input value={referencia} onChange={e => setReferencia(e.target.value)} required minLength={11} placeholder="Ej: REF-2026-001" />
-          <p className="text-xs text-muted-foreground">Mínimo 11 caracteres</p>
+        <div className="sm:col-span-2">
+          <PrefixReferenceInput
+            selectedPrefix={selectedPrefix}
+            referenceSuffix={referenceSuffix}
+            onPrefixChange={(prefix, branchId) => {
+              setSelectedPrefix(prefix);
+              setSucursalId(branchId);
+            }}
+            onSuffixChange={setReferenceSuffix}
+          />
         </div>
         <div className="space-y-2">
           <Label>Sucursal</Label>
-          <Select value={sucursalId} onValueChange={setSucursalId}>
+          <Select value={sucursalId} onValueChange={setSucursalId} disabled={!!selectedPrefix}>
             <SelectTrigger><SelectValue placeholder="Seleccionar sucursal" /></SelectTrigger>
             <SelectContent>
               {(branches.data ?? []).map(b => (
@@ -92,6 +97,11 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
               ))}
             </SelectContent>
           </Select>
+          {selectedPrefix && sucursalId && (
+            <p className="text-xs text-muted-foreground">
+              Auto-seleccionada por el prefijo "{selectedPrefix}"
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Ejecutivo</Label>
@@ -118,7 +128,7 @@ export function PedimentoForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
       <div className="flex justify-end">
-        <Button type="submit" disabled={mutation.isPending || !referencia || referencia.trim().length < 11}>
+        <Button type="submit" disabled={mutation.isPending || !selectedPrefix || referenceSuffix.trim().length !== 7}>
           {mutation.isPending ? "Registrando..." : "Registrar Pedimento"}
         </Button>
       </div>

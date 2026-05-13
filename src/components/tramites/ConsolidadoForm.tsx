@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { PrefixReferenceInput } from "./PrefixReferenceInput";
 
 function parseRangeInput(input: string): number[] {
   const nums = new Set<number>();
@@ -39,8 +40,11 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
   const [glosadorId, setGlosadorId] = useState("");
   const [referenciaConsolidado, setReferenciaConsolidado] = useState("");
   const [sinRemesaBase, setSinRemesaBase] = useState(false);
-  const [referenciaLibre, setReferenciaLibre] = useState("");
+  const [selectedPrefix, setSelectedPrefix] = useState("");
+  const [referenceSuffix, setReferenceSuffix] = useState("");
   const [comentarioFaltantes, setComentarioFaltantes] = useState("");
+
+  const fullReference = selectedPrefix ? `${selectedPrefix}${referenceSuffix}` : "";
 
   const selectedRemesa = activeRemesas.find(r => r.id === remesaBaseId);
 
@@ -89,18 +93,17 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       const hasGlosador = glosadorId && glosadorId !== "_none";
 
       if (sinRemesaBase) {
-        if (!referenciaLibre.trim() || referenciaLibre.trim().length < 11) {
-          throw new Error("La referencia debe tener al menos 11 caracteres");
-        }
+        if (!selectedPrefix) throw new Error("Debes seleccionar un prefijo de referencia");
+        if (referenceSuffix.trim().length !== 7) throw new Error("El código debe tener exactamente 7 caracteres");
 
         const { count } = await supabase
           .from("review_cases")
           .select("id", { count: "exact", head: true })
-          .eq("reference", referenciaLibre.trim())
+          .eq("reference", fullReference)
           .eq("document_type_id", docType.id)
           .is("deleted_at", null);
         if (count && count > 0) {
-          throw new Error(`Ya existe un consolidado con la referencia "${referenciaLibre.trim()}"`);
+          throw new Error(`Ya existe un consolidado con la referencia "${fullReference}"`);
         }
 
         const { data: folio } = await supabase.rpc("generate_internal_folio", { doc_code: "CONSOLIDADO" });
@@ -108,7 +111,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
 
         const { error: insertError } = await supabase.from("review_cases").insert({
           internal_folio: folio,
-          reference: referenciaLibre.trim(),
+          reference: fullReference,
           document_type_id: docType.id,
           assigned_glosador_user_id: hasGlosador ? glosadorId : null,
           status: hasGlosador ? "ASIGNADO" : "REGISTRADO",
@@ -173,7 +176,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       setRemesaBaseId("");
       setGlosadorId("");
       setReferenciaConsolidado("");
-      setReferenciaLibre("");
+      setSelectedPrefix("");
+      setReferenceSuffix("");
       setSinRemesaBase(false);
       setComentarioFaltantes("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
@@ -274,10 +278,13 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         )}
 
         {sinRemesaBase && (
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Referencia *</Label>
-            <Input value={referenciaLibre} onChange={e => setReferenciaLibre(e.target.value)} required minLength={11} placeholder="Ej: CON-2026-001" />
-            <p className="text-xs text-muted-foreground">Mínimo 11 caracteres</p>
+          <div className="sm:col-span-2">
+            <PrefixReferenceInput
+              selectedPrefix={selectedPrefix}
+              referenceSuffix={referenceSuffix}
+              onPrefixChange={(prefix) => setSelectedPrefix(prefix)}
+              onSuffixChange={setReferenceSuffix}
+            />
           </div>
         )}
 
@@ -300,7 +307,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
           disabled={
             mutation.isPending ||
             (!sinRemesaBase && !remesaBaseId) ||
-            (sinRemesaBase && !referenciaLibre.trim()) ||
+            (sinRemesaBase && (!selectedPrefix || referenceSuffix.trim().length !== 7)) ||
             (!!(validacionSecuencia?.faltantes.length) && !comentarioFaltantes.trim())
           }
         >
