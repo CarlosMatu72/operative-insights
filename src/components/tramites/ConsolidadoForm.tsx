@@ -176,7 +176,8 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
       setRemesaBaseId("");
       setGlosadorId("");
       setReferenciaConsolidado("");
-      setReferenciaLibre("");
+      setSelectedPrefix("");
+      setReferenceSuffix("");
       setSinRemesaBase(false);
       setComentarioFaltantes("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
