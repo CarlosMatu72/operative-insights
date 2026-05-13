@@ -343,6 +343,12 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
         queryClient.invalidateQueries({ queryKey: ["glosa-cases"] });
         queryClient.invalidateQueries({ queryKey: ["review-case", caseId] });
         queryClient.invalidateQueries({ queryKey: ["review-case-detail", caseId] });
+        toast.success("Glosa finalizada — comentarios pendientes de revisión");
+      } else {
+        toast.success(
+          "Glosa guardada correctamente. Todos los campos están completos — puedes Aprobar el trámite.",
+          { duration: 5000 }
+        );
       }
     }
   };
