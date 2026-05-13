@@ -296,10 +296,28 @@ export function useGlosaActions() {
         session_status: "active",
       });
 
+      // Check if the case was in correction mode before pausing
+      // by looking at finding_histories or review_rounds count
+      const { data: caseData } = await supabase
+        .from("review_cases")
+        .select("correction_started_at")
+        .eq("id", caseId)
+        .single();
+
+      // If correction was started (has a round after first), resume EN_CORRECCION
+      const { count: roundCount } = await supabase
+        .from("review_rounds")
+        .select("id", { count: "exact", head: true })
+        .eq("review_case_id", caseId);
+
+      const resumeStatus = (roundCount ?? 0) > 1
+        ? "EN_CORRECCION" as const
+        : "EN_REVISION" as const;
+
       await supabase
         .from("review_cases")
         .update({
-          status: "EN_REVISION" as const,
+          status: resumeStatus,
           last_started_at: new Date().toISOString(),
           paused_at: null,
           updated_by: user!.id,
