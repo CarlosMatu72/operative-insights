@@ -247,9 +247,6 @@ const Glosa = () => {
                     </span>
                   ) : "—"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {formatTime(c.active_time_seconds)}
-                </TableCell>
                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                   {c.assigned_at
                     ? new Date(c.assigned_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })
