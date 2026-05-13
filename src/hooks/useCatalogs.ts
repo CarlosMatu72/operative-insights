@@ -61,3 +61,24 @@ export function useActiveRemesas() {
     },
   });
 }
+
+export function useReferencePrefixes() {
+  return useQuery({
+    queryKey: ["reference-prefixes"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reference_prefixes")
+        .select("id, prefix, branch_id, descripcion, activo, branches(nombre)")
+        .eq("activo", true)
+        .order("prefix");
+      return (data ?? []) as {
+        id: string;
+        prefix: string;
+        branch_id: string;
+        descripcion: string | null;
+        activo: boolean;
+        branches: { nombre: string } | null;
+      }[];
+    },
+  });
+}
