@@ -265,6 +265,23 @@ const Glosa = () => {
                         className="h-7 text-xs gap-1"
                         onClick={async () => {
                           await startGlosa.mutateAsync(c.id);
+                          // Copy start-of-glosa text to clipboard
+                          const now = new Date();
+                          const hora = now.toLocaleTimeString("es-MX", {
+                            hour: "2-digit", minute: "2-digit", hour12: true
+                          });
+                          const tipo = c.document_types?.name ?? "Trámite";
+                          const ref = c.reference ?? c.internal_folio;
+                          const glosadorNombre =
+                            (glosadores.find(g => g.id === user?.id))?.nombre
+                            ?? user?.email
+                            ?? "—";
+                          const texto =
+                            `Se inicia glosa de ${tipo} ${ref}\n` +
+                            `Glosador: ${glosadorNombre}\n` +
+                            `${hora}`;
+                          navigator.clipboard.writeText(texto).catch(() => {});
+                          toast.success("Texto de inicio copiado", { duration: 2000 });
                           setSelectedCaseId(c.id);
                         }}
                         disabled={startGlosa.isPending}
