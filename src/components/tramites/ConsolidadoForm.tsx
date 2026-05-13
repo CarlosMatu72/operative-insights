@@ -278,10 +278,13 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
         )}
 
         {sinRemesaBase && (
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Referencia *</Label>
-            <Input value={referenciaLibre} onChange={e => setReferenciaLibre(e.target.value)} required minLength={11} placeholder="Ej: CON-2026-001" />
-            <p className="text-xs text-muted-foreground">Mínimo 11 caracteres</p>
+          <div className="sm:col-span-2">
+            <PrefixReferenceInput
+              selectedPrefix={selectedPrefix}
+              referenceSuffix={referenceSuffix}
+              onPrefixChange={(prefix) => setSelectedPrefix(prefix)}
+              onSuffixChange={setReferenceSuffix}
+            />
           </div>
         )}
 
