@@ -97,7 +97,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     t += `│ Ejecutivo:       ${reviewCase.executives?.nombre || "—"}\n`;
     t += `│ Glosador:        ${reviewCase.glosador?.nombre || "Sin asignar"}\n`;
     t += "└──────────────────────────────────────────────────────┘\n\n";
-    if (documentation && (documentation.documentation_status !== "COMPLETO" || documentation.documentation_comment)) {
+    if (documentation && documentation.documentation_status !== "COMPLETO") {
       t += "┌─ DOCUMENTACIÓN ────────────────────────────────────┐\n";
       t += `│ Estado: ${dsl[documentation.documentation_status ?? ""] || documentation.documentation_status}\n`;
       if (documentation.documentation_comment) {
