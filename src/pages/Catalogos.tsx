@@ -19,6 +19,7 @@ import { ClassificationFeaturesConfig } from "@/components/catalogos/Classificat
 import { ItemRangesConfig } from "@/components/catalogos/ItemRangesConfig";
 import { ObservationCategoriesConfig } from "@/components/catalogos/ObservationCategoriesConfig";
 import { ObservationSubcategoriesConfig } from "@/components/catalogos/ObservationSubcategoriesConfig";
+import { ReferencePrefixesConfig } from "@/components/catalogos/ReferencePrefixesConfig";
 
 type CatalogType = "branches" | "clients" | "executives" | "customs_keys";
 
