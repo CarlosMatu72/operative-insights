@@ -114,7 +114,7 @@ const Glosa = () => {
         <SelectContent>
           <SelectItem value="_all">Todos</SelectItem>
           {Object.entries(statusConfig)
-            .filter(([k]) => isAdmin || !["APROBADO", "RECHAZADO"].includes(k))
+            .filter(([k]) => !["APROBADO", "RECHAZADO"].includes(k))
             .map(([k, v]) => (
               <SelectItem key={k} value={k}>{v.label}</SelectItem>
             ))}
