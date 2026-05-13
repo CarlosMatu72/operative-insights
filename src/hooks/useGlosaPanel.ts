@@ -56,10 +56,16 @@ export function useGlosaCases(filters: {
         .order("updated_at", { ascending: filters.sortAsc });
 
       if (!isAdmin) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayISO = todayStart.toISOString();
         query = query
           .eq("assigned_glosador_user_id", user!.id)
-          .not("status", "eq", "APROBADO")
-          .not("status", "eq", "RECHAZADO");
+          .or(
+            `and(status.neq.APROBADO,status.neq.RECHAZADO),` +
+            `and(status.eq.APROBADO,updated_at.gte.${todayISO}),` +
+            `and(status.eq.RECHAZADO,updated_at.gte.${todayISO})`
+          );
       } else {
         // Admins see: all active cases + today's APROBADO/RECHAZADO
         const todayStart = new Date();
