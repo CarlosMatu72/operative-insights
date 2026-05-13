@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Building2, UsersRound, Key, AlertTriangle, Settings2, FolderTree, Layers, Tag, GitBranch, Search } from "lucide-react";
+import { Plus, Building2, UsersRound, Key, AlertTriangle, Settings2, FolderTree, Layers, Tag, GitBranch, Search, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { ObservationErrorsConfig } from "@/components/catalogos/ObservationErrorsConfig";
@@ -19,6 +19,7 @@ import { ClassificationFeaturesConfig } from "@/components/catalogos/Classificat
 import { ItemRangesConfig } from "@/components/catalogos/ItemRangesConfig";
 import { ObservationCategoriesConfig } from "@/components/catalogos/ObservationCategoriesConfig";
 import { ObservationSubcategoriesConfig } from "@/components/catalogos/ObservationSubcategoriesConfig";
+import { ReferencePrefixesConfig } from "@/components/catalogos/ReferencePrefixesConfig";
 
 type CatalogType = "branches" | "clients" | "executives" | "customs_keys";
 
@@ -331,6 +332,10 @@ const Catalogos = () => {
               <FolderTree className="h-4 w-4" />
               Clasificación
             </TabsTrigger>
+            <TabsTrigger value="prefixes" className="gap-2">
+              <Hash className="h-4 w-4" />
+              Prefijos
+            </TabsTrigger>
           </TabsList>
           {catalogs.map((c) => (
             <TabsContent key={c.key} value={c.key}>
@@ -354,6 +359,9 @@ const Catalogos = () => {
           </TabsContent>
           <TabsContent value="classification">
             <ClassificationFeaturesConfig />
+          </TabsContent>
+          <TabsContent value="prefixes">
+            <ReferencePrefixesConfig />
           </TabsContent>
         </Tabs>
       </div>
