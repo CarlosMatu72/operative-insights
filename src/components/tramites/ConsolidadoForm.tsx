@@ -307,7 +307,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
           disabled={
             mutation.isPending ||
             (!sinRemesaBase && !remesaBaseId) ||
-            (sinRemesaBase && !referenciaLibre.trim()) ||
+            (sinRemesaBase && (!selectedPrefix || referenceSuffix.trim().length !== 7)) ||
             (!!(validacionSecuencia?.faltantes.length) && !comentarioFaltantes.trim())
           }
         >
