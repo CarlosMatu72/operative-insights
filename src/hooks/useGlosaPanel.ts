@@ -61,11 +61,17 @@ export function useGlosaCases(filters: {
           .not("status", "eq", "APROBADO")
           .not("status", "eq", "RECHAZADO");
       } else {
-        // Admins see: all active cases (never APROBADO/RECHAZADO)
-        // Approved/rejected cases live in Dashboard "Trámites Revisados"
-        query = query
-          .not("status", "eq", "APROBADO")
-          .not("status", "eq", "RECHAZADO");
+        // Admins see: all active cases + today's APROBADO/RECHAZADO
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayISO = todayStart.toISOString();
+        // Active cases: everything except APROBADO and RECHAZADO
+        // Today's closed cases: APROBADO or RECHAZADO updated today
+        query = query.or(
+          `and(status.neq.APROBADO,status.neq.RECHAZADO),` +
+          `and(status.eq.APROBADO,updated_at.gte.${todayISO}),` +
+          `and(status.eq.RECHAZADO,updated_at.gte.${todayISO})`
+        );
       }
 
       const { data, error } = await query;
