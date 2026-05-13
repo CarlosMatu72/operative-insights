@@ -458,7 +458,19 @@ const Glosa = () => {
 
       {/* Review Detail Sheet — close only via action bar buttons (no X) */}
       <Sheet open={!!selectedCaseId} onOpenChange={(open) => {
-        if (!open) setSelectedCaseId(null);
+        if (!open) {
+          // Only allow closing if no active session
+          const activeCase = cases.find(c => c.id === selectedCaseId);
+          if (activeCase?.has_active_session) {
+            // Block close — user must use Pausar button
+            toast.warning(
+              "Usa el botón Pausar para cerrar la revisión y guardar tu avance.",
+              { duration: 4000 }
+            );
+            return; // Prevent close
+          }
+          setSelectedCaseId(null);
+        }
       }}>
         <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl p-0 overflow-y-auto">
           {selectedCaseId && (
