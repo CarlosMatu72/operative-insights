@@ -40,8 +40,11 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
   const [glosadorId, setGlosadorId] = useState("");
   const [referenciaConsolidado, setReferenciaConsolidado] = useState("");
   const [sinRemesaBase, setSinRemesaBase] = useState(false);
-  const [referenciaLibre, setReferenciaLibre] = useState("");
+  const [selectedPrefix, setSelectedPrefix] = useState("");
+  const [referenceSuffix, setReferenceSuffix] = useState("");
   const [comentarioFaltantes, setComentarioFaltantes] = useState("");
+
+  const fullReference = selectedPrefix ? `${selectedPrefix}${referenceSuffix}` : "";
 
   const selectedRemesa = activeRemesas.find(r => r.id === remesaBaseId);
 
