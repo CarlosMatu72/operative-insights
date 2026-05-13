@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { PrefixReferenceInput } from "./PrefixReferenceInput";
 
 function parseRangeInput(input: string): number[] {
   const nums = new Set<number>();
