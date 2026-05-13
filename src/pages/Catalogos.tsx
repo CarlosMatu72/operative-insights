@@ -332,6 +332,10 @@ const Catalogos = () => {
               <FolderTree className="h-4 w-4" />
               Clasificación
             </TabsTrigger>
+            <TabsTrigger value="prefixes" className="gap-2">
+              <Hash className="h-4 w-4" />
+              Prefijos
+            </TabsTrigger>
           </TabsList>
           {catalogs.map((c) => (
             <TabsContent key={c.key} value={c.key}>
