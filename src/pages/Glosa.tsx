@@ -17,17 +17,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusConfig } from "@/components/StatusBadge";
-import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2 } from "lucide-react";
+import { Play, Pause, RotateCcw, ClipboardCheck, FilterX, Inbox, Trash2, Copy } from "lucide-react";
 import ReviewDetailPanel from "@/components/glosa/ReviewDetailPanel";
 import { toast } from "sonner";
-
-function formatTime(seconds: number): string {
-  if (seconds === 0) return "—";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
 
 const Glosa = () => {
   const { isAdmin, user } = useAuth();
@@ -175,7 +167,7 @@ const Glosa = () => {
             <TableHead className="text-xs font-semibold text-center">Obs.</TableHead>
             <TableHead className="text-xs font-semibold text-center">Rev.</TableHead>
             <TableHead className="text-xs font-semibold text-center">Calif.</TableHead>
-            <TableHead className="text-xs font-semibold">Tiempo</TableHead>
+            
             <TableHead className="text-xs font-semibold">Asignado</TableHead>
             <TableHead className="text-xs font-semibold">Glosador</TableHead>
             <TableHead className="text-xs font-semibold text-right">Acciones</TableHead>
@@ -184,7 +176,7 @@ const Glosa = () => {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={13} className="text-center py-16 text-muted-foreground">
+              <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
                 <div className="flex flex-col items-center gap-2">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   <span className="text-sm">Cargando trámites...</span>
@@ -193,7 +185,7 @@ const Glosa = () => {
             </TableRow>
           ) : rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={13} className="text-center py-16">
+              <TableCell colSpan={12} className="text-center py-16">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Inbox className="h-10 w-10 opacity-30" />
                   <p className="text-sm font-medium">
@@ -255,9 +247,6 @@ const Glosa = () => {
                     </span>
                   ) : "—"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {formatTime(c.active_time_seconds)}
-                </TableCell>
                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                   {c.assigned_at
                     ? new Date(c.assigned_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })
@@ -276,6 +265,23 @@ const Glosa = () => {
                         className="h-7 text-xs gap-1"
                         onClick={async () => {
                           await startGlosa.mutateAsync(c.id);
+                          // Copy start-of-glosa text to clipboard
+                          const now = new Date();
+                          const hora = now.toLocaleTimeString("es-MX", {
+                            hour: "2-digit", minute: "2-digit", hour12: true
+                          });
+                          const tipo = c.document_types?.name ?? "Trámite";
+                          const ref = c.reference ?? c.internal_folio;
+                          const glosadorNombre =
+                            (glosadores.find(g => g.id === user?.id))?.nombre
+                            ?? user?.email
+                            ?? "—";
+                          const texto =
+                            `Se inicia glosa de ${tipo} ${ref}\n` +
+                            `Glosador: ${glosadorNombre}\n` +
+                            `${hora}`;
+                          navigator.clipboard.writeText(texto).catch(() => {});
+                          toast.success("Texto de inicio copiado", { duration: 2000 });
                           setSelectedCaseId(c.id);
                         }}
                         disabled={startGlosa.isPending}
@@ -318,6 +324,42 @@ const Glosa = () => {
                         <ClipboardCheck className="h-3 w-3" /> Correcciones
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      title="Copiar texto del trámite"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const ref = c.reference ?? c.internal_folio;
+                        const tipo = c.document_types?.name ?? "Trámite";
+                        const docCode = c.document_types?.code ?? "";
+                        let texto = "";
+                        if (c.status === "APROBADO") {
+                          const actionText = docCode === "REMESA"
+                            ? "Remesas autorizadas"
+                            : "autorizado para pago";
+                          texto =
+                            `┌─ INFORMACIÓN GENERAL ─────────────────────────────┐\n` +
+                            `│ Referencia:      ${ref}\n` +
+                            `│ Cliente:         ${c.clients?.nombre || "—"}\n` +
+                            `│ Ejecutivo:       ${c.executives?.nombre || "—"}\n` +
+                            `│ Glosador:        ${c.glosador?.nombre || "—"}\n` +
+                            `└──────────────────────────────────────────────────────┘\n\n` +
+                            `[${tipo}] [${ref}] ${actionText}.\n`;
+                        } else {
+                          texto =
+                            `[${tipo}] ${ref}\n` +
+                            `Estatus: ${c.status}\n` +
+                            `Ejecutivo: ${c.executives?.nombre || "—"}\n` +
+                            `Cliente: ${c.clients?.nombre || "—"}\n`;
+                        }
+                        await navigator.clipboard.writeText(texto).catch(() => {});
+                        toast.success("Texto copiado", { duration: 1500 });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
                     {isAdmin && !["APROBADO", "RECHAZADO"].includes(c.status) && (
                       <Button
                         size="sm"

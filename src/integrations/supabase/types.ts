@@ -570,6 +570,41 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_prefixes: {
+        Row: {
+          activo: boolean | null
+          branch_id: string
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          prefix: string
+        }
+        Insert: {
+          activo?: boolean | null
+          branch_id: string
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          prefix: string
+        }
+        Update: {
+          activo?: boolean | null
+          branch_id?: string
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          prefix?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reference_prefixes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rejection_histories: {
         Row: {
           comentario: string | null

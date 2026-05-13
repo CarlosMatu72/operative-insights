@@ -76,7 +76,11 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       t += `│ Ejecutivo:       ${reviewCase.executives?.nombre || "—"}\n`;
       t += `│ Glosador:        ${reviewCase.glosador?.nombre || "Sin asignar"}\n`;
       t += "└──────────────────────────────────────────────────────┘\n\n";
-      t += `[${docTypeName}] [${ref}] autorizado para pago.\n`;
+      const docCode = reviewCase.document_types?.code ?? "";
+      const actionText = docCode === "REMESA"
+        ? "Remesas autorizadas"
+        : "autorizado para pago";
+      t += `[${docTypeName}] [${ref}] ${actionText}.\n`;
       navigator.clipboard.writeText(t);
       toast.success("Texto copiado");
       return;
