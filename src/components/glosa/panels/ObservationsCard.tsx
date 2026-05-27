@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, X, FileCheck, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, X, FileCheck, Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -101,7 +101,9 @@ export function ObservationsCard({ state }: Props) {
             )}
             {obsSubcategoryId && (
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Error específico <span className="text-muted-foreground">(opcional)</span></Label>
+                <Label className="text-xs text-muted-foreground">
+                  Error específico <span className="text-destructive ml-0.5">*</span>
+                </Label>
                 <Popover open={errorPopoverOpen} onOpenChange={setErrorPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -153,7 +155,7 @@ export function ObservationsCard({ state }: Props) {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                {obsErrorId && (
+                {obsErrorId ? (
                   <button
                     type="button"
                     className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
@@ -161,6 +163,11 @@ export function ObservationsCard({ state }: Props) {
                   >
                     <X className="h-3 w-3" /> Quitar error seleccionado
                   </button>
+                ) : (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Selecciona el tipo de error para poder agregar la observación
+                  </p>
                 )}
               </div>
             )}
@@ -175,7 +182,7 @@ export function ObservationsCard({ state }: Props) {
                 Cancelar
               </Button>
               <Button size="sm" onClick={handleAddFinding}
-                disabled={actions.addFinding.isPending || !obsCategoryId || !obsSubcategoryId}
+                disabled={actions.addFinding.isPending || !obsCategoryId || !obsSubcategoryId || !obsErrorId}
                 className="h-8 text-xs gap-1 shrink-0">
                 <Plus className="h-3 w-3" /> Agregar
               </Button>
