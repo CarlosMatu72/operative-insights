@@ -97,8 +97,9 @@ export function useGlosadores() {
           ),
         }));
     },
-    refetchInterval: 30000,
-    staleTime: 20000,
+    refetchInterval: 15000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 
