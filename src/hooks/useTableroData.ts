@@ -29,35 +29,38 @@ export function useGlosadores() {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: monthCases } = await supabase
-        .from("review_cases")
-        .select("assigned_glosador_user_id, document_type_id, status, remesas_count")
-        .in("assigned_glosador_user_id", glosadorIds)
-        .gte("approved_at", startOfMonth.toISOString());
+      let allDistribCases: any[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: batch } = await supabase
+          .from("review_cases")
+          .select("assigned_glosador_user_id, document_type_id, status, remesas_count, approved_at")
+          .in("assigned_glosador_user_id", glosadorIds)
+          .is("deleted_at", null)
+          .not("status", "eq", "RECHAZADO")
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (!batch || batch.length === 0) break;
+        allDistribCases = [...allDistribCases, ...batch];
+        if (batch.length < pageSize) break;
+        page++;
+      }
+      // Keep only: active cases (any date) + approved this month
+      allDistribCases = allDistribCases.filter(c =>
+        c.status !== "APROBADO" ||
+        (c.approved_at && c.approved_at >= startOfMonth.toISOString())
+      );
 
       const { data: docTypes } = await supabase.from("document_types").select("id, code");
       const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
 
-      // Also count EN_REVISION cases per glosador this month
-      const { data: allMonthCases } = await supabase
-        .from("review_cases")
-        .select("assigned_glosador_user_id, document_type_id, status, approved_at, remesas_count")
-        .in("assigned_glosador_user_id", glosadorIds)
-        .not("status", "eq", "APROBADO") // APROBADO already in monthCases, avoid double fetch
-        .is("deleted_at", null);
-
-      // Build stats from ALL assigned cases (approved this month + all active)
-      // This gives the true workload distribution across glosadores
-      const allCasesForStats = [
-        ...(monthCases ?? []),
-        ...(allMonthCases ?? []).filter(c => c.status !== "APROBADO"), // avoid double-counting
-      ];
       const statsMap: Record<string, {
         pedimentos: number;
         consolidados: number;
         remesas: number;
       }> = {};
-      for (const c of allCasesForStats) {
+      for (const c of allDistribCases) {
+
         const uid = c.assigned_glosador_user_id;
         if (!uid) continue;
         if (!statsMap[uid]) statsMap[uid] = { pedimentos: 0, consolidados: 0, remesas: 0 };
