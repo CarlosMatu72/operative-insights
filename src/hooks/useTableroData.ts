@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 export function useGlosadores() {
   return useQuery({
-    queryKey: ["glosadores-with-stats"],
+    queryKey: ["glosadores-with-stats-v2"],
     queryFn: async () => {
       // Get users with glosa or admin role
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
