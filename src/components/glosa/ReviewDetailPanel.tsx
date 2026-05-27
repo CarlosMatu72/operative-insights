@@ -178,13 +178,21 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
   };
 
   const handleGeneratePDF = () => {
+    const esc = (v: unknown) =>
+      String(v ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
     const ref = reviewCase?.reference ?? reviewCase?.internal_folio ?? "";
     const tipo = reviewCase?.document_types?.name ?? "";
     const suc = reviewCase?.branches?.nombre ?? "";
     const ejec = reviewCase?.executives?.nombre ?? "";
     const cli = reviewCase?.clients?.nombre ?? "";
 
-    let html = `<html><head><title>Revisión ${ref}</title>
+    let html = `<html><head><title>Revisión ${esc(ref)}</title>
     <style>
       body{font-family:Arial,sans-serif;padding:40px;font-size:13px;color:#1a1a1a}
       h1{font-size:18px;border-bottom:2px solid #0077F9;padding-bottom:8px;color:#111126}
@@ -195,31 +203,31 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       .obs-item{margin:6px 0;padding:8px;background:#f8f9fa;border-left:3px solid #F59E0B}
       .corrected{border-left-color:#16a34a} .not-corrected{border-left-color:#dc2626}
     </style></head><body>`;
-    html += `<h1>Revisión de Glosa — ${ref}</h1>`;
+    html += `<h1>Revisión de Glosa — ${esc(ref)}</h1>`;
     html += `<h2>Datos Generales</h2>`;
-    html += `<table><tr><th>Referencia</th><td>${ref}</td><th>Tipo</th><td>${tipo}</td></tr>`;
-    html += `<tr><th>Sucursal</th><td>${suc}</td><th>Ejecutivo</th><td>${ejec}</td></tr>`;
-    html += `<tr><th>Cliente</th><td>${cli}</td><th>Partidas</th><td>${partidas || "—"}</td></tr></table>`;
+    html += `<table><tr><th>Referencia</th><td>${esc(ref)}</td><th>Tipo</th><td>${esc(tipo)}</td></tr>`;
+    html += `<tr><th>Sucursal</th><td>${esc(suc)}</td><th>Ejecutivo</th><td>${esc(ejec)}</td></tr>`;
+    html += `<tr><th>Cliente</th><td>${esc(cli)}</td><th>Partidas</th><td>${esc(partidas || "—")}</td></tr></table>`;
     html += `<h2>Clasificación</h2><table><tr><th>Característica</th><th>Valor</th></tr>`;
     for (const f of features) {
-      html += `<tr><td>${f.nombre}</td><td>${classValues[f.id] ? "Sí" : "No"}</td></tr>`;
+      html += `<tr><td>${esc(f.nombre)}</td><td>${classValues[f.id] ? "Sí" : "No"}</td></tr>`;
     }
     html += `</table>`;
-    html += `<h2>Documentación</h2><p><strong>Estado:</strong> ${docStatus}</p>`;
-    if (docComment) html += `<p><strong>Comentario:</strong> ${docComment}</p>`;
+    html += `<h2>Documentación</h2><p><strong>Estado:</strong> ${esc(docStatus)}</p>`;
+    if (docComment) html += `<p><strong>Comentario:</strong> ${esc(docComment)}</p>`;
     html += `<h2>Observaciones (${findings.length})</h2>`;
     for (const f of findings) {
       const cat = f.observation_categories?.nombre ?? "";
       const sub = f.observation_subcategories?.nombre ?? "";
       const err = f.observation_errors?.descripcion ?? "";
       const cls = f.current_status === "CORRECTED" ? "corrected" : f.current_status === "NOT_CORRECTED" ? "not-corrected" : "";
-      html += `<div class="obs-item ${cls}"><strong>${cat} &gt; ${sub}</strong> — <em>${f.current_status}</em><br/>${err}`;
-      if (f.comentario_inicial) html += `<br/><small>${f.comentario_inicial}</small>`;
+      html += `<div class="obs-item ${cls}"><strong>${esc(cat)} &gt; ${esc(sub)}</strong> — <em>${esc(f.current_status)}</em><br/>${esc(err)}`;
+      if (f.comentario_inicial) html += `<br/><small>${esc(f.comentario_inicial)}</small>`;
       html += `</div>`;
     }
     html += `<h2>Revisiones (${rounds.length})</h2><table><tr><th>#</th><th>Tipo</th><th>Resultado</th></tr>`;
     for (const r of rounds) {
-      html += `<tr><td>${r.round_number}</td><td>${r.round_type ?? "—"}</td><td>${r.result_status ?? "En curso"}</td></tr>`;
+      html += `<tr><td>${esc(r.round_number)}</td><td>${esc(r.round_type ?? "—")}</td><td>${esc(r.result_status ?? "En curso")}</td></tr>`;
     }
     html += `</table>`;
     if (generalCommentsList.length > 0) {
@@ -228,7 +236,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
       for (const c of generalCommentsList) {
         const autor = (c as unknown as { profiles?: { nombre?: string } }).profiles?.nombre || "Usuario";
         const fecha = new Date(c.created_at).toLocaleDateString("es-MX");
-        html += `<tr><td>${autor}</td><td>${fecha}</td><td>${c.comment_text}</td></tr>`;
+        html += `<tr><td>${esc(autor)}</td><td>${esc(fecha)}</td><td>${esc(c.comment_text)}</td></tr>`;
       }
       html += `</table>`;
     }
@@ -237,6 +245,7 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
     const win = window.open("", "_blank");
     if (win) { win.document.write(html); win.document.close(); win.print(); }
   };
+
 
   if (isLoading) {
     return (
