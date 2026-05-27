@@ -41,28 +41,37 @@ export function useGlosadores() {
       // Also count EN_REVISION cases per glosador this month
       const { data: allMonthCases } = await supabase
         .from("review_cases")
-        .select("assigned_glosador_user_id, document_type_id, status, approved_at")
+        .select("assigned_glosador_user_id, document_type_id, status, approved_at, remesas_count")
         .in("assigned_glosador_user_id", glosadorIds)
-        .in("status", ["APROBADO", "EN_REVISION", "ASIGNADO", "REGISTRADO", "PAUSADO", "CORRECCION_PENDIENTE", "EN_CORRECCION"]);
+        .not("status", "eq", "APROBADO") // APROBADO already in monthCases, avoid double fetch
+        .is("deleted_at", null);
 
-      // Build stats per glosador
+      // Build stats from ALL assigned cases (approved this month + all active)
+      // This gives the true workload distribution across glosadores
+      const allCasesForStats = [
+        ...(monthCases ?? []),
+        ...(allMonthCases ?? []).filter(c => c.status !== "APROBADO"), // avoid double-counting
+      ];
       const statsMap: Record<string, {
         pedimentos: number;
         consolidados: number;
         remesas: number;
       }> = {};
-      for (const c of monthCases ?? []) {
-        const uid = c.assigned_glosador_user_id!;
+      for (const c of allCasesForStats) {
+        const uid = c.assigned_glosador_user_id;
+        if (!uid) continue;
         if (!statsMap[uid]) statsMap[uid] = { pedimentos: 0, consolidados: 0, remesas: 0 };
         const code = docTypeMap[c.document_type_id!];
         if (code === "REMESA") {
           statsMap[uid].remesas += (c as any).remesas_count ?? 1;
         } else if (code === "CONSOLIDADO") {
           statsMap[uid].consolidados++;
-        } else {
+        } else if (code !== "ALTA_REMESA") {
+          // Exclude ALTA_REMESA — they are administrative records, not real glosas
           statsMap[uid].pedimentos++;
         }
       }
+
 
       // Total across ALL glosadores = denominator for true proportion
       const totalWorkload = Math.max(
