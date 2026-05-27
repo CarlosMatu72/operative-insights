@@ -29,27 +29,31 @@ export function useGlosadores() {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      let allDistribCases: any[] = [];
-      let page = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data: batch } = await supabase
-          .from("review_cases")
-          .select("assigned_glosador_user_id, document_type_id, status, remesas_count, approved_at")
-          .in("assigned_glosador_user_id", glosadorIds)
-          .is("deleted_at", null)
-          .not("status", "eq", "RECHAZADO")
-          .range(page * pageSize, (page + 1) * pageSize - 1);
-        if (!batch || batch.length === 0) break;
-        allDistribCases = [...allDistribCases, ...batch];
-        if (batch.length < pageSize) break;
-        page++;
-      }
-      // Keep only: active cases (any date) + approved this month
-      allDistribCases = allDistribCases.filter(c =>
-        c.status !== "APROBADO" ||
-        (c.approved_at && c.approved_at >= startOfMonth.toISOString())
+      // Fetch per glosador to avoid row limits with large datasets
+      const allDistribCases: any[] = [];
+      await Promise.all(
+        glosadorIds.map(async (uid) => {
+          // Active cases — all statuses except APROBADO and RECHAZADO
+          const { data: active } = await supabase
+            .from("review_cases")
+            .select("assigned_glosador_user_id, document_type_id, status, remesas_count")
+            .eq("assigned_glosador_user_id", uid)
+            .is("deleted_at", null)
+            .not("status", "eq", "APROBADO")
+            .not("status", "eq", "RECHAZADO");
+          
+          // Approved this month
+          const { data: approved } = await supabase
+            .from("review_cases")
+            .select("assigned_glosador_user_id, document_type_id, status, remesas_count")
+            .eq("assigned_glosador_user_id", uid)
+            .eq("status", "APROBADO")
+            .is("deleted_at", null)
+            .gte("approved_at", startOfMonth.toISOString());
+          allDistribCases.push(...(active ?? []), ...(approved ?? []));
+        })
       );
+
 
       const { data: docTypes } = await supabase.from("document_types").select("id, code");
       const docTypeMap = Object.fromEntries((docTypes ?? []).map((d) => [d.id, d.code]));
