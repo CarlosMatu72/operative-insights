@@ -51,7 +51,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       const { data: folioAlta } = await supabase.rpc("generate_internal_folio", { doc_code: "ALTA_REMESA" });
       if (!folioAlta) throw new Error("Error generando folio");
 
-      const { error: altaError } = await supabase.from("review_cases").insert({
+      const { data: altaCase, error: altaError } = await supabase.from("review_cases").insert({
         internal_folio: folioAlta,
         reference: fullReference,
         document_type_id: docTypeAlta.id,
@@ -65,6 +65,14 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
         updated_by: user?.id,
       }).select().single();
       if (altaError) throw altaError;
+
+      if (altaCase && (customsKeyId || partidas)) {
+        await supabase.from("review_case_details").insert({
+          review_case_id: altaCase.id,
+          customs_key_id: customsKeyId || null,
+          partidas: partidas ? parseInt(partidas) : null,
+        });
+      }
     },
     onSuccess: () => {
       toast.success("Alta de Remesa registrada. Ya puedes agregar revisiones con el formulario de Remesa.");
@@ -72,6 +80,8 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       setReferenceSuffix("");
       setSucursalId("");
       setClienteId("");
+      setCustomsKeyId("");
+      setPartidas("");
       setTotalEsperado("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
