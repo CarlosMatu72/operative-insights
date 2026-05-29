@@ -88,7 +88,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
 
       const hasGlosador = glosadorId && glosadorId !== "_none";
 
-      const { error } = await supabase.from("review_cases").insert({
+      const { data: insertedCase, error } = await supabase.from("review_cases").insert({
         internal_folio: folio,
         reference: referencia,
         document_type_id: docType.id,
@@ -105,8 +105,17 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         remesas_count: effectiveCount,
         created_by: user?.id,
         updated_by: user?.id,
-      });
+      }).select().single();
       if (error) throw error;
+
+      const altaDetails = (selectedRemesa as any).review_case_details?.[0];
+      if (insertedCase && (altaDetails?.customs_key_id || altaDetails?.partidas)) {
+        await supabase.from("review_case_details").insert({
+          review_case_id: insertedCase.id,
+          customs_key_id: altaDetails.customs_key_id ?? null,
+          partidas: altaDetails.partidas ?? null,
+        });
+      }
 
       return { referencia, loteDescripcion };
     },
