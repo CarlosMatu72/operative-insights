@@ -40,6 +40,7 @@ export function ConsolidadoForm({ onSuccess }: { onSuccess: () => void }) {
   const queryClient = useQueryClient();
 
   const [remesaBaseId, setRemesaBaseId] = useState("");
+  const [remesaPopoverOpen, setRemesaPopoverOpen] = useState(false);
   const [glosadorId, setGlosadorId] = useState("");
   const [referenciaConsolidado, setReferenciaConsolidado] = useState("");
   const [sinRemesaBase, setSinRemesaBase] = useState(false);
