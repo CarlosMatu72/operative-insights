@@ -54,7 +54,7 @@ export function useActiveRemesas() {
     queryFn: async () => {
       const { data } = await supabase
         .from("review_cases")
-        .select("*, branches(nombre), clients(nombre)")
+        .select("*, branches(nombre), clients(nombre), review_case_details(customs_key_id, partidas, customs_keys(clave, descripcion))")
         .eq("is_active_remesa", true)
         .order("created_at", { ascending: false });
       return data ?? [];
