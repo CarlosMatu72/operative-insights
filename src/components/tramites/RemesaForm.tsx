@@ -50,6 +50,7 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const queryClient = useQueryClient();
 
   const [remesaBaseId, setRemesaBaseId] = useState("");
+  const [remesaPopoverOpen, setRemesaPopoverOpen] = useState(false);
   const [glosadorId, setGlosadorId] = useState("");
   const [rangeInput, setRangeInput] = useState("");
   const [remesasCountOverride, setRemesasCountOverride] = useState<number | null>(null);
