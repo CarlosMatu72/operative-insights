@@ -553,6 +553,18 @@ const ReviewDetailPanel = ({ caseId, onClose }: Props) => {
                   </div>
                 );
               })()}
+              {state.openComments.length > 0 && (isActiveReview || isReopened) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {state.openComments.length} comentario{state.openComments.length !== 1 ? "s" : ""} abierto{state.openComments.length !== 1 ? "s" : ""} — ciérralos antes de aprobar
+                </p>
+              )}
+              {!state.hasClassification && (isActiveReview || isReopened) && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Selecciona al menos una clasificación para aprobar
+                </p>
+              )}
               {(isActiveReview || isReopened) && !needsCorrection && (
                 <Button
                   variant="default"
