@@ -140,21 +140,63 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
       <div className="space-y-2">
         <Label>Remesa base activa *</Label>
-        <Select value={remesaBaseId} onValueChange={setRemesaBaseId}>
-          <SelectTrigger><SelectValue placeholder="Seleccionar remesa base activa" /></SelectTrigger>
-          <SelectContent>
-            {activeRemesas.length === 0 ? (
-              <SelectItem value="_empty" disabled>No hay remesas activas</SelectItem>
-            ) : (
-              activeRemesas.map(r => (
-                <SelectItem key={r.id} value={r.id}>
-                  {r.remesa_base_reference || r.reference} — {r.branches?.nombre ?? "Sin sucursal"}
-                  {r.total_remesas_esperadas ? ` (${r.total_remesas_esperadas} esperadas)` : ""}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+        <Popover open={remesaPopoverOpen} onOpenChange={setRemesaPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between h-9 font-normal"
+            >
+              {remesaBaseId ? (
+                <span className="truncate">
+                  {(() => {
+                    const r = activeRemesas.find(r => r.id === remesaBaseId);
+                    if (!r) return "Seleccionar...";
+                    return `${r.remesa_base_reference || r.reference} — ${r.branches?.nombre ?? "—"} · ${r.clients?.nombre ?? "—"}`;
+                  })()}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Buscar o seleccionar remesa base...</span>
+              )}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar por referencia, sucursal o cliente..." />
+              <CommandList>
+                <CommandEmpty>No se encontró ninguna remesa activa</CommandEmpty>
+                <CommandGroup>
+                  {activeRemesas.map(r => (
+                    <CommandItem
+                      key={r.id}
+                      value={`${r.remesa_base_reference || r.reference} ${r.branches?.nombre ?? ""} ${r.clients?.nombre ?? ""}`}
+                      onSelect={() => {
+                        setRemesaBaseId(r.id);
+                        setRemesaPopoverOpen(false);
+                      }}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", remesaBaseId === r.id ? "opacity-100" : "opacity-0")} />
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">
+                          {r.remesa_base_reference || r.reference}
+                          {r.total_remesas_esperadas
+                            ? <span className="ml-2 text-xs text-muted-foreground">({r.total_remesas_esperadas} esp.)</span>
+                            : null}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {r.branches?.nombre ?? "Sin sucursal"}
+                          {r.clients?.nombre ? ` · ${r.clients.nombre}` : ""}
+                        </span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {selectedRemesa && (
