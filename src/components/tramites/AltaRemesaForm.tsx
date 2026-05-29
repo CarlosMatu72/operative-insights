@@ -132,6 +132,30 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
           </Select>
         </div>
         <div className="space-y-2">
+          <Label>Clave Aduanera</Label>
+          <Select value={customsKeyId} onValueChange={setCustomsKeyId}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar clave" /></SelectTrigger>
+            <SelectContent>
+              {(customsKeys ?? []).map((k) => (
+                <SelectItem key={k.id} value={k.id}>
+                  {k.clave} — {k.descripcion}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Partidas</Label>
+          <Input
+            type="number"
+            min={1}
+            value={partidas}
+            onChange={e => setPartidas(e.target.value)}
+            placeholder="Número de partidas"
+            className="h-9"
+          />
+        </div>
+        <div className="space-y-2">
           <Label>Total de remesas esperadas <span className="text-muted-foreground font-normal">(opcional)</span></Label>
           <Input
             type="number"
