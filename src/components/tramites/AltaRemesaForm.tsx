@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCatalogs } from "@/hooks/useCatalogs";
+import { useCustomsKeys } from "@/hooks/useReviewDetail";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,15 @@ import { PrefixReferenceInput } from "./PrefixReferenceInput";
 export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const { user } = useAuth();
   const { branches, clients, documentTypes } = useCatalogs();
+  const { data: customsKeys = [] } = useCustomsKeys();
   const queryClient = useQueryClient();
 
   const [selectedPrefix, setSelectedPrefix] = useState("");
   const [referenceSuffix, setReferenceSuffix] = useState("");
   const [sucursalId, setSucursalId] = useState("");
   const [clienteId, setClienteId] = useState("");
+  const [customsKeyId, setCustomsKeyId] = useState("");
+  const [partidas, setPartidas] = useState("");
   const [totalEsperado, setTotalEsperado] = useState("");
 
   const fullReference = selectedPrefix ? `${selectedPrefix}${referenceSuffix}` : "";
@@ -47,7 +51,7 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       const { data: folioAlta } = await supabase.rpc("generate_internal_folio", { doc_code: "ALTA_REMESA" });
       if (!folioAlta) throw new Error("Error generando folio");
 
-      const { error: altaError } = await supabase.from("review_cases").insert({
+      const { data: altaCase, error: altaError } = await supabase.from("review_cases").insert({
         internal_folio: folioAlta,
         reference: fullReference,
         document_type_id: docTypeAlta.id,
@@ -61,6 +65,14 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
         updated_by: user?.id,
       }).select().single();
       if (altaError) throw altaError;
+
+      if (altaCase && (customsKeyId || partidas)) {
+        await supabase.from("review_case_details").insert({
+          review_case_id: altaCase.id,
+          customs_key_id: customsKeyId || null,
+          partidas: partidas ? parseInt(partidas) : null,
+        });
+      }
     },
     onSuccess: () => {
       toast.success("Alta de Remesa registrada. Ya puedes agregar revisiones con el formulario de Remesa.");
@@ -68,6 +80,8 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
       setReferenceSuffix("");
       setSucursalId("");
       setClienteId("");
+      setCustomsKeyId("");
+      setPartidas("");
       setTotalEsperado("");
       queryClient.invalidateQueries({ queryKey: ["review-cases"] });
       queryClient.invalidateQueries({ queryKey: ["active-remesas"] });
@@ -116,6 +130,30 @@ export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Clave Aduanera</Label>
+          <Select value={customsKeyId} onValueChange={setCustomsKeyId}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar clave" /></SelectTrigger>
+            <SelectContent>
+              {(customsKeys ?? []).map((k) => (
+                <SelectItem key={k.id} value={k.id}>
+                  {k.clave} — {k.descripcion}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Partidas</Label>
+          <Input
+            type="number"
+            min={1}
+            value={partidas}
+            onChange={e => setPartidas(e.target.value)}
+            placeholder="Número de partidas"
+            className="h-9"
+          />
         </div>
         <div className="space-y-2">
           <Label>Total de remesas esperadas <span className="text-muted-foreground font-normal">(opcional)</span></Label>

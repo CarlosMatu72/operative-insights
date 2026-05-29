@@ -303,7 +303,11 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     customsKeyId &&
     !isNaN(partidasNum) && partidasNum > 0
   );
+  const openComments = generalCommentsList.filter(c => !c.is_closed);
+  const hasClassification = classifications.length > 0;
   const canApprove = openFindings.length === 0
+    && openComments.length === 0
+    && hasClassification
     && docStatus === "COMPLETO"
     && status !== "DOCUMENTO_PENDIENTE"
     && hasRequiredFields;
@@ -451,6 +455,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     // computed
     status, isReadOnly, isCorrection, needsCorrection, isReopened, isActiveReview,
     detectedRange, activeErrors, openFindings, hasRequiredFields, canApprove,
+    openComments, hasClassification,
     previousFindings, newFindings,
     // handlers
     handleSaveAll, handleAddFinding, handleStartCorrection,
