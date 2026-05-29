@@ -13,12 +13,15 @@ import { PrefixReferenceInput } from "./PrefixReferenceInput";
 export function AltaRemesaForm({ onSuccess }: { onSuccess: () => void }) {
   const { user } = useAuth();
   const { branches, clients, documentTypes } = useCatalogs();
+  const { data: customsKeys = [] } = useCustomsKeys();
   const queryClient = useQueryClient();
 
   const [selectedPrefix, setSelectedPrefix] = useState("");
   const [referenceSuffix, setReferenceSuffix] = useState("");
   const [sucursalId, setSucursalId] = useState("");
   const [clienteId, setClienteId] = useState("");
+  const [customsKeyId, setCustomsKeyId] = useState("");
+  const [partidas, setPartidas] = useState("");
   const [totalEsperado, setTotalEsperado] = useState("");
 
   const fullReference = selectedPrefix ? `${selectedPrefix}${referenceSuffix}` : "";
