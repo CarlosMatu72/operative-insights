@@ -455,6 +455,7 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     // computed
     status, isReadOnly, isCorrection, needsCorrection, isReopened, isActiveReview,
     detectedRange, activeErrors, openFindings, hasRequiredFields, canApprove,
+    openComments, hasClassification,
     previousFindings, newFindings,
     // handlers
     handleSaveAll, handleAddFinding, handleStartCorrection,
