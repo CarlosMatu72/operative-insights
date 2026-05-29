@@ -167,6 +167,25 @@ export function RemesaForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       )}
 
+      {selectedRemesa && (() => {
+        const ad = (selectedRemesa as any).review_case_details?.[0];
+        if (!ad?.customs_keys && !ad?.partidas) return null;
+        return (
+          <div className="rounded-md bg-muted/40 border px-3 py-2 space-y-1 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground text-sm">Datos heredados del Alta</p>
+            {ad?.customs_keys && (
+              <p>Clave: <span className="text-foreground font-medium">
+                {ad.customs_keys.clave} — {ad.customs_keys.descripcion}
+              </span></p>
+            )}
+            {ad?.partidas && (
+              <p>Partidas: <span className="text-foreground font-medium">{ad.partidas}</span></p>
+            )}
+          </div>
+        );
+      })()}
+
+
       <div className="space-y-2">
         <Label>Números de remesa a registrar *</Label>
         <Input
