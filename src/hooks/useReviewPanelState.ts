@@ -304,7 +304,10 @@ export function useReviewPanelState(caseId: string, onClose: () => void) {
     !isNaN(partidasNum) && partidasNum > 0
   );
   const openComments = generalCommentsList.filter(c => !c.is_closed);
-  const hasClassification = classifications.length > 0;
+  // Check BD records OR local state — whichever has at least one checked value
+  const hasClassificationInDB = classifications.length > 0;
+  const hasClassificationLocal = Object.values(classValues).some(v => v === true);
+  const hasClassification = hasClassificationInDB || hasClassificationLocal;
   const canApprove = openFindings.length === 0
     && openComments.length === 0
     && hasClassification
